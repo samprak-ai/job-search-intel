@@ -66,6 +66,30 @@ type GapMitigation = {
   strategy: string;
 };
 
+type BulletPriority = {
+  original: string;
+  action: "lead_with" | "reword" | "deprioritize";
+  reword_suggestion: string | null;
+  why: string;
+};
+
+type ResumeTailoring = {
+  headline_suggestion: string;
+  summary_rewrite: string;
+  section_order: string[];
+  bullet_priorities: BulletPriority[];
+  keywords_to_emphasize: string[];
+  skills_to_highlight: string[];
+  skills_to_deprioritize: string[];
+};
+
+type ResumeTailor = {
+  id: string;
+  role_id: string;
+  tailoring: ResumeTailoring;
+  created_at: string;
+};
+
 type SessionConfig = {
   company_interview_philosophy: string;
   question_themes: QuestionTheme[];
@@ -92,6 +116,7 @@ type RoleData = {
   application_status: string | null;
   score: Score | null;
   interview_intel: Intel[];
+  resume_tailor: ResumeTailor | null;
   session: Session | null;
 };
 
@@ -103,6 +128,7 @@ export default function RoleDetail() {
   const [scoring, setScoring] = useState(false);
   const [fetchingIntel, setFetchingIntel] = useState(false);
   const [generatingSession, setGeneratingSession] = useState(false);
+  const [tailoringLoading, setTailoringLoading] = useState(false);
 
   useEffect(() => {
     fetchRole();
@@ -144,6 +170,17 @@ export default function RoleDetail() {
     setRole({ ...role, application_status: status });
   }
 
+  async function generateTailoring() {
+    setTailoringLoading(true);
+    try {
+      await fetch(`${API}/resume-tailor/${id}`, { method: "POST" });
+      await fetchRole();
+    } catch (e) {
+      console.error("Resume tailoring generation failed:", e);
+    }
+    setTailoringLoading(false);
+  }
+
   async function generateForgeSession() {
     setGeneratingSession(true);
     try {
@@ -160,8 +197,20 @@ export default function RoleDetail() {
 
   const score = role.score;
   const intel = role.interview_intel;
+  const tailor = role.resume_tailor;
   const session = role.session;
   const currentStatus = role.application_status || "unreviewed";
+
+  const bulletActionStyle: Record<string, string> = {
+    lead_with: "border-green-200 bg-green-50",
+    reword: "border-blue-200 bg-blue-50",
+    deprioritize: "border-gray-200 bg-gray-50",
+  };
+  const bulletActionLabel: Record<string, { text: string; color: string }> = {
+    lead_with: { text: "Lead With", color: "bg-green-600 text-white" },
+    reword: { text: "Reword", color: "bg-blue-600 text-white" },
+    deprioritize: { text: "Deprioritize", color: "bg-gray-400 text-white" },
+  };
 
   return (
     <main className="p-6">
@@ -379,6 +428,175 @@ export default function RoleDetail() {
           <p className="text-sm text-gray-400">
             No intel yet. Click &quot;Fetch Intel&quot; to gather interview
             preparation data.
+          </p>
+        )}
+      </section>
+
+      {/* Resume Tailoring */}
+      <section className="bg-white rounded-lg border border-gray-200 p-5 mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold">Resume Tailoring</h2>
+          <button
+            onClick={generateTailoring}
+            disabled={tailoringLoading}
+            className="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {tailoringLoading
+              ? "Generating..."
+              : tailor
+                ? "Regenerate"
+                : "Generate Resume Tailoring"}
+          </button>
+        </div>
+
+        {tailor ? (
+          <div className="space-y-5">
+            <p className="text-xs text-gray-400">
+              Generated{" "}
+              {new Date(tailor.created_at).toLocaleDateString()} at{" "}
+              {new Date(tailor.created_at).toLocaleTimeString()}
+            </p>
+
+            {/* Headline Suggestion */}
+            {tailor.tailoring.headline_suggestion && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-indigo-800 mb-2">
+                  Headline Positioning
+                </h3>
+                <p className="text-sm text-indigo-900 font-medium">
+                  {tailor.tailoring.headline_suggestion}
+                </p>
+              </div>
+            )}
+
+            {/* Summary Rewrite */}
+            {tailor.tailoring.summary_rewrite && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Tailored Summary
+                </h3>
+                <p className="text-sm text-gray-600 bg-gray-50 rounded p-3 italic">
+                  {tailor.tailoring.summary_rewrite}
+                </p>
+              </div>
+            )}
+
+            {/* Section Order */}
+            {tailor.tailoring.section_order?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Optimal Section Order
+                </h3>
+                <ol className="text-sm text-gray-700 list-decimal pl-5 space-y-1">
+                  {tailor.tailoring.section_order.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Bullet Priorities */}
+            {tailor.tailoring.bullet_priorities?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Bullet Point Priorities
+                </h3>
+                <div className="space-y-3">
+                  {tailor.tailoring.bullet_priorities.map((b, i) => (
+                    <div
+                      key={i}
+                      className={`border rounded-lg p-4 ${bulletActionStyle[b.action] || "border-gray-200 bg-gray-50"}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span
+                          className={`text-xs font-medium px-2 py-0.5 rounded flex-shrink-0 mt-0.5 ${bulletActionLabel[b.action]?.color || "bg-gray-400 text-white"}`}
+                        >
+                          {bulletActionLabel[b.action]?.text || b.action}
+                        </span>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-800 font-medium">
+                            {b.original}
+                          </p>
+                          {b.reword_suggestion && (
+                            <p className="text-sm text-gray-600 mt-1 italic">
+                              &rarr; {b.reword_suggestion}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {b.why}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Keywords & Skills */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Keywords to Emphasize */}
+              {tailor.tailoring.keywords_to_emphasize?.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Keywords to Emphasize
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tailor.tailoring.keywords_to_emphasize.map((k, i) => (
+                      <span
+                        key={i}
+                        className="text-xs px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-full font-medium"
+                      >
+                        {k}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Skills to Highlight */}
+              {tailor.tailoring.skills_to_highlight?.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Skills to Highlight
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tailor.tailoring.skills_to_highlight.map((s, i) => (
+                      <span
+                        key={i}
+                        className="text-xs px-2.5 py-1 bg-green-100 text-green-700 rounded-full font-medium"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Skills to Deprioritize */}
+            {tailor.tailoring.skills_to_deprioritize?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Skills to Deprioritize
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {tailor.tailoring.skills_to_deprioritize.map((s, i) => (
+                    <span
+                      key={i}
+                      className="text-xs px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full line-through"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">
+            No tailoring yet. Click &quot;Generate Resume Tailoring&quot; to get
+            role-specific advice on how to prioritize and reframe your resume.
           </p>
         )}
       </section>

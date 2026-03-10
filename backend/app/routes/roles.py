@@ -74,6 +74,15 @@ async def get_role(role_id: str):
     )
     role["interview_intel"] = intel.data if intel.data else []
 
+    # Fetch resume tailoring if exists
+    tailoring = (
+        supabase.table("resume_tailors")
+        .select("*")
+        .eq("role_id", role_id)
+        .execute()
+    )
+    role["resume_tailor"] = tailoring.data[0] if tailoring.data else None
+
     # Fetch Forge session if exists
     session = (
         supabase.table("sessions")

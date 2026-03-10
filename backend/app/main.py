@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import discover, score, intel, roles, forge, usage
+from app.routes import discover, score, intel, roles, forge, usage, resume_tailor
 
 app = FastAPI(title="Job Search Intelligence", version="0.1.0")
 
@@ -30,6 +30,7 @@ app.include_router(intel.router, prefix="/intel", tags=["intel"])
 app.include_router(roles.router, prefix="/roles", tags=["roles"])
 app.include_router(forge.router, prefix="/forge", tags=["forge"])
 app.include_router(usage.router, prefix="/usage", tags=["usage"])
+app.include_router(resume_tailor.router, prefix="/resume-tailor", tags=["resume-tailor"])
 
 
 @app.get("/health")
