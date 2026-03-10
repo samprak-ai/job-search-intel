@@ -7,7 +7,7 @@ from dotenv import dotenv_values
 from supabase import create_client, Client
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
-CONFIG_DIR = BACKEND_DIR.parent / "config"
+CONFIG_DIR = BACKEND_DIR / "config"
 
 
 def _env_get(key: str, default: str = "") -> str:
