@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Job Search Intel",
+  title: "Sam's Work Alignment",
   description: "Job search intelligence platform",
 };
 
@@ -31,7 +31,7 @@ export default function RootLayout({
         <nav className="bg-white border-b border-gray-200 px-6 py-3">
           <div className="max-w-7xl mx-auto flex items-center gap-6">
             <Link href="/" className="text-lg font-bold text-gray-900">
-              Job Search Intel
+              Sam's Work Alignment
             </Link>
             <div className="flex gap-4 text-sm">
               <Link
