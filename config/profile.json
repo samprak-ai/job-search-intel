@@ -1,0 +1,29 @@
+{
+  "name": "Sam Prakash",
+  "location": "Renton, WA",
+  "target_role_types": [
+    "AI Solutions Engineer",
+    "AI Partnerships",
+    "Head of AI Product",
+    "GTM Strategy AI",
+    "Sales Intelligence AI"
+  ],
+  "differentiators": [
+    "Built production AI systems end-to-end (GenAI-Intel, Forge, AWS internal agents)",
+    "11+ years GTM + Sales Ops at AWS Startups",
+    "Rare fluency across business strategy, AI infrastructure, and hands-on product building",
+    "Live deployed products as proof, not just claims"
+  ],
+  "experience_summary": "11+ years at AWS Startups leading GTM and Sales Operations. Built multiple production AI systems including GenAI-Intel (cloud market intelligence platform), Forge (AI interview prep), and internal AWS agent tooling. Combines deep business strategy experience with hands-on AI product development.",
+  "skills": [
+    "FastAPI",
+    "Next.js",
+    "Supabase",
+    "Claude API",
+    "Python",
+    "SQL",
+    "Salesforce",
+    "AWS"
+  ],
+  "education": "MBA, W.P. Carey / ASU; B.Tech EE, BPUT"
+}

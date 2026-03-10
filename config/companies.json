@@ -1,0 +1,254 @@
+{
+  "target_companies": [
+    {
+      "name": "Anthropic",
+      "tier": "model_provider",
+      "h1b_status": "confirmed",
+      "priority": 1,
+      "careers_url": "https://www.anthropic.com/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "anthropic",
+      "notes": ""
+    },
+    {
+      "name": "OpenAI",
+      "tier": "model_provider",
+      "h1b_status": "confirmed",
+      "priority": 2,
+      "careers_url": "https://openai.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "openai",
+      "notes": ""
+    },
+    {
+      "name": "Cohere",
+      "tier": "model_provider",
+      "h1b_status": "confirmed",
+      "priority": 3,
+      "careers_url": "https://cohere.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "cohere",
+      "notes": ""
+    },
+    {
+      "name": "Together AI",
+      "tier": "model_provider",
+      "h1b_status": "likely",
+      "priority": 4,
+      "careers_url": "https://www.together.ai/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "togetherai",
+      "notes": ""
+    },
+    {
+      "name": "Perplexity",
+      "tier": "model_provider",
+      "h1b_status": "likely",
+      "priority": 5,
+      "careers_url": "https://www.perplexity.ai/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "perplexity",
+      "notes": ""
+    },
+    {
+      "name": "Mistral",
+      "tier": "model_provider",
+      "h1b_status": "unknown",
+      "priority": 6,
+      "careers_url": "https://mistral.ai/careers",
+      "ats_platform": "lever",
+      "ats_slug": "mistral",
+      "notes": "US operations"
+    },
+    {
+      "name": "xAI",
+      "tier": "model_provider",
+      "h1b_status": "unknown",
+      "priority": 7,
+      "careers_url": "https://x.ai/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "xai",
+      "notes": ""
+    },
+    {
+      "name": "Google DeepMind",
+      "tier": "big_tech_cloud_ai",
+      "h1b_status": "confirmed",
+      "priority": 8,
+      "careers_url": "https://www.google.com/about/careers/applications/",
+      "ats_platform": null,
+      "ats_slug": null,
+      "notes": "Proprietary ATS — uses Brave Search fallback. Jobs listed on careers.google.com"
+    },
+    {
+      "name": "Microsoft Azure AI",
+      "tier": "big_tech_cloud_ai",
+      "h1b_status": "confirmed",
+      "priority": 9,
+      "careers_url": "https://careers.microsoft.com",
+      "ats_platform": null,
+      "ats_slug": null,
+      "notes": "Proprietary ATS — uses Brave Search fallback"
+    },
+    {
+      "name": "Databricks",
+      "tier": "big_tech_cloud_ai",
+      "h1b_status": "confirmed",
+      "priority": 10,
+      "careers_url": "https://www.databricks.com/company/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "databricks",
+      "notes": ""
+    },
+    {
+      "name": "Snowflake",
+      "tier": "big_tech_cloud_ai",
+      "h1b_status": "confirmed",
+      "priority": 11,
+      "careers_url": "https://careers.snowflake.com",
+      "ats_platform": "ashby",
+      "ats_slug": "snowflake",
+      "notes": ""
+    },
+    {
+      "name": "Salesforce",
+      "tier": "big_tech_cloud_ai",
+      "h1b_status": "confirmed",
+      "priority": 12,
+      "careers_url": "https://www.salesforce.com/company/careers/",
+      "ats_platform": null,
+      "ats_slug": null,
+      "notes": "Proprietary ATS — uses Brave Search fallback"
+    },
+    {
+      "name": "Clay",
+      "tier": "gtm_revenue_intelligence",
+      "h1b_status": "likely",
+      "priority": 13,
+      "careers_url": "https://www.clay.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "claylabs",
+      "notes": ""
+    },
+    {
+      "name": "6sense",
+      "tier": "gtm_revenue_intelligence",
+      "h1b_status": "confirmed",
+      "priority": 14,
+      "careers_url": "https://6sense.com/company/careers/",
+      "ats_platform": "greenhouse",
+      "ats_slug": "6sense",
+      "notes": ""
+    },
+    {
+      "name": "Common Room",
+      "tier": "gtm_revenue_intelligence",
+      "h1b_status": "likely",
+      "priority": 15,
+      "careers_url": "https://www.commonroom.io/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "commonroom",
+      "notes": ""
+    },
+    {
+      "name": "Pocus",
+      "tier": "gtm_revenue_intelligence",
+      "h1b_status": "unknown",
+      "priority": 16,
+      "careers_url": "https://www.pocus.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "pocus",
+      "notes": ""
+    },
+    {
+      "name": "Demandbase",
+      "tier": "gtm_revenue_intelligence",
+      "h1b_status": "confirmed",
+      "priority": 17,
+      "careers_url": "https://www.demandbase.com/company/careers/",
+      "ats_platform": "ashby",
+      "ats_slug": "demandbase",
+      "notes": ""
+    },
+    {
+      "name": "Amplemarket",
+      "tier": "gtm_revenue_intelligence",
+      "h1b_status": "unknown",
+      "priority": 18,
+      "careers_url": "https://www.amplemarket.com/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "amplemarket",
+      "notes": ""
+    },
+    {
+      "name": "Crunchbase",
+      "tier": "data_startup_intelligence",
+      "h1b_status": "likely",
+      "priority": 19,
+      "careers_url": "https://about.crunchbase.com/careers/",
+      "ats_platform": "ashby",
+      "ats_slug": "crunchbase",
+      "notes": ""
+    },
+    {
+      "name": "PitchBook",
+      "tier": "data_startup_intelligence",
+      "h1b_status": "confirmed",
+      "priority": 20,
+      "careers_url": "https://pitchbook.com/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "pitchbookdata",
+      "notes": ""
+    },
+    {
+      "name": "Similarweb",
+      "tier": "data_startup_intelligence",
+      "h1b_status": "confirmed",
+      "priority": 21,
+      "careers_url": "https://www.similarweb.com/careers/",
+      "ats_platform": "greenhouse",
+      "ats_slug": "similarweb",
+      "notes": ""
+    },
+    {
+      "name": "Bombora",
+      "tier": "data_startup_intelligence",
+      "h1b_status": "likely",
+      "priority": 22,
+      "careers_url": "https://bombora.com/careers/",
+      "ats_platform": "greenhouse",
+      "ats_slug": "bombora",
+      "notes": ""
+    },
+    {
+      "name": "Qualified",
+      "tier": "ai_native_gtm",
+      "h1b_status": "likely",
+      "priority": 23,
+      "careers_url": "https://www.qualified.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "qualified",
+      "notes": ""
+    },
+    {
+      "name": "Keyplay",
+      "tier": "ai_native_gtm",
+      "h1b_status": "unknown",
+      "priority": 24,
+      "careers_url": "https://www.keyplay.io/careers",
+      "ats_platform": null,
+      "ats_slug": null,
+      "notes": "Small startup — no public ATS found, uses Brave Search fallback"
+    },
+    {
+      "name": "LinkedIn",
+      "tier": "ai_native_gtm",
+      "h1b_status": "confirmed",
+      "priority": 25,
+      "careers_url": "https://careers.linkedin.com",
+      "ats_platform": null,
+      "ats_slug": null,
+      "notes": "Microsoft subsidiary — proprietary ATS, uses Brave Search fallback"
+    }
+  ]
+}
