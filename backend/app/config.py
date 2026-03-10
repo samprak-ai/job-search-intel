@@ -37,6 +37,7 @@ def get_settings():
         notification_email: str = _env_get("NOTIFICATION_EMAIL")
         cron_secret: str = _env_get("CRON_SECRET")
         cron_companies: str = _env_get("CRON_COMPANIES")  # comma-separated list
+        frontend_url: str = _env_get("FRONTEND_URL")
         forge_api_url: str = _env_get("FORGE_API_URL")
         forge_import_key: str = _env_get("FORGE_IMPORT_KEY")
 

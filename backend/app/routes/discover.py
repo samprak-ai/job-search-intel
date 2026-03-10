@@ -170,6 +170,19 @@ async def discover_cron(
                     score_failed += 1
                     logger.warning(f"Cron auto-score failed for {role['title']}: {e}")
 
+        # Send daily digest email
+        try:
+            from app.services.notifications import send_daily_digest_email
+
+            await send_daily_digest_email(
+                companies_searched=len(results),
+                total_new=total_new,
+                auto_scored=scored_count,
+                score_failed=score_failed,
+            )
+        except Exception as e:
+            logger.warning(f"Digest email failed: {e}")
+
         return {
             "status": "completed",
             "trigger": "cron",
