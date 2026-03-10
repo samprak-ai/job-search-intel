@@ -71,14 +71,14 @@
       "notes": ""
     },
     {
-      "name": "Google DeepMind",
+      "name": "Alphabet",
       "tier": "big_tech_cloud_ai",
       "h1b_status": "confirmed",
       "priority": 8,
       "careers_url": "https://www.google.com/about/careers/applications/",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "Proprietary ATS — uses Brave Search fallback. Jobs listed on careers.google.com"
+      "notes": "Includes Google, DeepMind, Google Cloud, Waymo, etc. Proprietary ATS — uses Brave Search fallback. Jobs listed on careers.google.com"
     },
     {
       "name": "Microsoft Azure AI",
