@@ -27,12 +27,6 @@ export default function Home() {
             Browse 25 target companies by tier, H1B status, and priority.
           </p>
         </Link>
-        <div className="p-6 bg-white rounded-lg border border-gray-200 opacity-60">
-          <h2 className="text-lg font-semibold mb-2">Forge (Phase 2)</h2>
-          <p className="text-sm text-gray-500">
-            Practice interviews with AI-powered mock sessions.
-          </p>
-        </div>
       </div>
     </main>
   );
