@@ -36,7 +36,13 @@ Rules:
 - section_order should list 4-6 sections in the optimal order for this role. Use recognizable section names like: "Independent AI Projects", "Experience" (for work history), "Capabilities", "Education"
 - Be specific and actionable — reference actual JD requirements and actual profile content
 - Consider the match gaps when suggesting rewording — help bridge those gaps through framing
-- skills_to_highlight should be 3-6 items; skills_to_deprioritize should be 1-3 items"""
+- skills_to_highlight should be 3-6 items; skills_to_deprioritize should be 1-3 items
+
+CRITICAL — Grounding constraint:
+- The headline_suggestion and summary_rewrite must ONLY claim expertise, skills, or experience that is directly evidenced by the provided resume bullets and profile data. NEVER fabricate, infer, or invent capabilities to match the JD.
+- If the candidate's background does not cover a JD requirement (e.g., quota management, compensation design), do NOT claim that expertise. Instead, frame adjacent strengths authentically — e.g., "operational analytics" instead of "quota governance" if the resume shows dashboards and reporting, not quota programs.
+- Reword_suggestions must stay truthful to what the candidate actually did. You may reframe emphasis and language, but never change the substance of what happened.
+- When there is a gap between the candidate's experience and the JD, acknowledge the gap implicitly by focusing on genuine strengths rather than fabricating alignment."""
 
 
 def build_tailoring_message(role: dict, profile: dict, score: dict | None) -> str:
