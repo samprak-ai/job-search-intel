@@ -129,6 +129,7 @@ export default function RoleDetail() {
   const [fetchingIntel, setFetchingIntel] = useState(false);
   const [generatingSession, setGeneratingSession] = useState(false);
   const [tailoringLoading, setTailoringLoading] = useState(false);
+  const [downloadingResume, setDownloadingResume] = useState(false);
 
   useEffect(() => {
     fetchRole();
@@ -179,6 +180,30 @@ export default function RoleDetail() {
       console.error("Resume tailoring generation failed:", e);
     }
     setTailoringLoading(false);
+  }
+
+  async function downloadResume() {
+    setDownloadingResume(true);
+    try {
+      const res = await fetch(`${API}/resume-tailor/${id}/download`);
+      if (!res.ok) {
+        console.error("Download failed:", res.statusText);
+        setDownloadingResume(false);
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Sam_Prakash_Resume_${role?.company?.replace(/\s+/g, "_") || "Role"}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Resume download failed:", e);
+    }
+    setDownloadingResume(false);
   }
 
   async function generateForgeSession() {
@@ -436,17 +461,31 @@ export default function RoleDetail() {
       <section className="bg-white rounded-lg border border-gray-200 p-5 mt-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Resume Tailoring</h2>
-          <button
-            onClick={generateTailoring}
-            disabled={tailoringLoading}
-            className="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {tailoringLoading
-              ? "Generating..."
-              : tailor
-                ? "Regenerate"
-                : "Generate Resume Tailoring"}
-          </button>
+          <div className="flex items-center gap-2">
+            {tailor && (
+              <button
+                onClick={downloadResume}
+                disabled={downloadingResume}
+                className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                {downloadingResume ? "Downloading..." : "Download Resume"}
+              </button>
+            )}
+            <button
+              onClick={generateTailoring}
+              disabled={tailoringLoading}
+              className="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {tailoringLoading
+                ? "Generating..."
+                : tailor
+                  ? "Regenerate"
+                  : "Generate Resume Tailoring"}
+            </button>
+          </div>
         </div>
 
         {tailor ? (
