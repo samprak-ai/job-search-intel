@@ -28,24 +28,6 @@ async def create_resume_tailoring(role_id: str):
     return result
 
 
-@router.get("/{role_id}")
-async def get_resume_tailoring(role_id: str):
-    """Retrieve existing resume tailoring for a role."""
-    supabase = get_supabase_client()
-
-    result = (
-        supabase.table("resume_tailors")
-        .select("*")
-        .eq("role_id", role_id)
-        .execute()
-    )
-
-    if not result.data:
-        raise HTTPException(status_code=404, detail="No tailoring found for this role")
-
-    return result.data[0]
-
-
 @router.get("/{role_id}/download")
 async def download_tailored_resume(role_id: str):
     """Download a tailored .docx resume for a specific role."""
@@ -122,3 +104,21 @@ async def download_tailored_resume(role_id: str):
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.get("/{role_id}")
+async def get_resume_tailoring(role_id: str):
+    """Retrieve existing resume tailoring for a role."""
+    supabase = get_supabase_client()
+
+    result = (
+        supabase.table("resume_tailors")
+        .select("*")
+        .eq("role_id", role_id)
+        .execute()
+    )
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="No tailoring found for this role")
+
+    return result.data[0]
