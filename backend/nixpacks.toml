@@ -1,2 +1,7 @@
+providers = ["python", "node"]
+
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["...", "pkgs.nodejs-20_x"]
+
+[phases.build]
+cmds = ["...", "cd scripts && npm install --production"]
