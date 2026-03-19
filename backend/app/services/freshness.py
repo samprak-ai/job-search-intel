@@ -77,7 +77,13 @@ async def _check_lever(url: str) -> bool | None:
 
 
 async def _check_ashby(url: str) -> bool | None:
-    """Check if an Ashby posting is still live."""
+    """Check if an Ashby posting is still live.
+
+    The non-auth API endpoint is not reliable for all postings —
+    some live jobs return 404 from the API while the page is still active.
+    When the API says 404, we fall back to checking the actual page content
+    for signs of a closed posting (e.g. "no longer available" text).
+    """
     match = ASHBY_ID_RE.search(url)
     if not match:
         return None
@@ -89,12 +95,50 @@ async def _check_ashby(url: str) -> bool | None:
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(api_url, timeout=CHECK_TIMEOUT)
+            if resp.status_code == 200:
+                return True
+            if resp.status_code in DEAD_STATUSES:
+                # API is unreliable — verify by checking actual page content
+                return await _verify_ashby_page(url)
+    except Exception as e:
+        logger.debug(f"Ashby API check failed for {url}: {e}")
+    return None
+
+
+async def _verify_ashby_page(url: str) -> bool | None:
+    """Verify an Ashby posting by checking the actual page for closed signals.
+
+    Ashby renders a 200 page even for closed postings, so we check the
+    response body for indicators like 'no longer available' or missing
+    application form elements.
+    """
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+    }
+    try:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers, timeout=CHECK_TIMEOUT)
             if resp.status_code in DEAD_STATUSES:
                 return False
             if resp.status_code == 200:
+                body = resp.text.lower()
+                # Ashby closed-posting signals
+                closed_signals = [
+                    "no longer available",
+                    "this job has been closed",
+                    "position has been filled",
+                    "job not found",
+                ]
+                for signal in closed_signals:
+                    if signal in body:
+                        return False
+                # Page loaded OK with no closed signals → likely still live
                 return True
     except Exception as e:
-        logger.debug(f"Ashby API check failed for {url}: {e}")
+        logger.debug(f"Ashby page verification failed for {url}: {e}")
     return None
 
 
