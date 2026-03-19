@@ -118,6 +118,8 @@ type RoleData = {
   interview_intel: Intel[];
   resume_tailor: ResumeTailor | null;
   session: Session | null;
+  is_live: boolean | null;
+  last_checked_at: string | null;
 };
 
 export default function RoleDetail() {
