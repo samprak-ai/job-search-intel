@@ -33,7 +33,7 @@ Rules:
 - bullet_priorities should have 5-8 items, covering the most important resume points to adjust
 - bullet_priorities "original" field MUST be an exact copy of an actual bullet from the candidate's Work History or Project descriptions below — do not paraphrase
 - keywords_to_emphasize should pull directly from the JD language
-- section_order should list 4-6 sections in the optimal order for this role. Use recognizable section names like: "Independent AI Projects", "Experience" (for work history), "Capabilities", "Education"
+- section_order should list 4-7 sections in the optimal order for this role. Use recognizable section names like: "Independent AI Projects", "Professional AI Projects", "Experience" (for work history), "Capabilities", "Education"
 - Be specific and actionable — reference actual JD requirements and actual profile content
 - Consider the match gaps when suggesting rewording — help bridge those gaps through framing
 - skills_to_highlight should be 3-6 items; skills_to_deprioritize should be 1-3 items
@@ -79,9 +79,18 @@ def build_tailoring_message(role: dict, profile: dict, score: dict | None) -> st
     if profile.get("projects"):
         msg += "\n\n**Independent Projects:**"
         for proj in profile["projects"]:
-            msg += f"\n\n__{proj['title']} — {proj['subtitle']}__"
+            msg += f"\n\n__{proj['title']} — {proj.get('subtitle', '')}__"
             if proj.get("description"):
                 msg += f"\n{proj['description'][:300]}"
+
+    if profile.get("professional_ai_projects"):
+        msg += "\n\n**Professional AI Projects (Internal AWS):**"
+        for proj in profile["professional_ai_projects"]:
+            msg += f"\n\n__{proj['title']}__"
+            if proj.get("description"):
+                msg += f"\n{proj['description'][:300]}"
+            if proj.get("outcome"):
+                msg += f"\nOutcome: {proj['outcome'][:200]}"
 
     if score:
         msg += f"""

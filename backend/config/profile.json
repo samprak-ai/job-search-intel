@@ -3,9 +3,11 @@
   "location": "Renton, WA",
   "contact": {
     "email": "smrutip.b@gmail.com",
-    "linkedin": "linkedin.com/in/samprakash",
+    "phone": "602-596-2974",
+    "linkedin": "www.linkedin.com/in/prakashsam",
     "github": "github.com/samprak-ai"
   },
+  "headline": "AI-native GTM Builder | Agentic Systems Builder | 6.5+ years at AWS Startups",
   "target_role_types": [
     "AI Solutions Engineer",
     "AI Partnerships",
@@ -14,13 +16,13 @@
     "Sales Intelligence AI"
   ],
   "differentiators": [
-    "Built production AI systems end-to-end (GenAI-Intel, Forge, AWS internal agents)",
-    "11+ years GTM + Sales Ops at AWS Startups",
+    "Built production AI systems end-to-end (GenAI-Intel, Forge, Job Search Intel, AWS internal agents)",
+    "11+ years GTM + Sales Ops, 6.5+ years at AWS Startups",
     "Rare fluency across business strategy, AI infrastructure, and hands-on product building",
     "Live deployed products as proof, not just claims"
   ],
-  "experience_summary": "11+ years at AWS Startups leading GTM and Sales Operations. Built multiple production AI systems including GenAI-Intel (cloud market intelligence platform), Forge (AI interview prep), and internal AWS agent tooling. Combines deep business strategy experience with hands-on AI product development.",
-  "summary": "Senior GTM and operations leader who has spent the last 6.5 years building data and intelligence systems at AWS \u2014 and the last 2 building AI products on top of them, both inside Amazon and independently. I bring rare fluency across business strategy, AI infrastructure, and hands-on product building: I understand the customer problem deeply enough to architect the solution, and I ship it myself. Two live products. One heading to production inside AWS.",
+  "experience_summary": "11+ years driving revenue performance at scale, including 6.5+ years at AWS Startups, with a rare combination of deep sales operations expertise and hands-on AI systems building. Built multiple production AI systems including GenAI-Intel, Forge, Job Search Intel, and internal AWS agentic tooling.",
+  "summary": "AI-native GTM Operations leader with 11+ years driving revenue performance at scale, including 6.5+ years at AWS Startups, with a rare combination of deep sales operations expertise and hands-on AI systems building. Architected agentic intelligence systems that redefined how GTM organizations consume competitive, portfolio, and win/loss data, moving executive workflows from manual effort to autonomous, insight-driven cadences. Known for building performance measurement infrastructure that gets adopted at the leadership level, from frameworks that shaped organizational goal setting to reports delivered directly to AWS CEO and Board offices.",
   "skills": [
     "FastAPI",
     "Next.js",
@@ -31,42 +33,84 @@
     "Salesforce",
     "AWS"
   ],
-  "education": "MBA, W.P. Carey / ASU; B.Tech EE, BPUT",
+  "education": "MS Business Analytics, W.P. Carey / ASU; MBA, IIM Raipur; B.Tech EE, BPUT",
   "projects": [
     {
-      "title": "GenAI-Intel",
-      "subtitle": "Automated VC Intelligence System",
+      "title": "Cloud-Intel",
+      "subtitle": "Automated Intelligence System",
       "url": "cloud-intel.vercel.app",
       "github": "github.com/samprak-ai/genai-intel",
-      "description": "Built to automate what I was doing manually at AWS \u2014 identifying which VC-funded startups are running on which cloud and AI providers, and prioritizing which ones to engage. A live AI intelligence platform tracking 110+ VC-funded startups with cloud and AI provider attribution, vertical classification, and engagement prioritization. Core: a 4-tier attribution engine (deterministic signals \u2192 dual LLM fallback via Perplexity Sonar + Claude Haiku) with confidence scoring and entrenchment ratings. Phase 1 added vertical/sub-vertical classification across 84 sub-verticals with cloud propensity tags (High/Medium/Low). Phase 2 added engagement priority tiers (Engage Now / Watch / Track), trigger detection (hiring surges, leadership changes, product launches), and LLM-generated outreach intelligence in a dedicated \u201cReady to Engage\u201d view. Built end-to-end using Claude Code without a traditional software engineering background.",
-      "stack": "FastAPI, Python, Next.js, Supabase, Claude API (Anthropic), Claude Code, Perplexity Sonar, Brave Search API, Railway, Vercel",
-      "outcome": "Live at cloud-intel.vercel.app. Daily automated pipeline; 110+ startups tracked with cloud/AI attribution, vertical classification, propensity tags, engagement tiers, trigger detection, and LLM-generated outreach intelligence. Full product across 5 dashboard views."
+      "description": "Built to automate what I was doing manually at AWS - identifying which VC-funded startups are running on which cloud and AI providers and prioritizing which ones to engage. A live AI intelligence platform tracking 200+ VC-funded startups with cloud and AI provider attribution, vertical classification, and engagement prioritization. Core: a 4-tier attribution engine (deterministic signals \u2192 strong inference \u2192 supporting signals \u2192 dual LLM fallback via Perplexity Sonar + Claude Haiku) with confidence scoring and entrenchment ratings. Scans DNS records, subprocessor/DPA pages, job postings across 15 VC job boards, partnership announcements, technical docs, privacy policies, IP/ASN ranges, and tech blogs - ~2,500 automated web searches per daily pipeline run. Phase 1 added vertical/sub-vertical classification across 84 sub-verticals with cloud propensity tags (High/Medium/Low). Phase 2 added engagement priority tiers (Engage Now / Watch / Track), trigger detection (hiring surges, leadership changes, product launches, press features, vendor partnerships), and LLM-generated outreach intelligence with a dedicated \u201cReady to Engage\u201d view. Phase 3 added API cost observability - granular per-function search usage tracking with a stacked bar chart and KPI cards on the dashboard. Built end-to-end using Claude Code without a traditional software engineering background.",
+      "stack": "FastAPI, Python, Next.js, Supabase, Claude API (Anthropic), Claude Code, Perplexity Sonar, Serper.dev (Google Search), Recharts, Railway, Vercel",
+      "outcome": "Live at cloud-intel.vercel.app. Daily automated pipeline: 167+ startups tracked with cloud/AI attribution, vertical classification, propensity tags, engagement tiers, trigger detection, LLM-generated outreach intelligence, and API cost monitoring. Full product across 6 dashboard views."
     },
     {
       "title": "Forge",
       "subtitle": "Communication OS",
       "url": "forge-pi-livid.vercel.app",
       "github": "github.com/samprak-ai/forge",
-      "description": "Daily practice platform for professional writing and speaking. Two loops: (1) writing scored by Claude Sonnet across 4 dimensions (clarity, structure, concision, persuasion), (2) speaking via OpenAI Whisper transcription + AI delivery analysis. Tracks skill growth via a custom SVG radar chart, streaks, and on-demand coaching notes. Full auth flow, RLS-protected Supabase database, 6-table schema, and a clean indigo design system.",
+      "description": "Built to systematize professional communication practice the way athletes train - structured daily reps with AI scoring, not ad-hoc preparation before interviews. A live practice platform with two core loops: (1) timed writing prompts scored by Claude Sonnet across 4 dimensions (clarity, structure, concision, persuasion), (2) speaking practice via OpenAI Whisper transcription + AI delivery analysis across 5 dimensions (delivery, vocabulary, confidence, articulation, alignment). Includes an interview prep mode with company-specific and role-specific prompts, a curated prompt library, and a progress analytics view with SVG trend charts, per-dimension tracking, and company/role filtering. Tracks practice streaks, rep history, and provides on-demand coaching notes. Full auth flow with RLS-protected Supabase database, 6-table schema, and a clean indigo design system. Built end-to-end using Claude Code.",
       "stack": "Next.js 16, TypeScript, Tailwind CSS v4, Supabase, Claude API (Anthropic), OpenAI Whisper, Vercel",
-      "outcome": null
+      "outcome": "Live at forge-pi-livid.vercel.app. Daily practice system with AI-scored writing and speaking reps, interview prep with company-targeted prompts, progress analytics with trend visualization, and streak tracking."
     },
     {
-      "title": "AI Executive Reporting Toolkit",
-      "subtitle": "Internal AWS (Startups Org)",
-      "url": null,
-      "github": null,
-      "description": "Architected a multi-agent AI system powering two CEO reporting cadences: bi-weekly (top newly-funded startups) and quarterly (top-funded across 18 months). Each report delivers a 360-degree view \u2014 internal metrics, CRM engagement, external funding data, customer snapshots, and primary cloud and AI provider inference.",
-      "stack": "Amazon Q, MCP (Salesforce), Python, AWS Bedrock, Claude API, Perplexity, internal APIs",
-      "outcome": null,
-      "agents": [
-        "(1) Internal metrics \u2014 Amazon Q agent querying internal data tables via natural language. Outputs data for 1,000+ customers in a single run; saves 40+ analyst hours per quarter.",
-        "(2) CRM engagement \u2014 Pioneered an Amazon Q agent with MCP server connected to internal Salesforce. Per-account engagement summaries and next steps at near-instant speed; saves 80+ hours per cycle.",
-        "(3) External data \u2014 Web-scanning agent generating customer snapshots and funding summaries. Produces in 15 mins what took 40+ analyst hours. Scaling with product team to support 500+ customers.",
-        "(4) Primary Cloud Provider (PCP) \u2014 Adopted by AWS startup leadership and the CEO for executive reporting and ad-hoc searches. Built through 50+ iterations using both web signals and internal CRM data. Outputs three tiers: web inference, internal data inference, and consolidated PCP.",
-        "(5) Primary AI Provider \u2014 Extended the PCP agent to infer primary AI provider using the same dual-signal approach.",
-        "(6) Vertical classification agent \u2014 Built an agent to scan startup websites and tag each company\u2019s vertical and sub-vertical against a pre-defined taxonomy, enabling cloud propensity to serve as a filter alongside funding signals."
-      ]
+      "title": "Job Search Intel",
+      "subtitle": "AI-Powered Job Search Platform",
+      "url": "job-search-intel.vercel.app",
+      "github": "github.com/samprak-ai/job-search-intel",
+      "description": "Built to replace the manual cycle of checking career pages, reading JDs, and guessing which roles are worth applying to. A live job search intelligence platform monitoring 25 target companies across model providers, big tech, GTM/revenue intelligence, and AI-native startups. Core: automated role discovery via Brave Search across Greenhouse, Lever, Ashby, and LinkedIn with JD scraping and deduplication. Claude API scores each role across 5 dimensions (domain fit, technical fit, seniority fit, role type fit, H1B likelihood) with a realism filter and match tiers (Strong / Worth Applying / Stretch / Skip). Resume tailoring engine analyzes each JD against full structured resume data and generates grounded prioritization - section reordering, bullet priorities, keyword optimization, and a tailored summary - with a constraint that prevents fabricating expertise not evidenced in the actual resume. Generates downloadable .docx resumes per role via a Node.js document builder with fuzzy bullet matching. Includes interview intel gathering from Reddit and Levels.fyi, daily automated discovery via Vercel Cron with email digest via Resend, and session handoff to Forge for targeted practice. Built end-to-end using Claude Code.",
+      "stack": "FastAPI, Python, Next.js 16, TypeScript, Tailwind CSS v4, Supabase, Claude API (Anthropic), Brave Search API, Node.js, Resend, Railway, Vercel",
+      "outcome": "Live at job-search-intel.vercel.app. Daily automated pipeline: 25 companies monitored, roles discovered and deduplicated, 5-dimension match scoring, grounded resume tailoring with .docx generation, interview intel, and email digest notifications."
+    }
+  ],
+  "professional_ai_projects": [
+    {
+      "title": "AI Executive Reporting Toolkit - Startup Pulse",
+      "description": "Architected a multi-agent AI system powering two CEO-facing reporting cadences - bi-weekly (top newly funded startups) and quarterly (top funded across an 18-month window). Each report delivers a 360-degree view across internal metrics, CRM engagement, external funding signals, customer snapshots, and cloud/AI provider inference, assembled autonomously across a coordinated agent pipeline.",
+      "stack": "Amazon Bedrock Agents (PCP, Metadata, and Industry agents), Salesforce MCP integration, Amazon Q Spaces & Flows, internal dashboards",
+      "outcome": "Reduced end-to-end report production from 6 weeks to under 2 weeks, a >65% reduction in manual effort, recovering 480 hours of work across 3 individuals per cycle and enabling consistent, scalable executive delivery without analyst bottlenecks."
+    },
+    {
+      "title": "Portfolio Intelligence Engine",
+      "subtitle": "Agentic System",
+      "description": "Built an end-to-end agentic pipeline to shift VC relationship management from anecdotal to analytical - crawling top-tier and competitor-aligned VC funds (Sequoia, a16z, M12, GV, CapitalG) to extract structured portfolio metadata (domain, investment year, acquisition/IPO status), enriched via 1P/3P data agents with funding and usage signals. A filtering layer scopes the universe to active, recently funded startups (3-year lookback), while a PCP inference agent identifies Primary Cloud Provider across the portfolio and surfaces white space opportunities and joint-success signals by VC, stage, and vintage. A notification agent drives accountable follow-through across Startup Investment Managers and Account teams, with structured output piped directly into Salesforce and Outlook workflows.",
+      "stack": "Claude (via PizzaBot AI), MCP-integrated tooling across Salesforce, Outlook, and local filesystem",
+      "outcome": "Delivered a portfolio intelligence layer spanning 15+ VC funds, equipping Investment Manager teams to enter VC conversations armed with PCP penetration metrics, white space signals, and stage-specific engagement prioritization, shifting from relationship intuition to repeatable, data-driven pipeline development."
+    },
+    {
+      "title": "FlankWatch: Competitive Threat Monitor",
+      "subtitle": "Agentic System",
+      "description": "Built to replace scattered field observations with a structured monthly intelligence cadence on emerging cloud threats - a scheduled GenAI-powered agent that synthesizes internal CRM signals (field notes, deal outcomes, customer conversations) with external market data (product launches, funding rounds, market commentary) to produce a monthly competitive threat assessment targeting GPU-specialized clouds (CoreWeave) and neo-clouds (Nebius) encroaching on startup verticals. Each report surfaces at-risk accounts, evaluates current account team positioning, and recommends mitigation strategies - with a built-in accountability loop tracking execution against prior-quarter recommendations.",
+      "stack": "Claude (scheduled agent), MCP-integrated tooling across CRM and Email",
+      "outcome": "Delivered monthly structured threat reports to the Startup Sales Operations Director - closing the gap between competitive reality and field perception, with a quarter-over-quarter accountability loop ensuring recommended counter-positioning actions translate to measurable field follow-through."
+    },
+    {
+      "title": "Loss Signal Validator",
+      "subtitle": "Agentic System",
+      "description": "Built to cut through CRM noise and surface the real drivers behind deal outcomes - an agentic workflow that reads and analyzes Salesforce loss reasoning at scale, cross-referencing field-entered rationale against first-party engagement data and external evidence (press releases, customer announcements, third-party reports) to validate or challenge sales team assertions. Filters out subjective and inconsistent inputs to surface high-signal patterns across specific deal drivers and needle-moving workloads. Monthly outputs maintain ongoing win/loss theme visibility; quarterly deep-dives deliver verified strategic recommendations with a built-in accountability loop tracking execution against prior interventions.",
+      "stack": "Claude (agentic workflow), MCP-integrated across Salesforce and 1P data",
+      "outcome": "Replaced subjective CRM reporting with fact-checked win/loss intelligence, surfacing verified deal drivers, validated competitive loss patterns, and quarterly strategic recommendations with quarter-over-quarter progress tracking against prior interventions."
+    },
+    {
+      "title": "PCP-Intel: Attribution Accuracy Auto-Optimization Loop",
+      "subtitle": "Agentic System - In Design",
+      "description": "Designed to eliminate manual signal weight tuning in the GenAI-Intel cloud attribution pipeline - replacing ad-hoc threshold adjustments with an autonomous overnight optimization loop modeled on Karpathy's AutoResearch pattern. A validation agent runs the attribution pipeline against a curated, human-verified ground truth eval set of 30-50 startups stratified across confidence tiers, PCP categories, and known edge cases (multi-cloud, conflicting signals, false positive-prone patterns). An optimization agent reads the current signal weight config and a natural-language research brief, forms a hypothesis, proposes a targeted weight adjustment across five attribution signals (partnership pages, subprocessor lists, DNS records, marketplace listings, job postings), and re-scores against a composite accuracy metric that penalizes false positives more heavily than misses. A logging agent persists each experiment - hypothesis, config delta, score delta, keep/revert decision - to Supabase, building an auditable history of what the pipeline learned. Runs ~12 experiments per hour unattended, surfacing the best-performing config each morning.",
+      "stack": "Claude (multi-agent orchestration), MCP (Supabase, Filesystem), Brave Search",
+      "outcome": "Designed to replace manual attribution tuning with a closed-loop, evidence-driven optimization system - continuously improving PCP signal accuracy overnight and surfacing a validated, experiment-backed config ready for production promotion each morning."
+    },
+    {
+      "title": "LastMile: Seller Intelligence Collection Engine",
+      "subtitle": "Agentic System - In Design",
+      "description": "Designed to eliminate the manual follow-up burden of collecting last-mile PCP and AI provider data from sellers when automated attribution signals are exhausted - a 5-agent orchestration that closes the data gap in executive reporting pipelines. A resolution agent maps each unattributed startup domain to its Salesforce account and identifies the assigned seller; an outreach agent composes and sends a contextualized data request with account-specific context pre-populated. A reply monitoring agent reads inbound responses and classifies completion state (data provided, committed timeline, needs more time, no reply). A follow-up scheduling agent sends aptly timed reminders based on the seller's stated timeline rather than a generic cadence. A notification agent surfaces unresolved cases to operations for escalation, with structured output feeding directly back into the reporting pipeline.",
+      "stack": "Claude (multi-agent orchestration), MCP-integrated across Salesforce and Email",
+      "outcome": "Designed to replace manual seller follow-up with a closed-loop, context-aware collection system - ensuring last-mile PCP and AI provider data reaches executive reports on time without operations manually chasing individual account teams."
+    },
+    {
+      "title": "ActionWire: GTM Trigger-to-Action Engine",
+      "subtitle": "Agentic System - In Design",
+      "description": "Designed to close the gap between market signals and seller action - a multi-agent orchestration that monitors for high-intent startup triggers (funding rounds, product launches, leadership changes) and drives a fully automated assess-then-act workflow. A signal detection agent identifies and validates the trigger; an account assessment agent pulls a 360-degree view of the account across CRM history, engagement depth, deal stage, and owner status. A routing agent branches based on account state: managed accounts surface a contextualized alert and recommended action directly to the assigned seller; unmanaged accounts bypass the seller entirely and trigger a contextually grounded outreach email to the startup contact. All actions are logged and tracked for follow-through.",
+      "stack": "Claude (multi-agent orchestration), MCP-integrated across Salesforce, Email, and external funding data sources (Crunchbase / Brave Search)",
+      "outcome": "Designed to eliminate signal-to-action latency in startup GTM coverage - ensuring every fundable trigger reaches either a seller or a contact within hours, not weeks, with context-aware routing that respects account ownership boundaries."
     }
   ],
   "work_history": [
@@ -75,16 +119,17 @@
       "title": "Sr. Sales Operations Manager \u2014 Startups",
       "dates": "June 2022 \u2013 Present",
       "bullets": [
-        "Pioneered use of PCP framework for tracking AWS market share efficacy; elevated PCP to a key organizational success metric now tracked at the S-team level and influencing S-team goal revisions.",
-        "Led product definition and cross-functional development of Startup Pulse \u2014 AWS\u2019s first AI-powered PCP and primary AI provider identification system, now in productionization with Data and Software Engineering. Achieved 10x scale improvement in analysis capacity through GenAI automation; saves 70% of report generation time.",
-        "Launched and owned the Monthly Top Startups Report for Matt Garman\u2019s office (Q1 2024) \u2014 developed ranking logic across 7 cohorts covering 175 high-potential startups.",
-        "Delivered the Top 100 AI Startups report for Andy Jassy\u2019s office \u2014 developed and refined the ranking logic, coordinated with 130+ account teams.",
-        "Led the OP1 workstream for the Startups org \u2014 developed the Market Summary tab for executive visibility, generated PCP analysis for all OP1-listed startups.",
-        "Applied the Startup Pulse prototype to generate the top startups engagement list for AWS re:Invent \u2014 used directly by AWS CEO Matt Garman.",
-        "Originated and socialized the strategic framework that vertical classification \u2014 not funding size alone \u2014 should be the primary filter for identifying high-potential startups.",
-        "Built GenAI applications to automate multi-step executive reporting workflows, integrating Claude, OpenAI, and Perplexity to replace manual analyst processes.",
+        "Enabled the Startup Operations team on AI tools.",
+        "Designed and operationalized performance measurement framework for market share tracking; elevated to key organizational metric monitored at executive level, directly influencing senior leadership goal-setting and strategic planning cycles.",
+        "Architected agentic AI-powered automation & augmentation solutions for executive reporting workflows, streamlining complex analytical processes and improving data quality across leadership reporting cadences.",
+        "Led product definition and cross-functional development of Startup Pulse - AWS\u2019s first AI-powered PCP and primary AI provider identification system, now in productionization with Data and Software Engineering. Achieved 10x scale improvement in analysis capacity through GenAI automation; saves 70% of report generation time.",
+        "Applied the Startup Pulse prototype to generate the top startups list for AWS re:Invent, used directly by AWS CEO Matt Garman.",
+        "Launched and owned the Monthly Top Startups Report for Matt Garman\u2019s office (FY\u201924) - developed ranking logic across 7 cohorts covering 175 high-potential startups.",
+        "Delivered the Top 100 AI Startups report for Andy Jassy\u2019s office - developed and refined the ranking, coordinated with 130+ account teams.",
+        "Led strategic planning workstream for executive business review cycles - developed performance dashboards for leadership visibility and conducted comprehensive performance analysis across organizational priorities.",
+        "Originated and socialized the strategic framework that vertical classification - not funding size alone - should be the primary filter for identifying high-potential startups.",
         "Led cross-functional data integration initiatives to unlock new internal use cases, evangelizing GenAI adoption beyond dashboards to the full leadership org.",
-        "Partnered with the AWS Credits team to develop a data-driven scoring mechanism for startup credit allocation."
+        "Collaborated cross-functionally with Finance teams to design data-driven allocation frameworks."
       ]
     },
     {
@@ -93,11 +138,11 @@
       "dates": "Jan 2021 \u2013 June 2022",
       "bullets": [
         "Built the data infrastructure and GTM tooling that became the foundation for the intelligence systems developed in the Sr. Sales Operations Manager role.",
-        "Designed and built the Startup 360 mechanism from scratch \u2014 driving a 70% increase in usage over 6 months (396 to 667 users) and earning a top-3 ranking in seller productivity surveys.",
-        "Onboarded 6 net-new third-party data vendors, adding 100k+ data points across 20k+ accounts with targeted coverage for EEM, ASEAN, and LATAM regions.",
-        "Built campaign performance and MBR self-service dashboards, saving 16+ cumulative hours per month across geo teams.",
+        "Designed and built the Startup 360 mechanism from scratch - driving a 70% increase in usage over 6 months and earning a top 3 ranking in seller productivity surveys.",
+        "Designed and implemented performance measurement dashboards for monthly business review cycles, automating reporting workflows and improving operational efficiency across regional teams.",
         "Built a self-service Triggers dashboard tracking 50k+ monthly engagement signals in near real-time.",
-        "Defined the MVP business use cases for the Market Intelligence Product and led development of the historical funding business logic."
+        "Defined the MVP business use cases for the Market Intelligence Product and led development of SSOT startup intelligence tool.",
+        "Onboarded 6 net-new third-party data vendors, adding 100k+ data points across 20k+ accounts with targeted coverage for EEM, ASEAN, and LATAM regions."
       ]
     },
     {
@@ -108,8 +153,7 @@
         "Designed and built the Partner Productivity dashboard to track role-based productivity across KPIs and granularities.",
         "Led development and implementation of logic for Partner Revenue 2.0 with leadership, partner sales, and systems teams.",
         "Built and maintained ETL pipelines using Cradle, Redshift, and S3; reduced manual reporting time by 8 hrs/week.",
-        "Rebuilt the Total Addressable Spend (TAS) model, improving prediction accuracy for high-value customers from 20% to 80% \u2014 a 4x improvement.",
-        "Identified and fixed a systemic 3P data quality issue through deduplication logic across 20k+ accounts \u2014 correcting a $391M (15%) overstatement in monthly TAS model value."
+        "Redesigned performance forecasting model, improving prediction accuracy by 4x through advanced analytical methodologies and enhanced data integration frameworks."
       ]
     },
     {
@@ -117,7 +161,8 @@
       "title": "Institutional Sales Manager",
       "dates": "2015 \u2013 2018",
       "bullets": [
-        "Managed $28M+ B2B sales portfolio serving MARS, Siemens, GE, and AkzoNobel; grew revenue 182% over 14 months."
+        "Headed the Institutional B2B business managing a $28M portfolio (35% of order book) across enterprise clients including Siemens and GE, growing existing customer orders by 100%+ to $17M over 14 months and boosting business profitability by 17% through cost optimization and delivery efficiency.",
+        "Built a cross-functional team of 12 and pioneered use of primary and secondary research for capital investment signal tracking, driving 200%+ increase in leads and 182% growth in client inquiries, expanding the qualified pipeline to $250M+."
       ]
     },
     {
@@ -125,34 +170,44 @@
       "title": "Systems Engineer \u2014 QA & Testing",
       "dates": "2010 \u2013 2013",
       "bullets": [
-        "QA and systems testing for enterprise Java applications; Selenium-based automated testing, PostgreSQL, and UNIX environments."
+        "Built and tested e-governance web portals (Java, JSP, Tomcat) with MySQL/PostgreSQL backends, achieving 32% team efficiency gains through Selenium-based automated testing, and led knowledge transfer across multiple geographies for smooth production handoff."
       ]
     }
   ],
   "capabilities": {
-    "AI Building": ["Claude Code", "Claude API", "LangGraph", "AWS Bedrock", "OpenAI", "Perplexity", "Supabase", "Railway", "Vercel"],
-    "Data & Analytics": ["Python", "SQL (Redshift, PostgreSQL)", "ETL pipelines", "API integrations", "Tableau"],
-    "Product": ["0\u21921 product development", "multi-agent orchestration", "cross-functional delivery", "stakeholder management"],
-    "GTM & Strategy": ["Market segmentation", "competitive intelligence", "executive reporting", "B2B sales", "Salesforce"]
+    "AI Building": ["Claude Code", "Claude API", "LangGraph", "AWS Bedrock", "OpenAI", "Perplexity", "Gemini", "Supabase", "Railway", "Vercel"],
+    "Data & Analytics": ["Python", "SQL (Redshift, PostgreSQL)", "API integrations", "Tableau"],
+    "Product": ["0\u21921 Product development", "multi-agent orchestration", "agentic system design", "GTM tooling"],
+    "GTM & Strategy": ["Sales operations", "competitive intelligence", "executive reporting", "performance measurement", "market segmentation", "Salesforce"]
   },
   "education_details": [
     {
       "institution": "W. P. Carey School of Business, Arizona State University",
       "location": "Tempe, AZ",
-      "degree": "MBA",
+      "degree": "Master of Science in Business Analytics",
+      "dates": "Aug 2018 \u2013 May 2019",
       "gpa": "GPA 3.68"
     },
     {
-      "institution": "Biju Patnaik University of Technology, Rourkela",
-      "location": null,
-      "degree": "B.Tech, Electrical Engineering",
+      "institution": "Indian Institute of Management Raipur",
+      "location": "India",
+      "degree": "Master of Business Administration",
+      "dates": "Jun 2013 \u2013 Jun 2015",
+      "gpa": "GPA 4.0"
+    },
+    {
+      "institution": "Instituto Panamericano de Alta Direcci\u00f3n de Empresa (IPADE)",
+      "location": "Mexico",
+      "degree": "Final Trimester, MBA Exchange Program",
+      "dates": null,
       "gpa": null
     },
     {
-      "institution": "Instituto Panamericano de Alta Empresa (IPADE)",
-      "location": null,
-      "degree": "Executive Program, Mexico City",
-      "gpa": null
+      "institution": "Biju Patnaik University of Technology, Rourkela",
+      "location": "India",
+      "degree": "Bachelor in Technology",
+      "dates": "Aug 2006 \u2013 Jun 2010",
+      "gpa": "GPA 4.0"
     }
   ]
 }

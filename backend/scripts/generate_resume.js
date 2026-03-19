@@ -119,10 +119,11 @@ function buildHeader(profile, tailoring) {
   }));
 
   // Contact line
-  const contactParts = [profile.location];
+  const contactParts = [];
+  if (profile.contact?.phone) contactParts.push(profile.contact.phone);
   if (profile.contact?.email) contactParts.push(profile.contact.email);
-  if (profile.contact?.linkedin) contactParts.push(profile.contact.linkedin);
   if (profile.contact?.github) contactParts.push(profile.contact.github);
+  if (profile.contact?.linkedin) contactParts.push(profile.contact.linkedin);
 
   children.push(new Paragraph({
     alignment: AlignmentType.CENTER,
@@ -186,6 +187,54 @@ function buildProjectSection(projects, tailoring) {
     children.push(new Paragraph({ spacing: { before: 100, after: 20 }, children: titleParts }));
 
     // Description (possibly reworded)
+    if (proj.description) {
+      const action = findBulletAction(proj.description, bulletPriorities);
+      const text = (action && action.reword_suggestion) ? action.reword_suggestion : proj.description;
+      children.push(new Paragraph({
+        spacing: { after: 20 },
+        children: [new TextRun({ text, font: FONT, size: BODY_SIZE })],
+      }));
+    }
+
+    // Stack line
+    if (proj.stack) {
+      children.push(new Paragraph({
+        spacing: { after: 20 },
+        children: [
+          new TextRun({ text: "Stack:  ", font: FONT, size: SMALL_SIZE, bold: true, color: "555555" }),
+          new TextRun({ text: proj.stack, font: FONT, size: SMALL_SIZE, color: "555555" }),
+        ],
+      }));
+    }
+
+    // Outcome line
+    if (proj.outcome) {
+      children.push(new Paragraph({
+        spacing: { after: 40 },
+        children: [
+          new TextRun({ text: "Outcome:  ", font: FONT, size: SMALL_SIZE, bold: true, color: "555555" }),
+          new TextRun({ text: proj.outcome, font: FONT, size: SMALL_SIZE, color: "555555" }),
+        ],
+      }));
+    }
+  }
+
+  return children;
+}
+
+function buildProfessionalAIProjectsSection(projects, tailoring) {
+  const children = [buildSectionHeading("Professional AI Projects")];
+  const bulletPriorities = tailoring.bullet_priorities || [];
+
+  for (const proj of projects) {
+    // Project title line
+    const titleParts = [new TextRun({ text: proj.title, font: FONT, size: BODY_SIZE, bold: true })];
+    if (proj.subtitle) {
+      titleParts.push(new TextRun({ text: `  \u2014  ${proj.subtitle}`, font: FONT, size: SMALL_SIZE, color: "555555", italics: true }));
+    }
+    children.push(new Paragraph({ spacing: { before: 100, after: 20 }, children: titleParts }));
+
+    // Description
     if (proj.description) {
       const action = findBulletAction(proj.description, bulletPriorities);
       const text = (action && action.reword_suggestion) ? action.reword_suggestion : proj.description;
@@ -326,9 +375,11 @@ function buildEducation(profile) {
       font: FONT, size: BODY_SIZE, bold: true,
     })];
 
-    if (edu.location) {
+    // Right-align location or dates
+    const rightText = [edu.location, edu.dates].filter(Boolean).join("  \u00B7  ");
+    if (rightText) {
       parts.push(new TextRun({
-        text: `\t${edu.location}`,
+        text: `\t${rightText}`,
         font: FONT, size: SMALL_SIZE, color: "555555",
       }));
     }
@@ -360,7 +411,8 @@ const KNOWN_SECTIONS = {
   "education": "education",
 };
 
-const PROJECT_KEYWORDS = ["independent", "project", "ai project", "personal project", "genai", "forge"];
+const PROJECT_KEYWORDS = ["independent", "personal project", "genai", "forge", "cloud-intel", "job search intel"];
+const PROF_AI_PROJECT_KEYWORDS = ["professional ai", "startup pulse", "executive reporting", "flankwatch", "portfolio intelligence", "loss signal", "actionwire", "lastmile", "pcp-intel"];
 const EXPERIENCE_KEYWORDS = ["experience", "work history", "employment", "aws"];
 
 function buildSections(profile, tailoring) {
@@ -375,6 +427,7 @@ function buildSections(profile, tailoring) {
   const all = [];
   const renderedJobs = new Set();
   let renderedProjects = false;
+  let renderedProfAIProjects = false;
   let renderedCaps = false;
   let renderedEdu = false;
   let renderedSummary = false;
@@ -401,7 +454,14 @@ function buildSections(profile, tailoring) {
       continue;
     }
 
-    // Check if it's a project section
+    // Check if it's a professional AI projects section
+    if (PROF_AI_PROJECT_KEYWORDS.some(kw => sLower.includes(kw)) && !renderedProfAIProjects) {
+      all.push(...buildProfessionalAIProjectsSection(profile.professional_ai_projects || [], tailoring));
+      renderedProfAIProjects = true;
+      continue;
+    }
+
+    // Check if it's an independent project section
     if (PROJECT_KEYWORDS.some(kw => sLower.includes(kw)) && !renderedProjects) {
       all.push(...buildProjectSection(profile.projects || [], tailoring));
       renderedProjects = true;
@@ -440,6 +500,9 @@ function buildSections(profile, tailoring) {
   if (!renderedSummary) all.push(...buildSummary(tailoring, profile));
   if (!renderedProjects && (profile.projects || []).length > 0) {
     all.push(...buildProjectSection(profile.projects, tailoring));
+  }
+  if (!renderedProfAIProjects && (profile.professional_ai_projects || []).length > 0) {
+    all.push(...buildProfessionalAIProjectsSection(profile.professional_ai_projects, tailoring));
   }
   const unrenderedJobs = (profile.work_history || []).filter(j => !renderedJobs.has(j.title));
   if (unrenderedJobs.length > 0) all.push(...buildWorkSection(unrenderedJobs, tailoring));
