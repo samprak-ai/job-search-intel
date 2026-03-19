@@ -16,6 +16,8 @@ type Role = {
   match_tier: string | null;
   overall_score: number | null;
   application_status: string | null;
+  is_live: boolean | null;
+  last_checked_at: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -710,7 +712,7 @@ export default function Dashboard() {
                                               key={role.id}
                                               className="flex items-center pl-24 pr-4 py-2 hover:bg-white transition-colors border-b border-gray-100 last:border-b-0"
                                             >
-                                              <div className="flex-1 min-w-0">
+                                              <div className="flex-1 min-w-0 flex items-center gap-1.5">
                                                 <Link
                                                   href={`/role/${role.id}`}
                                                   className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block"
@@ -718,6 +720,13 @@ export default function Dashboard() {
                                                 >
                                                   {role.title}
                                                 </Link>
+                                                {role.is_live === false && (
+                                                  <span title="Posting may no longer be active" className="flex-shrink-0 text-amber-500">
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                                    </svg>
+                                                  </span>
+                                                )}
                                               </div>
                                               <div className="w-16 text-center">
                                                 <span className="text-sm text-gray-600 font-medium">

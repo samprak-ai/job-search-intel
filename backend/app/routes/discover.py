@@ -170,6 +170,15 @@ async def discover_cron(
                     score_failed += 1
                     logger.warning(f"Cron auto-score failed for {role['title']}: {e}")
 
+        # Run freshness checks on all existing roles
+        stale_found = 0
+        try:
+            from app.services.freshness import check_all_freshness
+            freshness_summary = await check_all_freshness()
+            stale_found = freshness_summary.get("stale_found", 0)
+        except Exception as e:
+            logger.warning(f"Freshness check failed: {e}")
+
         # Send daily digest email
         try:
             from app.services.notifications import send_daily_digest_email
@@ -179,6 +188,7 @@ async def discover_cron(
                 total_new=total_new,
                 auto_scored=scored_count,
                 score_failed=score_failed,
+                stale_found=stale_found,
             )
         except Exception as e:
             logger.warning(f"Digest email failed: {e}")
@@ -191,6 +201,7 @@ async def discover_cron(
             "total_new_roles": total_new,
             "auto_scored": scored_count,
             "score_failed": score_failed,
+            "stale_found": stale_found,
             "results": results,
         }
     except HTTPException:

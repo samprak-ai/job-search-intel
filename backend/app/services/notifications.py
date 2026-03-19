@@ -110,6 +110,7 @@ async def send_daily_digest_email(
     total_new: int,
     auto_scored: int,
     score_failed: int,
+    stale_found: int = 0,
 ) -> bool:
     """Send a daily digest email summarising the cron discovery results.
 
@@ -284,7 +285,7 @@ async def send_daily_digest_email(
           {total_new} new role{'s' if total_new != 1 else ''} found across {companies_searched} {'companies' if companies_searched != 1 else 'company'}
         </p>
         <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">
-          {auto_scored} scored{f', {score_failed} failed' if score_failed else ''}
+          {auto_scored} scored{f', {score_failed} failed' if score_failed else ''}{f', {stale_found} stale posting{"s" if stale_found != 1 else ""} detected' if stale_found else ''}
         </p>
 
         <div style="margin-bottom:20px;">{stats_html}</div>
