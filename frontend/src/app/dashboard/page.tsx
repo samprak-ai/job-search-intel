@@ -272,7 +272,7 @@ export default function Dashboard() {
 
   async function fetchRoles() {
     setLoading(true);
-    const res = await fetch(`${API}/roles?limit=500`);
+    const res = await fetch(`${API}/roles?limit=1000`);
     const data = await res.json();
     setRoles(data.roles);
     setLoading(false);
