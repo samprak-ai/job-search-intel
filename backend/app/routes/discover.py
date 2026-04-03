@@ -12,6 +12,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+async def _auto_score_unscored() -> tuple[int, int]:
+    """Score all unscored roles. Returns (scored_count, failed_count)."""
+    from app.services.scoring import score_role as score_fn
+
+    supabase = get_supabase_client()
+    scored_result = supabase.table("role_scores").select("role_id").execute()
+    scored_ids = {r["role_id"] for r in scored_result.data}
+
+    roles_result = supabase.table("roles").select("id, title, company").execute()
+    unscored = [r for r in roles_result.data if r["id"] not in scored_ids]
+
+    scored_count = 0
+    score_failed = 0
+    for role in unscored:
+        try:
+            await score_fn(role["id"])
+            scored_count += 1
+            await asyncio.sleep(0.3)
+        except Exception as e:
+            score_failed += 1
+            logger.warning(f"Auto-score failed for {role['title']}: {e}")
+
+    return scored_count, score_failed
+
+
 @router.post("")
 async def discover_roles():
     """Trigger role discovery across all target companies.
@@ -22,10 +47,19 @@ async def discover_roles():
     try:
         results = await discover_all()
         total_new = sum(r["new_roles"] for r in results)
+
+        # Auto-score any unscored roles
+        scored_count = 0
+        score_failed = 0
+        if total_new > 0:
+            scored_count, score_failed = await _auto_score_unscored()
+
         return {
             "status": "completed",
             "companies_searched": len(results),
             "total_new_roles": total_new,
+            "auto_scored": scored_count,
+            "score_failed": score_failed,
             "results": results,
         }
     except Exception as e:
@@ -149,26 +183,8 @@ async def discover_cron(
 
         total_new = sum(r["new_roles"] for r in results)
 
-        # Auto-score any new unscored roles
-        scored_count = 0
-        score_failed = 0
-        if total_new > 0:
-            from app.services.scoring import score_role as score_fn
-            supabase = get_supabase_client()
-            scored_result = supabase.table("role_scores").select("role_id").execute()
-            scored_ids = {r["role_id"] for r in scored_result.data}
-
-            roles_result = supabase.table("roles").select("id, title, company").execute()
-            unscored = [r for r in roles_result.data if r["id"] not in scored_ids]
-
-            for role in unscored:
-                try:
-                    await score_fn(role["id"])
-                    scored_count += 1
-                    await asyncio.sleep(0.3)
-                except Exception as e:
-                    score_failed += 1
-                    logger.warning(f"Cron auto-score failed for {role['title']}: {e}")
+        # Auto-score any unscored roles (not just new ones — catches retries)
+        scored_count, score_failed = await _auto_score_unscored()
 
         # Run freshness checks on all existing roles
         stale_found = 0
@@ -231,7 +247,19 @@ async def discover_roles_for_company_route(company: str):
 
     try:
         result = await discover_for_company(target)
-        return {"status": "completed", **result}
+
+        # Auto-score any unscored roles (including ones just discovered)
+        scored_count = 0
+        score_failed = 0
+        if result.get("new_roles", 0) > 0:
+            scored_count, score_failed = await _auto_score_unscored()
+
+        return {
+            "status": "completed",
+            **result,
+            "auto_scored": scored_count,
+            "score_failed": score_failed,
+        }
     except Exception as e:
         logger.error(f"Discovery failed for {company}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
