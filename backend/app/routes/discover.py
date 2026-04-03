@@ -6,6 +6,7 @@ from typing import Annotated
 
 from app.config import get_settings, get_supabase_client, load_companies
 from app.services.discovery import discover_all, discover_for_company, cleanup_junk_roles, wipe_all_roles, backfill_departments
+from app.services.role_discovery import discover_by_role
 from app.services.jd_scraper import enrich_missing_jds
 
 logger = logging.getLogger(__name__)
@@ -183,6 +184,15 @@ async def discover_cron(
 
         total_new = sum(r["new_roles"] for r in results)
 
+        # Run role-based discovery (search by job title across open market)
+        role_discovery_new = 0
+        try:
+            role_result = await discover_by_role()
+            role_discovery_new = role_result.get("new_roles", 0)
+            total_new += role_discovery_new
+        except Exception as e:
+            logger.warning(f"Role-based discovery failed: {e}")
+
         # Auto-score any unscored roles (not just new ones — catches retries)
         scored_count, score_failed = await _auto_score_unscored()
 
@@ -215,6 +225,7 @@ async def discover_cron(
             "companies_searched": len(results),
             "company_names": [c["name"] for c in targets],
             "total_new_roles": total_new,
+            "role_discovery_new": role_discovery_new,
             "auto_scored": scored_count,
             "score_failed": score_failed,
             "stale_found": stale_found,
@@ -224,6 +235,22 @@ async def discover_cron(
         raise
     except Exception as e:
         logger.error(f"Cron discovery failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/by-role")
+async def discover_roles_by_role():
+    """Trigger role-based discovery across the open market.
+
+    Searches for job title keywords (from profile target_role_types)
+    across ATS platforms, not limited to the target company list.
+    Discovers roles at companies we haven't pre-selected.
+    """
+    try:
+        result = await discover_by_role()
+        return result
+    except Exception as e:
+        logger.error(f"Role-based discovery failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

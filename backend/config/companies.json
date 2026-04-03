@@ -249,6 +249,106 @@
       "ats_platform": null,
       "ats_slug": null,
       "notes": "Microsoft subsidiary — proprietary ATS, uses Brave Search fallback"
+    },
+    {
+      "name": "Scale AI",
+      "tier": "ai_infrastructure",
+      "h1b_status": "confirmed",
+      "priority": 26,
+      "careers_url": "https://www.scaleai.com/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "scaleai",
+      "notes": ""
+    },
+    {
+      "name": "Notion",
+      "tier": "ai_productivity",
+      "h1b_status": "confirmed",
+      "priority": 27,
+      "careers_url": "https://www.notion.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "notion",
+      "notes": ""
+    },
+    {
+      "name": "Runway",
+      "tier": "ai_creative",
+      "h1b_status": "likely",
+      "priority": 28,
+      "careers_url": "https://runwayml.com/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "runwayml",
+      "notes": ""
+    },
+    {
+      "name": "Weights & Biases",
+      "tier": "ml_platform",
+      "h1b_status": "likely",
+      "priority": 29,
+      "careers_url": "https://wandb.ai/site/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "wandb",
+      "notes": ""
+    },
+    {
+      "name": "Hugging Face",
+      "tier": "ml_platform",
+      "h1b_status": "likely",
+      "priority": 30,
+      "careers_url": "https://huggingface.co/careers",
+      "ats_platform": null,
+      "ats_slug": null,
+      "notes": "Uses Workable — Brave Search fallback"
+    },
+    {
+      "name": "Replit",
+      "tier": "ai_coding",
+      "h1b_status": "likely",
+      "priority": 31,
+      "careers_url": "https://replit.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "replit",
+      "notes": ""
+    },
+    {
+      "name": "Glean",
+      "tier": "ai_enterprise",
+      "h1b_status": "likely",
+      "priority": 32,
+      "careers_url": "https://www.glean.com/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "gleanwork",
+      "notes": ""
+    },
+    {
+      "name": "Writer",
+      "tier": "ai_enterprise",
+      "h1b_status": "likely",
+      "priority": 33,
+      "careers_url": "https://writer.com/company/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "writer",
+      "notes": ""
+    },
+    {
+      "name": "Moveworks",
+      "tier": "ai_enterprise",
+      "h1b_status": "likely",
+      "priority": 34,
+      "careers_url": "https://www.moveworks.com/us/en/company/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "moveworks",
+      "notes": ""
+    },
+    {
+      "name": "Ramp",
+      "tier": "ai_fintech",
+      "h1b_status": "confirmed",
+      "priority": 35,
+      "careers_url": "https://ramp.com/careers",
+      "ats_platform": "ashby",
+      "ats_slug": "ramp",
+      "notes": ""
     }
   ]
 }

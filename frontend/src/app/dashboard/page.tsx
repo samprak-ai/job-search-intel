@@ -250,6 +250,7 @@ export default function Dashboard() {
   const [batchScoring, setBatchScoring] = useState(false);
   const [batchScoreResult, setBatchScoreResult] = useState<string | null>(null);
   const [discoveringCompany, setDiscoveringCompany] = useState<string | null>(null);
+  const [discoveringByRole, setDiscoveringByRole] = useState(false);
   const [discoveryResult, setDiscoveryResult] = useState<string | null>(null);
 
   // Usage tracking
@@ -350,6 +351,23 @@ export default function Dashboard() {
       setDiscoveryResult(`Discovery failed for ${companyName}`);
     }
     setDiscoveringCompany(null);
+  }
+
+  async function discoverByRole() {
+    setDiscoveringByRole(true);
+    setDiscoveryResult(null);
+    try {
+      const res = await fetch(`${API}/discover/by-role`, { method: "POST" });
+      const data = await res.json();
+      setDiscoveryResult(
+        `Role search: ${data.new_roles} new roles found (${data.scored || 0} scored, ${data.queries_run} queries)`
+      );
+      await fetchRoles();
+    } catch (e) {
+      console.error("Role-based discovery failed:", e);
+      setDiscoveryResult("Role-based discovery failed");
+    }
+    setDiscoveringByRole(false);
   }
 
   async function batchScoreAll() {
@@ -498,6 +516,32 @@ export default function Dashboard() {
             {company}
           </button>
         ))}
+
+        <div className="h-6 w-px bg-gray-200" />
+
+        {/* Role-based discovery */}
+        <button
+          onClick={discoverByRole}
+          disabled={discoveringByRole || discoveringCompany !== null}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-purple-200"
+        >
+          {discoveringByRole ? (
+            <>
+              <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Searching...
+            </>
+          ) : (
+            <>
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
+              Discover by Role
+            </>
+          )}
+        </button>
       </div>
 
       {/* Status messages */}
