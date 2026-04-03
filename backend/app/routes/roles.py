@@ -17,8 +17,12 @@ async def list_roles(company: str | None = None, limit: int = 100):
     """
     supabase = get_supabase_client()
 
+    # Select only fields needed for the dashboard listing — exclude raw_jd
+    # which can be 10KB+ per role and slows the query significantly
     query = supabase.table("roles").select(
-        "*, role_scores(match_tier, overall_score, scored_at)"
+        "id, company, title, url, source, department, date_found, "
+        "application_status, is_live, last_checked_at, created_at, "
+        "role_scores(match_tier, overall_score, scored_at)"
     ).order("date_found", desc=True).limit(limit)
 
     if company:
