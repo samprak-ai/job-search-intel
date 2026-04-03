@@ -17,12 +17,10 @@ async def list_roles(company: str | None = None, limit: int = 100):
     """
     supabase = get_supabase_client()
 
-    # Select only fields needed for the dashboard listing — exclude raw_jd
-    # which can be 10KB+ per role and slows the query significantly
+    # Fetch roles (without join — much faster)
     query = supabase.table("roles").select(
         "id, company, title, url, source, department, date_found, "
-        "application_status, is_live, last_checked_at, created_at, "
-        "role_scores(match_tier, overall_score, scored_at)"
+        "application_status, is_live, last_checked_at, created_at"
     ).order("date_found", desc=True).limit(limit)
 
     if company:
@@ -30,17 +28,29 @@ async def list_roles(company: str | None = None, limit: int = 100):
 
     result = query.execute()
 
-    # Flatten: pick the most recent score per role
+    # Fetch all scores in a single query (no join = faster)
+    role_ids = [r["id"] for r in result.data]
+    scores_map: dict[str, dict] = {}
+    if role_ids:
+        # Supabase .in_ can handle large lists; chunk if needed
+        chunk_size = 200
+        for i in range(0, len(role_ids), chunk_size):
+            chunk = role_ids[i:i + chunk_size]
+            scores_result = supabase.table("role_scores").select(
+                "role_id, match_tier, overall_score, scored_at"
+            ).in_("role_id", chunk).execute()
+            for s in scores_result.data:
+                rid = s["role_id"]
+                # Keep the most recent score per role
+                if rid not in scores_map or (s["scored_at"] or "") > (scores_map[rid]["scored_at"] or ""):
+                    scores_map[rid] = s
+
+    # Merge scores into roles
     roles = []
     for row in result.data:
-        scores = row.pop("role_scores", [])
-        if scores:
-            latest = max(scores, key=lambda s: s["scored_at"] or "")
-            row["match_tier"] = latest["match_tier"]
-            row["overall_score"] = latest["overall_score"]
-        else:
-            row["match_tier"] = None
-            row["overall_score"] = None
+        score = scores_map.get(row["id"])
+        row["match_tier"] = score["match_tier"] if score else None
+        row["overall_score"] = score["overall_score"] if score else None
         roles.append(row)
 
     return {"roles": roles, "count": len(roles)}
