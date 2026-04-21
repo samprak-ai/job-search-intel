@@ -32,26 +32,30 @@ ATS_SITE_FILTER = (
     "site:jobs.lever.co OR site:boards.greenhouse.io"
 )
 
-# Role search queries derived from profile target_role_types + adjacent terms
-# Each entry is a search phrase that captures a class of roles Sam targets
+# Role search queries derived from profile target_role_types + adjacent terms.
+# Excludes engineer / solutions architect tracks — Sam targets GTM, Partnerships,
+# Product, and Strategy roles.
 ROLE_SEARCH_QUERIES = [
-    # Core target roles
-    '"AI Solutions Engineer"',
+    # Partnerships & BD
     '"AI Partnerships" OR "AI Partner"',
-    '"Head of AI" product',
-    '"GTM" "AI" strategy',
-    # Adjacent high-value roles
-    '"Solutions Architect" AI',
-    '"Forward Deployed Engineer"',
-    '"Applied AI" engineer OR lead',
-    '"Technical Account Manager" AI',
-    '"Sales Engineer" AI OR "ML"',
-    '"Product Manager" AI OR "machine learning"',
-    '"Business Development" AI OR "artificial intelligence"',
-    '"Customer Engineer" AI OR cloud',
-    '"Solutions Engineer" AI OR ML',
-    '"AI evangelist" OR "developer advocate" AI',
     '"Strategic Partnerships" AI OR ML',
+    '"Business Development" AI OR "artificial intelligence"',
+    # Product
+    '"Head of AI" product',
+    '"Product Manager" AI OR "machine learning"',
+    '"Product Lead" AI OR "machine learning"',
+    '"AI Product" manager OR lead',
+    # GTM / Strategy
+    '"GTM" "AI" strategy',
+    '"Go-to-Market" AI OR "machine learning"',
+    '"Strategy" "AI" lead OR manager',
+    # Customer-facing (non-engineer)
+    '"Technical Account Manager" AI',
+    '"Customer Success" AI OR ML',
+    '"AI evangelist" OR "developer advocate" AI',
+    # Sales (non-engineer)
+    '"Account Executive" AI OR "machine learning"',
+    '"Sales Intelligence" AI',
 ]
 
 

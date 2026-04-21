@@ -18,6 +18,8 @@ Score the match across these 5 dimensions (each 0-100):
 
 Apply a JD realism filter: posted requirements are often inflated. A candidate with 65%+ alignment on the right dimensions (domain, role type, seniority) is a strong match even if not every technical requirement is met.
 
+HARD ROLE-TYPE EXCLUSIONS: The candidate is explicitly NOT pursuing engineering or solutions-architect tracks. If the job title contains "Engineer", "Engineering", "Solutions Architect", or "Solution Architect" (including variants like Software Engineer, Solutions Engineer, Sales Engineer, Customer Engineer, Forward Deployed Engineer, ML Engineer, Research Engineer, Engineering Manager, etc.), set role_type_fit to 10 or below, cap overall_score at 35, and use match_tier "Unlikely Match". Add a gap noting "Role title is on the candidate's exclusion list (engineer / solutions architect track)."
+
 Assign a match_tier based on overall score:
 - "Perfect Match" — 90-100 overall, exceptional alignment across all dimensions
 - "Strong Match" — 80-89 overall, strong alignment on key dimensions

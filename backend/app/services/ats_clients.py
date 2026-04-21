@@ -44,14 +44,13 @@ US_LOCATION_KEYWORDS = [
 ]
 
 # Role title keywords that match Sam's target profile.
-# Tuned to his 5 target role types: AI Solutions Engineer, AI Partnerships,
-# Head of AI Product, GTM Strategy AI, Sales Intelligence AI.
-# Uses compound terms to avoid matching generic "engineer" or "product" roles.
+# Tuned to GTM, Partnerships, Product, and Strategy roles.
+# Engineer / Solutions Architect titles are explicitly excluded — Sam is
+# pivoting away from IC engineering tracks toward GTM/Product/Strategy.
 ROLE_KEYWORDS = [
-    # Solutions / Applied AI roles
-    "solutions architect", "solutions engineer", "applied ai",
-    "forward deployed", "customer engineer", "customer success",
-    "technical deployment", "evangelist",
+    # Applied AI / customer-facing (non-engineer titles)
+    "applied ai", "customer success", "technical deployment",
+    "evangelist",
     # Partnerships & BD
     "partner", "partnerships", "business development",
     # GTM / Strategy
@@ -59,9 +58,8 @@ ROLE_KEYWORDS = [
     # Product roles (scoped — "product manager", "product lead", "product marketing")
     "product manager", "product lead", "product marketing",
     "product owner", "product management",
-    # Sales roles
-    "account executive", "sales engineer", "sales intelligence",
-    "sales architect",
+    # Sales roles (excluding sales engineer / sales architect)
+    "account executive", "sales intelligence",
     # Strategy & Ops
     "strategy & operations", "strategic account",
     "strategic growth",
@@ -69,11 +67,13 @@ ROLE_KEYWORDS = [
     "head of",
 ]
 
-# Titles to explicitly EXCLUDE even if keywords match
+# Titles to explicitly EXCLUDE even if keywords match.
+# Broad "engineer" and "architect" excludes catch all engineering / SA tracks
+# (Software Engineer, Solutions Engineer, Sales Engineer, Solutions Architect,
+# Customer Engineer, Forward Deployed Engineer, Engineering Manager, etc.)
 ROLE_EXCLUDE_KEYWORDS = [
-    "software engineer", "research engineer", "ml engineer",
-    "machine learning engineer", "infrastructure engineer",
-    "data engineer", "design engineer", "ui engineer",
+    "engineer", "engineering",
+    "solutions architect", "solution architect",
     "video", "recruiter", "recruiting", "counsel",
     "accounting", "accountant", "finance &",
     "supply chain", "security fellow", "safety fellow",
