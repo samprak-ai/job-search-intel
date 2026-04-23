@@ -34,30 +34,36 @@ ATS_SITE_FILTER = (
     "site:jobs.lever.co OR site:boards.greenhouse.io"
 )
 
-# Role search queries derived from profile target_role_types + adjacent terms.
-# Excludes engineer / solutions architect tracks — Sam targets GTM, Partnerships,
-# Product, and Strategy roles.
+# Role search queries aligned with Sam's sharpened target_role_types.
+# Excludes engineer / solutions-architect / scaling-ops / relationship-mgmt roles.
+# Targets: 0→1 builder-operator roles at AI-native companies.
 ROLE_SEARCH_QUERIES = [
-    # Partnerships & BD
-    '"AI Partnerships" OR "AI Partner"',
-    '"Strategic Partnerships" AI OR ML',
-    '"Business Development" AI OR "artificial intelligence"',
-    # Product
-    '"Head of AI" product',
-    '"Product Manager" AI OR "machine learning"',
-    '"Product Lead" AI OR "machine learning"',
-    '"AI Product" manager OR lead',
-    # GTM / Strategy
-    '"GTM" "AI" strategy',
-    '"Go-to-Market" AI OR "machine learning"',
-    '"Strategy" "AI" lead OR manager',
-    # Customer-facing (non-engineer)
-    '"Technical Account Manager" AI',
-    '"Customer Success" AI OR ML',
-    '"AI evangelist" OR "developer advocate" AI',
-    # Sales (non-engineer)
-    '"Account Executive" AI OR "machine learning"',
-    '"Sales Intelligence" AI',
+    # GTM Systems & Agents (xAI-style builder-operator)
+    '"GTM Systems" AI OR agents',
+    '"AI Systems" lead OR head',
+    '"GTM Automation" lead',
+    '"AI Automation" lead OR head',
+    # AI Product Strategy & Growth
+    '"AI Product Strategy" lead OR head',
+    '"AI Product Growth" lead',
+    '"Product Growth" AI OR LLM',
+    '"Product Strategy" AI OR ML',
+    # Applied AI (customer-outcome flavor)
+    '"Applied AI" lead OR head',
+    '"AI Applications" lead',
+    # Chief of Staff (with build scope at an AI company)
+    '"Chief of Staff" AI',
+    '"Chief of Staff" product',
+    # Senior / Lead AI Product Manager
+    '"Senior Product Manager" AI OR "machine learning"',
+    '"Lead Product Manager" AI OR "machine learning"',
+    # Head of AI Product (hands-on)
+    '"Head of AI Product"',
+    '"Head of Product" AI OR LLM',
+    # Incubation / Labs / 0→1
+    '"AI Labs" lead OR head',
+    '"Incubation" AI OR product',
+    '"New Product Bets" AI',
 ]
 
 
