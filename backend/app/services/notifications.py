@@ -13,7 +13,16 @@ async def send_perfect_match_email(role: dict, score_data: dict) -> bool:
 
     Uses Resend API to email the notification address with role details.
     Returns True on success, False on failure (non-blocking).
+    Skips sending if role is stale (is_live=False).
     """
+    # Guard: don't notify on stale roles, even if they have a Perfect score
+    if role.get("is_live") is False:
+        logger.info(
+            f"Skipping Perfect Match email — role is stale: "
+            f"{role.get('title')} at {role.get('company')}"
+        )
+        return False
+
     settings = get_settings()
 
     if not settings.resend_api_key or not settings.notification_email:
@@ -133,10 +142,13 @@ async def send_daily_digest_email(
     supabase = get_supabase_client()
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
+    # Only surface live roles in the digest — stale roles (is_live=False)
+    # would create false Perfect Matches after freshness check flips them.
     roles_result = (
         supabase.table("roles")
-        .select("id, company, title, url, date_found")
+        .select("id, company, title, url, date_found, is_live")
         .gte("date_found", today)
+        .neq("is_live", False)
         .order("company", desc=False)
         .execute()
     )

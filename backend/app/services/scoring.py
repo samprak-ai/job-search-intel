@@ -88,8 +88,13 @@ def build_scoring_message(role: dict, profile: dict) -> str:
 Please score this job match."""
 
 
-async def score_role(role_id: str) -> dict:
-    """Score a role against the candidate profile using Claude API."""
+async def score_role(role_id: str, force: bool = False) -> dict:
+    """Score a role against the candidate profile using Claude API.
+
+    Skips scoring if the role is known to be stale (is_live=False), unless
+    `force=True`. Stale roles that gain a score would surface as false
+    Perfect Matches; we'd rather have no score than a misleading one.
+    """
     settings = get_settings()
     supabase = get_supabase_client()
     profile = load_profile()
@@ -100,6 +105,23 @@ async def score_role(role_id: str) -> dict:
         return None  # Signal to route handler for 404
 
     role = result.data[0]
+
+    # Guard: don't score stale roles. Freshness check flips is_live to False
+    # when a posting is no longer active, and we don't want such roles
+    # bubbling up as Perfect Matches.
+    if role.get("is_live") is False and not force:
+        logger.info(
+            f"Skipping scoring — role marked stale (is_live=False): "
+            f"{role['title']} at {role['company']}"
+        )
+        return {
+            "role_id": role_id,
+            "company": role["company"],
+            "title": role["title"],
+            "skipped": True,
+            "reason": "role is stale (is_live=False)",
+        }
+
     logger.info(f"Scoring role: {role['title']} at {role['company']}")
 
     # Call Claude API
