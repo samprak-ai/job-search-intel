@@ -9,9 +9,11 @@ real postings, then deduplicates and scores against the profile.
 """
 
 import asyncio
+import json
 import logging
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import urlparse
 
 from app.config import get_settings, get_supabase_client, load_profile
@@ -90,6 +92,63 @@ def _is_ats_job_url(url: str) -> bool:
     ])
 
 
+# ---------------------------------------------------------------------------
+# Approved-companies whitelist
+# ---------------------------------------------------------------------------
+# Role-based discovery searches across the whole ATS market. We restrict
+# results to URLs whose company slug matches a company in companies.json
+# (Big Tech + mature AI-forward startups only).
+
+_APPROVED_SLUGS_CACHE: set[str] | None = None
+
+
+def _load_approved_slugs() -> set[str]:
+    """Build the set of approved company slugs from companies.json.
+
+    Includes the explicit ats_slug when present, plus a normalized form of the
+    company name (lowercased, alphanumeric only) to catch URL-slug variants.
+    """
+    cfg_path = Path(__file__).parent.parent.parent / "config" / "companies.json"
+    with open(cfg_path) as f:
+        data = json.load(f)
+    slugs: set[str] = set()
+    for c in data.get("target_companies", []):
+        if c.get("ats_slug"):
+            slugs.add(c["ats_slug"].lower())
+        name_norm = "".join(ch for ch in c["name"].lower() if ch.isalnum())
+        if name_norm:
+            slugs.add(name_norm)
+    return slugs
+
+
+def _get_approved_slugs() -> set[str]:
+    global _APPROVED_SLUGS_CACHE
+    if _APPROVED_SLUGS_CACHE is None:
+        _APPROVED_SLUGS_CACHE = _load_approved_slugs()
+    return _APPROVED_SLUGS_CACHE
+
+
+def _is_approved_company_url(url: str) -> bool:
+    """Return True if the ATS URL's company slug matches an approved company.
+
+    Handles variants like "runwayml" → "runway", "gleanwork" → "glean".
+    """
+    approved = _get_approved_slugs()
+    parsed = urlparse(url)
+    path_parts = [p for p in parsed.path.strip("/").split("/") if p]
+    if not path_parts:
+        return False
+    slug = path_parts[0].lower()
+    slug_norm = "".join(ch for ch in slug if ch.isalnum())
+    if slug in approved or slug_norm in approved:
+        return True
+    # Prefix match for variants (runwayml starts-with runway, etc.)
+    for a in approved:
+        if len(a) >= 4 and (slug_norm.startswith(a) or a.startswith(slug_norm)):
+            return True
+    return False
+
+
 def _detect_source(url: str) -> str:
     """Detect the ATS source from URL."""
     host = (urlparse(url).hostname or "").lower()
@@ -162,6 +221,10 @@ async def discover_by_role() -> dict:
 
         # Only keep real ATS job postings
         if not _is_ats_job_url(url):
+            continue
+
+        # Only keep postings from approved companies (Big Tech + mature AI-forward startups)
+        if not _is_approved_company_url(url):
             continue
 
         # Normalize URL

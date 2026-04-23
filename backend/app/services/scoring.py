@@ -127,8 +127,8 @@ async def score_role(role_id: str) -> dict:
     # Send email notification only for Perfect Match (90+) roles
     if score_data.get("overall_score", 0) >= 90:
         try:
-            from app.services.notifications import send_strong_match_email
-            await send_strong_match_email(role, score_data)
+            from app.services.notifications import send_perfect_match_email
+            await send_perfect_match_email(role, score_data)
         except Exception as e:
             logger.error(f"Failed to send match notification: {e}")
 

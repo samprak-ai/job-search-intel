@@ -124,7 +124,9 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 }
 ```
 
-### Full Company List (25)
+### Full Company List (23)
+
+**Scope:** Big Tech + Mature AI-Forward Startups only. Focus on roles that enable rapid experimentation, learning, and influence. Role-based discovery is gated by this same whitelist — any ATS posting from a company outside this list is filtered out before scoring.
 
 **Model Providers**
 1. Anthropic — confirmed H1B
@@ -136,30 +138,28 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 7. xAI — unknown H1B
 
 **Big Tech / Cloud AI**
-8. Google / DeepMind — confirmed H1B
-9. Microsoft (Azure AI) — confirmed H1B
+8. Alphabet (Google/DeepMind) — confirmed H1B
+9. Microsoft Azure AI — confirmed H1B
 10. Databricks — confirmed H1B
 11. Snowflake — confirmed H1B
 12. Salesforce (Einstein AI) — confirmed H1B
+13. LinkedIn (Microsoft) — confirmed H1B
 
-**GTM & Revenue Intelligence**
-13. Clay — likely H1B
-14. 6sense — confirmed H1B
-15. Common Room — likely H1B
-16. Pocus — unknown H1B
-17. Demandbase — confirmed H1B
-18. Amplemarket — unknown H1B
+**Mature AI-Forward Startups**
+14. Scale AI — confirmed H1B
+15. Notion — confirmed H1B
+16. Glean — likely H1B
+17. Writer — likely H1B
+18. Moveworks — likely H1B
+19. Ramp — confirmed H1B
+20. Hugging Face — likely H1B
+21. Weights & Biases — likely H1B
+22. Replit — likely H1B
+23. Runway — likely H1B
 
-**Data & Startup Intelligence**
-19. Crunchbase — likely H1B
-20. PitchBook — confirmed H1B
-21. Similarweb — confirmed H1B
-22. Bombora — likely H1B
-
-**AI-native GTM / Emerging**
-23. Qualified — likely H1B
-24. Keyplay — unknown H1B
-25. LinkedIn (Microsoft) — confirmed H1B
+### Notifications policy
+- **Per-role emails:** only for Perfect Match (overall_score ≥ 90)
+- **Daily digest:** only sent when ≥1 Perfect Match is found that day; body shows Perfect Matches only (no Strong/Good/Possible/Unlikely tiers)
 
 ---
 
