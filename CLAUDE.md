@@ -124,42 +124,57 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 }
 ```
 
-### Full Company List (23)
+### Full Company List (26)
 
-**Scope:** Big Tech + Mature AI-Forward Startups only. Focus on roles that enable rapid experimentation, learning, and influence. Role-based discovery is gated by this same whitelist — any ATS posting from a company outside this list is filtered out before scoring.
+**Scope:** Frontier model labs + Big Tech AI divisions + mature AI-forward startups (horizontal and vertical) + frontier research orgs. Focus on **0→1 builder-operator roles** at companies where AI is the product (not a feature) and everyone builds by default. Role-based discovery is gated by this whitelist — any ATS posting from a company outside this list is filtered out before scoring.
 
-**Model Providers**
+**Model Providers (frontier labs)**
 1. Anthropic — confirmed H1B
 2. OpenAI — confirmed H1B
 3. Cohere — confirmed H1B
 4. Together AI — likely H1B
 5. Perplexity — likely H1B
-6. Mistral (US) — unknown H1B
-7. xAI — unknown H1B
+6. Mistral (US) — unknown H1B (verify)
+7. xAI — unknown H1B (verify)
 
 **Big Tech / Cloud AI**
-8. Alphabet (Google/DeepMind) — confirmed H1B
-9. Microsoft Azure AI — confirmed H1B
-10. Databricks — confirmed H1B
-11. Snowflake — confirmed H1B
-12. Salesforce (Einstein AI) — confirmed H1B
-13. LinkedIn (Microsoft) — confirmed H1B
+8. Alphabet (weight DeepMind heavily; Google Cloud / Workspace AI risks AWS-style big-co pain) — confirmed H1B
+9. Databricks — confirmed H1B
+10. Snowflake — confirmed H1B
+11. Salesforce (verify team has build-first culture) — confirmed H1B
+12. LinkedIn — confirmed H1B
 
-**Mature AI-Forward Startups**
-14. Scale AI — confirmed H1B
-15. Notion — confirmed H1B
-16. Glean — likely H1B
-17. Writer — likely H1B
-18. Moveworks — likely H1B
-19. Ramp — confirmed H1B
-20. Hugging Face — likely H1B
-21. Weights & Biases — likely H1B
-22. Replit — likely H1B
-23. Runway — likely H1B
+**Mature Horizontal AI Startups**
+13. Notion — confirmed H1B
+14. Glean — likely H1B
+15. Ramp — confirmed H1B
+16. Hugging Face — likely H1B
+17. Weights & Biases — likely H1B
+18. Replit — likely H1B
+19. Runway — likely H1B
+
+**AI-Native Vertical SaaS**
+20. Harvey (legal AI) — likely H1B
+21. Sierra (customer experience AI) — likely H1B
+22. Decagon (customer service AI) — likely H1B
+23. Cresta (contact center AI) — likely H1B
+24. Abridge (healthcare AI) — likely H1B
+
+**Frontier Research Orgs**
+25. Ai2 (Allen Institute for AI) — likely H1B (comp may be tight for non-research roles)
+26. Imbue (reasoning + agents research) — likely H1B
 
 ### Notifications policy
 - **Per-role emails:** only for Perfect Match (overall_score ≥ 90)
 - **Daily digest:** only sent when ≥1 Perfect Match is found that day; body shows Perfect Matches only (no Strong/Good/Possible/Unlikely tiers)
+
+### Target role types (sharpened after structured interview — see `/Users/Sam/Desktop/samresume/_context/sam-profile.md`)
+- GTM Systems & Agents Lead
+- AI Product Strategy & Growth Lead
+- Applied AI Lead (customer-outcome, non-engineering)
+- Chief of Staff to CPO / Head of AI / CRO (with build scope)
+- Senior / Lead AI Product Manager
+- Head of AI Product (hands-on, mid-stage companies)
 
 ---
 
