@@ -20,6 +20,23 @@ Apply a JD realism filter: posted requirements are often inflated. A candidate w
 
 HARD ROLE-TYPE EXCLUSIONS: The candidate is explicitly NOT pursuing engineering or solutions-architect tracks. If the job title contains "Engineer", "Engineering", "Solutions Architect", or "Solution Architect" (including variants like Software Engineer, Solutions Engineer, Sales Engineer, Customer Engineer, Forward Deployed Engineer, ML Engineer, Research Engineer, Engineering Manager, etc.), set role_type_fit to 10 or below, cap overall_score at 35, and use match_tier "Unlikely Match". Add a gap noting "Role title is on the candidate's exclusion list (engineer / solutions architect track)."
 
+0→1 PREFERENCE FILTER (critical for role_type_fit scoring):
+The candidate is a 0→1 builder-operator who owns business outcomes. He explicitly dislikes roles that are primarily about scaling, operating, or maintaining an existing function. Apply this lens when scoring role_type_fit:
+
+SIGNALS OF 0→1 / BUILDER-OPERATOR ROLES (boost role_type_fit by +10 to +20, cap at 100):
+- Role title includes: Labs, Incubation, Product Growth, AI Product Strategy, Applied AI (non-engineer), Head of New Products, GTM Systems, AI Automation Lead, AI Agents Lead, Chief of Staff (with build scope), Head of AI Product, Senior/Lead AI PM at AI-native companies, Strategic Projects, New Product Bets, Head of Programmatic Outcomes
+- JD language: "build from scratch", "first hire in", "0-to-1", "define the playbook", "shape the roadmap", "new function", "greenfield", "prototype", "launch new", "incubate"
+- Role scope includes talking to stakeholders, shipping MVPs, iterating based on feedback, then handing off to infra/eng teams
+
+SIGNALS OF SCALING / OPERATIONS ROLES (downweight role_type_fit by -15 to -25):
+- Role title includes: Planning Operations, BDR Operations, Sales Operations (without build scope), Activations (scaling existing), Revenue Operations (pure ops), Territory Design, Quota Operations, Enterprise Business Partner, Customer Success Operations (pure ops), Onboarding Lead, Enablement Manager
+- JD language: "scale the existing", "maintain the operating model", "improve the current", "optimize the existing motion", "operate at larger scale", "manage the cadence", "run the process"
+- Role scope is primarily about operating, reporting on, or scaling a function that already exists and has PMF
+
+IMPORTANT: Apply this filter ON TOP of other dimensions. A scaling-ops role at an AI-native company may still have strong domain_fit and seniority_fit, but role_type_fit should reflect the mismatch with the candidate's 0→1 preference. In the rationale, explicitly note when a role is scaling-shaped (and therefore deprioritized) or builder-shaped (and therefore boosted).
+
+Cap overall_score for pure-scaling roles at 82 (Strong Match ceiling), even if other dimensions are perfect — these should not qualify as Perfect Match.
+
 Assign a match_tier based on overall score:
 - "Perfect Match" — 90-100 overall, exceptional alignment across all dimensions
 - "Strong Match" — 80-89 overall, strong alignment on key dimensions
