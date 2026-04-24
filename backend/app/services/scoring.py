@@ -171,6 +171,27 @@ async def score_role(role_id: str, force: bool = False) -> dict:
         except Exception as e:
             logger.error(f"Failed to send match notification: {e}")
 
+        # Auto-generate a tailored application package for Anthropic Perfect Matches.
+        # Non-blocking: scoring still succeeds even if tailoring fails.
+        # Currently wired for Anthropic only; extend with per-company templates as needed.
+        try:
+            company_lower = (role.get("company") or "").lower().replace(" ", "")
+            if "anthropic" in company_lower:
+                from app.services.application_tailor import generate_anthropic_package
+                pkg_result = await generate_anthropic_package(role_id)
+                if pkg_result.get("status") == "generated":
+                    logger.info(
+                        f"Auto-generated application package for {role['title']}: "
+                        f"{pkg_result['output_dir']}"
+                    )
+                else:
+                    logger.info(
+                        f"Skipped package generation for {role['title']}: "
+                        f"{pkg_result.get('reason')}"
+                    )
+        except Exception as e:
+            logger.error(f"Failed to auto-generate application package: {e}")
+
     return {
         "role_id": role_id,
         "company": role["company"],
