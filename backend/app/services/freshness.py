@@ -17,6 +17,7 @@ from app.config import get_supabase_client
 logger = logging.getLogger(__name__)
 
 CHECK_TIMEOUT = 10.0
+LISTING_TIMEOUT = 45.0  # Bulk-board fetches can be large (e.g. OpenAI has 600+ jobs)
 
 # Regex patterns to extract job IDs from ATS URLs
 GREENHOUSE_ID_RE = re.compile(r"greenhouse\.io/.*?/jobs/(\d+)")
@@ -28,31 +29,75 @@ DEAD_STATUSES = {404, 410, 403}
 
 
 async def _check_greenhouse(url: str) -> bool | None:
-    """Check if a Greenhouse job posting is still live via API."""
+    """Check if a Greenhouse job posting is still live.
+
+    Uses the bulk board listing API (not per-job) because per-job endpoints
+    can return 200 for jobs that have been pulled from the public board.
+    The bulk listing reflects the *actual* current public state.
+    """
     match = GREENHOUSE_ID_RE.search(url)
     if not match:
         return None  # Can't parse, fall back to HTTP
 
     job_id = match.group(1)
-    # Extract the board slug from the URL path
-    # e.g., https://boards.greenhouse.io/anthropic/jobs/12345
     slug_match = re.search(r"greenhouse\.io/([^/]+)/jobs/", url)
     if not slug_match:
         return None
 
     slug = slug_match.group(1)
-    api_url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs/{job_id}"
+    listing_ids = await _get_greenhouse_listing(slug)
+    if listing_ids is None:
+        return None  # Couldn't fetch listing, inconclusive
+    return job_id in listing_ids
 
+
+# Per-process cache of full board listings, keyed by ATS+slug.
+# Populated lazily on first lookup; reused across all roles in a freshness run.
+# Format: {("greenhouse", slug): {job_id, ...}, ("ashby", slug): {job_id, ...}}
+_LISTING_CACHE: dict[tuple[str, str], set[str] | None] = {}
+
+
+async def _get_greenhouse_listing(slug: str) -> set[str] | None:
+    """Fetch the full set of public Greenhouse job IDs for a board slug."""
+    cache_key = ("greenhouse", slug)
+    if cache_key in _LISTING_CACHE:
+        return _LISTING_CACHE[cache_key]
+
+    api_url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(api_url, timeout=CHECK_TIMEOUT)
-            if resp.status_code in DEAD_STATUSES:
-                return False
+            resp = await client.get(api_url, timeout=LISTING_TIMEOUT)
             if resp.status_code == 200:
-                return True
+                ids = {str(j["id"]) for j in resp.json().get("jobs", [])}
+                _LISTING_CACHE[cache_key] = ids
+                return ids
     except Exception as e:
-        logger.debug(f"Greenhouse API check failed for {url}: {e}")
-    return None  # Inconclusive
+        logger.debug(f"Greenhouse bulk listing failed for {slug}: {e}")
+    _LISTING_CACHE[cache_key] = None
+    return None
+
+
+async def _get_ashby_listing(slug: str) -> set[str] | None:
+    """Fetch the full set of public Ashby posting IDs for a board slug."""
+    cache_key = ("ashby", slug)
+    if cache_key in _LISTING_CACHE:
+        return _LISTING_CACHE[cache_key]
+
+    api_url = (
+        f"https://api.ashbyhq.com/posting-api/job-board/{slug}"
+        f"?includeCompensation=false"
+    )
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(api_url, timeout=LISTING_TIMEOUT)
+            if resp.status_code == 200:
+                ids = {j["id"] for j in resp.json().get("jobs", [])}
+                _LISTING_CACHE[cache_key] = ids
+                return ids
+    except Exception as e:
+        logger.debug(f"Ashby bulk listing failed for {slug}: {e}")
+    _LISTING_CACHE[cache_key] = None
+    return None
 
 
 async def _check_lever(url: str) -> bool | None:
@@ -79,30 +124,22 @@ async def _check_lever(url: str) -> bool | None:
 async def _check_ashby(url: str) -> bool | None:
     """Check if an Ashby posting is still live.
 
-    The non-auth API endpoint is not reliable for all postings —
-    some live jobs return 404 from the API while the page is still active.
-    When the API says 404, we fall back to checking the actual page content
-    for signs of a closed posting (e.g. "no longer available" text).
+    Uses the bulk job-board listing (the source of truth for what's
+    publicly accepting applications). Per-job page checks are unreliable
+    because the page renders even for jobs that have been pulled from
+    the public board.
     """
     match = ASHBY_ID_RE.search(url)
     if not match:
         return None
 
-    # Ashby posting URLs: https://jobs.ashbyhq.com/{company}/{posting_id}
+    slug = match.group(1)
     posting_id = match.group(2)
-    api_url = f"https://jobs.ashbyhq.com/api/non-auth-job-posting/{posting_id}"
 
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(api_url, timeout=CHECK_TIMEOUT)
-            if resp.status_code == 200:
-                return True
-            if resp.status_code in DEAD_STATUSES:
-                # API is unreliable — verify by checking actual page content
-                return await _verify_ashby_page(url)
-    except Exception as e:
-        logger.debug(f"Ashby API check failed for {url}: {e}")
-    return None
+    listing_ids = await _get_ashby_listing(slug)
+    if listing_ids is None:
+        return None  # Couldn't fetch listing, inconclusive
+    return posting_id in listing_ids
 
 
 async def _verify_ashby_page(url: str) -> bool | None:
