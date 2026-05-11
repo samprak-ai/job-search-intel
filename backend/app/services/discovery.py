@@ -52,6 +52,15 @@ AGGREGATION_RE = re.compile(r"\d[\d,]*\+?\s+.*?\bjobs?\b", re.IGNORECASE)
 
 ATS_SOURCES = {"greenhouse", "ashby", "lever"}
 
+NON_US_LOCATION_SIGNALS = [
+    "london", "united kingdom", " uk", "dublin", "ireland",
+    "paris", "france", "berlin", "germany", "amsterdam",
+    "netherlands", "madrid", "spain", "zurich", "switzerland",
+    "tokyo", "japan", "seoul", "korea", "singapore",
+    "sydney", "australia", "melbourne", "toronto", "canada",
+    "vancouver", "bengaluru", "bangalore", "india",
+]
+
 
 def is_junk_role(title: str, url: str, company_name: str, source: str = "") -> tuple[bool, str]:
     """Master filter: returns (is_junk, reason).
@@ -110,6 +119,12 @@ def is_junk_role(title: str, url: str, company_name: str, source: str = "") -> t
             return True, "role belongs to a different company"
 
     return False, ""
+
+
+def looks_non_us_search_result(title: str, description: str) -> bool:
+    """Best-effort guard for web-search results that lack structured location."""
+    text = f" {title} {description} ".lower()
+    return any(signal in text for signal in NON_US_LOCATION_SIGNALS)
 
 
 # ---------------------------------------------------------------------------
@@ -228,6 +243,10 @@ def _build_brave_query(company: dict) -> str:
         '"AI" OR "solutions engineer" OR "product manager" OR '
         '"partnerships" OR "GTM" OR "sales engineer"'
     )
+    us_location_filter = (
+        '"United States" OR "USA" OR "US" OR "San Francisco" OR '
+        '"New York" OR "Seattle"'
+    )
 
     # For large companies with proprietary ATS, search broadly (LinkedIn + careers site)
     # instead of restricting to ATS platforms they don't use
@@ -236,7 +255,61 @@ def _build_brave_query(company: dict) -> str:
         f"site:greenhouse.io OR site:lever.co OR site:ashbyhq.com"
     )
 
-    return f'"{company_name}" ({role_keywords}) ({site_filter})'
+    return f'"{company_name}" ({role_keywords}) ({us_location_filter}) ({site_filter})'
+
+
+# Regex patterns that match URLs which look like individual job postings.
+# A URL must match at least one of these to be considered a real job listing.
+# Generic non-job paths like /agentforce/, /partners/, /company/careers/ won't match.
+import re as _re
+
+_JOB_URL_PATTERNS = [
+    # Path with /jobs/<id>/ followed by optional slug (e.g. Salesforce, generic ATS)
+    _re.compile(r"/jobs?/[a-z][a-z0-9_-]{1,}(/[a-z0-9._-]+)*/?$", _re.I),
+    _re.compile(r"/jobs?/view/\d+", _re.I),                          # LinkedIn /jobs/view/12345
+    _re.compile(r"/careers/(jobs?|positions?|openings?)/[a-z0-9]", _re.I),
+    _re.compile(r"/positions?/[a-z0-9]", _re.I),
+    _re.compile(r"/openings?/[a-z0-9]", _re.I),
+    _re.compile(r"/listings?/[a-z0-9]", _re.I),
+    _re.compile(r"boards\.greenhouse\.io/[^/]+/jobs/\d+", _re.I),
+    _re.compile(r"jobs\.lever\.co/[^/]+/[a-f0-9-]{8,}", _re.I),
+    _re.compile(r"jobs\.ashbyhq\.com/[^/]+/[a-f0-9-]{8,}", _re.I),
+]
+
+# Hard-reject URL patterns — paths that contain "jobs" but aren't individual postings.
+_JOB_URL_BLOCKLIST = [
+    _re.compile(r"/(xml|rss|atom|feed|sitemap)\b", _re.I),
+    _re.compile(r"\.(xml|rss|atom|json)(\?|$)", _re.I),
+    _re.compile(r"/jobs?/?$", _re.I),                                # bare /jobs/ index
+    _re.compile(r"/jobs?/(search|category|department|all|index)\b", _re.I),
+]
+
+# Title patterns that indicate a landing page rather than an individual posting.
+_LANDING_TITLE_PATTERNS = [
+    _re.compile(r"^\s*careers?\b", _re.I),
+    _re.compile(r"\bcareers?\s*[|\-]\s*", _re.I),                    # "X Careers | Company"
+    _re.compile(r"\bcareers?\s+at\b", _re.I),                        # "Tech & Product Careers at Salesforce"
+    _re.compile(r"\b(team|teams|department)\s*[|\-]", _re.I),
+    _re.compile(r"\bbuild\s+(what|the\s+future|with)\b", _re.I),     # "Build What's Next", "Build the Future"
+    _re.compile(r"\b(get\s+ai\s+working|the\s+ai\s+agent\s+platform)\b", _re.I),  # Salesforce product pages
+    _re.compile(r"^https?://", _re.I),                               # Title looks like a URL
+    _re.compile(r"\.(xml|rss|atom)\b", _re.I),
+]
+
+
+def _is_likely_job_posting_url(url: str) -> bool:
+    """Return True if URL path looks like an individual job posting."""
+    parsed = urlparse(url)
+    full = f"{parsed.netloc}{parsed.path}"
+    # Hard-reject patterns short-circuit even if a positive pattern matches
+    if any(p.search(full) for p in _JOB_URL_BLOCKLIST):
+        return False
+    return any(p.search(full) for p in _JOB_URL_PATTERNS)
+
+
+def _looks_like_landing_title(title: str) -> bool:
+    """Return True if title looks like a careers/landing page rather than a specific role."""
+    return any(p.search(title or "") for p in _LANDING_TITLE_PATTERNS)
 
 
 async def discover_via_web_search(company: dict) -> dict:
@@ -265,12 +338,27 @@ async def discover_via_web_search(company: dict) -> dict:
 
     # Parse and filter results
     roles = []
+    rejected_landing = 0
+    rejected_url_pattern = 0
     for result in results:
         url = result.get("url", "")
         title = result.get("title", "")
         description = result.get("description", "")
 
         if not url or not title:
+            continue
+
+        if looks_non_us_search_result(title, description):
+            continue
+
+        # Reject obvious landing-page / non-posting URLs and titles. This
+        # prevents pages like /agentforce/, /partners/, /careers/ (without a
+        # specific job id), or RSS feeds from getting scored as jobs.
+        if not _is_likely_job_posting_url(url):
+            rejected_url_pattern += 1
+            continue
+        if _looks_like_landing_title(title):
+            rejected_landing += 1
             continue
 
         parsed = urlparse(url)
@@ -289,6 +377,13 @@ async def discover_via_web_search(company: dict) -> dict:
             "raw_jd": description,
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
+
+    if rejected_url_pattern or rejected_landing:
+        logger.info(
+            f"Web search for {company_name}: rejected "
+            f"{rejected_url_pattern} non-job URLs, "
+            f"{rejected_landing} landing-page titles"
+        )
 
     # Deduplicate
     urls = [r["url"] for r in roles]
