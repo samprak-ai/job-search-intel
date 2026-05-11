@@ -169,6 +169,21 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 - **Daily digest:** sent when ≥1 Strong+ Match is found that day; body groups Perfect Matches first, Strong Matches second, sorted by score descending within each section. Skipped on days with zero Strong+ matches.
 - Resend free tier (100/day, 3,000/month) easily fits historical email volume at this threshold (~85 emails/month forecast).
 
+### Daily cron scope
+The Vercel cron (14:00 UTC daily) calls `/discover/cron` on the Railway backend, which scans the companies named in the `CRON_COMPANIES` env var. Current value (set on Railway and mirrored in local `.env`):
+
+```
+CRON_COMPANIES=Anthropic,OpenAI,xAI,Perplexity,Mistral,Databricks,Salesforce,Glean,Notion,Ramp
+```
+
+These 10 are a deliberately bounded subset of the 26-company whitelist to keep cron runtime under ~15 minutes. The other 16 companies in `companies.json` are still discoverable via the manual `/discover/{company}` endpoint and via role-based discovery — they're just not scanned daily.
+
+If you change this list:
+1. Update Railway env var via dashboard
+2. Update local `.env` to match (so local dev mirrors prod)
+3. Update this section of CLAUDE.md
+4. Names must match the `name` field in `backend/config/companies.json` exactly
+
 ### Target role types (sharpened after structured interview — see `/Users/Sam/Desktop/samresume/_context/sam-profile.md`)
 - GTM Systems & Agents Lead
 - AI Product Strategy & Growth Lead
