@@ -165,8 +165,9 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 26. Imbue (reasoning + agents research) — likely H1B
 
 ### Notifications policy
-- **Per-role emails:** only for Perfect Match (overall_score ≥ 90)
-- **Daily digest:** only sent when ≥1 Perfect Match is found that day; body shows Perfect Matches only (no Strong/Good/Possible/Unlikely tiers)
+- **Per-role emails:** fire for Strong Match (overall_score ≥ 80) and Perfect Match (≥ 90). Email subject + header adapt to the role's actual match_tier.
+- **Daily digest:** sent when ≥1 Strong+ Match is found that day; body groups Perfect Matches first, Strong Matches second, sorted by score descending within each section. Skipped on days with zero Strong+ matches.
+- Resend free tier (100/day, 3,000/month) easily fits historical email volume at this threshold (~85 emails/month forecast).
 
 ### Target role types (sharpened after structured interview — see `/Users/Sam/Desktop/samresume/_context/sam-profile.md`)
 - GTM Systems & Agents Lead

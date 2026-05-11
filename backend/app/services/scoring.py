@@ -10,15 +10,30 @@ logger = logging.getLogger(__name__)
 SCORING_SYSTEM_PROMPT = """You are a job match scoring assistant. You evaluate how well a candidate's profile aligns with a job description.
 
 Score the match across these 5 dimensions (each 0-100):
-- domain_fit: How well the candidate's industry/domain experience matches
-- technical_fit: How well the candidate's technical skills match requirements
-- seniority_fit: How well the candidate's experience level matches the role level
-- role_type_fit: How well the role aligns with the candidate's target role types
+- domain_fit: How well the candidate's AI/GTM/product-market-fit signal experience matches
+- technical_fit: Whether the role needs hands-on AI/product/system building that the candidate can credibly do without requiring deep ML engineering as the primary identity
+- seniority_fit: How well the candidate's experience level matches the role level and proximity to senior leadership
+- role_type_fit: How well the role aligns with the candidate's target role shape, especially PMF assessment plus rapid build scope
 - h1b_likelihood: Likelihood the company sponsors H1B visas (based on company reputation and role type)
 
 Apply a JD realism filter: posted requirements are often inflated. A candidate with 65%+ alignment on the right dimensions (domain, role type, seniority) is a strong match even if not every technical requirement is met.
 
 HARD ROLE-TYPE EXCLUSIONS: The candidate is explicitly NOT pursuing engineering or solutions-architect tracks. If the job title contains "Engineer", "Engineering", "Solutions Architect", or "Solution Architect" (including variants like Software Engineer, Solutions Engineer, Sales Engineer, Customer Engineer, Forward Deployed Engineer, ML Engineer, Research Engineer, Engineering Manager, etc.), set role_type_fit to 10 or below, cap overall_score at 35, and use match_tier "Unlikely Match". Add a gap noting "Role title is on the candidate's exclusion list (engineer / solutions architect track)."
+
+CORE TARGET SHAPE:
+The candidate is a velocity-optimizing AI builder-operator. His strongest target is a senior IC or first-level leader role at a mature AI-native company where the job-to-be-done is assessing AI product-market fit, reading customer/adoption signal, deciding the next hypothesis test, and rapidly prototyping or operationalizing it. He wants strategic influence, creative autonomy, speed of learning, and proximity to senior product/AI/GTM leadership.
+
+PERFECT MATCH REQUIREMENTS:
+Do not award "Perfect Match" unless the role has all of these:
+- Meaningful AI product, applied AI, agent, automation, or product-growth surface area
+- Clear build/prototype/launch/0-to-1 ownership, not only planning, reporting, or coordination
+- Senior altitude or direct influence with product/AI/GTM leadership
+- Reasonable evidence of speed/iteration culture or AI-native operating environment
+
+PMF / PRODUCT-LEARNING SIGNALS (boost domain_fit and role_type_fit):
+- "product-market fit", "PMF", "product strategy", "product growth", "growth", "adoption", "usage", "activation", "retention", "customer outcomes", "experimentation", "hypothesis", "prototype", "incubation", "labs", "new bets", "0-to-1"
+- Role owns deciding what to build next from customer, usage, or GTM signal
+- Role bridges product, GTM, customer signal, and AI system building
 
 0→1 PREFERENCE FILTER (critical for role_type_fit scoring):
 The candidate is a 0→1 builder-operator who owns business outcomes. He explicitly dislikes roles that are primarily about scaling, operating, or maintaining an existing function. Apply this lens when scoring role_type_fit:
@@ -28,7 +43,7 @@ SIGNALS OF 0→1 / BUILDER-OPERATOR ROLES (boost role_type_fit by +10 to +20, ca
 - JD language: "build from scratch", "first hire in", "0-to-1", "define the playbook", "shape the roadmap", "new function", "greenfield", "prototype", "launch new", "incubate"
 - Role scope includes talking to stakeholders, shipping MVPs, iterating based on feedback, then handing off to infra/eng teams
 
-SIGNALS OF SCALING / OPERATIONS ROLES (downweight role_type_fit by -15 to -25):
+SIGNALS OF SCALING / OPERATIONS ROLES (downweight role_type_fit by -20 to -35):
 - Role title includes: Planning Operations, BDR Operations, Sales Operations (without build scope), Activations (scaling existing), Revenue Operations (pure ops), Territory Design, Quota Operations, Enterprise Business Partner, Customer Success Operations (pure ops), Onboarding Lead, Enablement Manager
 - JD language: "scale the existing", "maintain the operating model", "improve the current", "optimize the existing motion", "operate at larger scale", "manage the cadence", "run the process"
 - Role scope is primarily about operating, reporting on, or scaling a function that already exists and has PMF
@@ -36,6 +51,8 @@ SIGNALS OF SCALING / OPERATIONS ROLES (downweight role_type_fit by -15 to -25):
 IMPORTANT: Apply this filter ON TOP of other dimensions. A scaling-ops role at an AI-native company may still have strong domain_fit and seniority_fit, but role_type_fit should reflect the mismatch with the candidate's 0→1 preference. In the rationale, explicitly note when a role is scaling-shaped (and therefore deprioritized) or builder-shaped (and therefore boosted).
 
 Cap overall_score for pure-scaling roles at 82 (Strong Match ceiling), even if other dimensions are perfect — these should not qualify as Perfect Match.
+Cap overall_score at 78 when the role is primarily relationship-only partnerships, account management, customer success, enablement, or executive reporting without explicit build scope.
+Cap overall_score at 84 for big-company AI roles unless the JD shows a specific fast-moving team such as DeepMind, Labs, Research/Product, Incubation, Growth, Applied AI, or an explicitly prototype-driven group.
 
 Assign a match_tier based on overall score:
 - "Perfect Match" — 90-100 overall, exceptional alignment across all dimensions
@@ -61,6 +78,12 @@ Respond with ONLY valid JSON in this exact format, no other text:
 }"""
 
 
+def _format_list(values: list[str] | None) -> str:
+    if not values:
+        return "- Not specified"
+    return "\n".join(f"- {value}" for value in values)
+
+
 def build_scoring_message(role: dict, profile: dict) -> str:
     """Build the user message with role and profile context."""
     return f"""## Job Posting
@@ -76,6 +99,7 @@ def build_scoring_message(role: dict, profile: dict) -> str:
 **Name:** {profile['name']}
 **Location:** {profile['location']}
 **Target Roles:** {', '.join(profile['target_role_types'])}
+**Positioning:** {profile.get('positioning', '')}
 **Skills:** {', '.join(profile['skills'])}
 **Education:** {profile['education']}
 
@@ -84,6 +108,18 @@ def build_scoring_message(role: dict, profile: dict) -> str:
 
 **Key Differentiators:**
 {chr(10).join('- ' + d for d in profile['differentiators'])}
+
+**Work Preferences:**
+{_format_list(profile.get('work_preferences'))}
+
+**Positive Role-Fit Signals:**
+{_format_list(profile.get('role_fit_positive_signals'))}
+
+**Negative Role-Fit Signals:**
+{_format_list(profile.get('role_fit_negative_signals'))}
+
+**Constraints:**
+{json.dumps(profile.get('constraints', {}), indent=2)}
 
 Please score this job match."""
 
@@ -163,11 +199,11 @@ async def score_role(role_id: str, force: bool = False) -> dict:
         f"{score_data['match_tier']} ({score_data['overall_score']})"
     )
 
-    # Send email notification only for Perfect Match (90+) roles
-    if score_data.get("overall_score", 0) >= 90:
+    # Send email notification for Strong Match (80+) or Perfect Match (90+) roles
+    if score_data.get("overall_score", 0) >= 80:
         try:
-            from app.services.notifications import send_perfect_match_email
-            await send_perfect_match_email(role, score_data)
+            from app.services.notifications import send_match_notification_email
+            await send_match_notification_email(role, score_data)
         except Exception as e:
             logger.error(f"Failed to send match notification: {e}")
 

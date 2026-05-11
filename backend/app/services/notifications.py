@@ -8,19 +8,27 @@ from app.config import get_settings, get_supabase_client
 logger = logging.getLogger(__name__)
 
 
-async def send_perfect_match_email(role: dict, score_data: dict) -> bool:
-    """Send email notification when a Perfect Match (score >= 90) is found.
+async def send_match_notification_email(role: dict, score_data: dict) -> bool:
+    """Send email notification when a Strong (80+) or Perfect (90+) match is found.
 
     Uses Resend API to email the notification address with role details.
+    Subject and header adapt to the role's actual match_tier so a Strong
+    Match doesn't masquerade as a Perfect Match.
+
     Returns True on success, False on failure (non-blocking).
-    Skips sending if role is stale (is_live=False).
+    Skips sending if role is stale (is_live=False) or score below 80.
     """
-    # Guard: don't notify on stale roles, even if they have a Perfect score
+    overall_score = score_data.get("overall_score", 0)
+    match_tier = score_data.get("match_tier", "Strong Match")
+
+    # Guard: don't notify on stale roles or sub-Strong scores
     if role.get("is_live") is False:
         logger.info(
-            f"Skipping Perfect Match email — role is stale: "
+            f"Skipping match email — role is stale: "
             f"{role.get('title')} at {role.get('company')}"
         )
+        return False
+    if overall_score < 80:
         return False
 
     settings = get_settings()
@@ -36,7 +44,6 @@ async def send_perfect_match_email(role: dict, score_data: dict) -> bool:
     company = role.get("company", "Unknown")
     title = role.get("title", "Unknown Role")
     url = role.get("url", "")
-    overall_score = score_data.get("overall_score", "N/A")
     rationale = score_data.get("rationale", "No rationale provided")
     gaps = score_data.get("gaps", [])
     cover_angles = score_data.get("cover_letter_angles", [])
@@ -44,10 +51,13 @@ async def send_perfect_match_email(role: dict, score_data: dict) -> bool:
     gaps_html = "".join(f"<li>{g}</li>" for g in gaps) if gaps else "<li>None identified</li>"
     angles_html = "".join(f"<li>{a}</li>" for a in cover_angles) if cover_angles else "<li>None</li>"
 
+    # Tier-aware header color (matches TIER_COLORS used elsewhere)
+    header_bg = "#065f46" if overall_score >= 90 else "#166534"  # Perfect = emerald, Strong = green
+
     html_body = f"""
     <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: #065f46; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 20px;">Perfect Match Found!</h1>
+      <div style="background: {header_bg}; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+        <h1 style="margin: 0; font-size: 20px;">{match_tier} Found</h1>
         <p style="margin: 5px 0 0; opacity: 0.9;">{company}</p>
       </div>
 
@@ -81,17 +91,21 @@ async def send_perfect_match_email(role: dict, score_data: dict) -> bool:
         params: resend.Emails.SendParams = {
             "from": "Job Search Intel <onboarding@resend.dev>",
             "to": [settings.notification_email],
-            "subject": f"Perfect Match: {title} at {company} ({overall_score}/100)",
+            "subject": f"{match_tier}: {title} at {company} ({overall_score}/100)",
             "html": html_body,
         }
 
         email = resend.Emails.send(params)
-        logger.info(f"Perfect match email sent for {title} at {company}: {email}")
+        logger.info(f"{match_tier} email sent for {title} at {company}: {email}")
         return True
 
     except Exception as e:
-        logger.error(f"Failed to send perfect match email: {e}")
+        logger.error(f"Failed to send match notification email: {e}")
         return False
+
+
+# Back-compat alias — older imports of send_perfect_match_email still work.
+send_perfect_match_email = send_match_notification_email
 
 
 # ── Tier display helpers ──────────────────────────────────────────────
@@ -188,42 +202,66 @@ async def send_daily_digest_email(
         else:
             grouped["Unscored"].append(role)
 
-    # Only notify on Perfect Matches — skip digest if none found today.
-    if not grouped["Perfect Match"]:
+    # Only notify when at least one Strong (80+) or Perfect (90+) match is found.
+    qualifying_roles = grouped["Perfect Match"] + grouped["Strong Match"]
+    if not qualifying_roles:
         logger.info(
-            f"Daily digest skipped — no Perfect Matches today "
+            f"Daily digest skipped — no Strong+ Matches today "
             f"(scan summary: {total_new} new, {auto_scored} scored)"
         )
         return False
 
-    # Perfect-only digest — only Perfect Match roles appear in the body.
-    perfect_roles = grouped["Perfect Match"]
-    perfect_count = len(perfect_roles)
+    perfect_count = len(grouped["Perfect Match"])
+    strong_count = len(grouped["Strong Match"])
 
-    # ── Perfect-Match cards ───────────────────────────────────────────
-    cards = []
-    for role in perfect_roles:
-        s = role["score"]
-        tier = s["match_tier"]
-        rationale = s.get("rationale", "")
-        _, bg, _ = TIER_COLORS.get(tier, ("#374151", "#f9fafb", "#6b7280"))
-        cards.append(f"""
-        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;background:{bg};">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <strong style="font-size:15px;">{role['title']}</strong>
-              <span style="color:#6b7280;font-size:13px;margin-left:8px;">{role['company']}</span>
-            </div>
-            <span style="font-size:20px;font-weight:700;color:#4f46e5;">{s['overall_score']}</span>
-          </div>
-          <p style="margin:8px 0 0;font-size:13px;color:#4b5563;">{rationale}</p>
-          <a href="{role['url']}" style="display:inline-block;margin-top:10px;color:#4f46e5;font-size:13px;text-decoration:none;font-weight:500;">View Posting &rarr;</a>
+    # Sort within each tier by overall_score descending so the strongest
+    # candidates surface first within each section.
+    perfect_roles = sorted(
+        grouped["Perfect Match"],
+        key=lambda r: r["score"].get("overall_score", 0),
+        reverse=True,
+    )
+    strong_roles = sorted(
+        grouped["Strong Match"],
+        key=lambda r: r["score"].get("overall_score", 0),
+        reverse=True,
+    )
+
+    def _render_cards(roles_subset):
+        out = []
+        for role in roles_subset:
+            s = role["score"]
+            tier = s["match_tier"]
+            rationale = s.get("rationale", "")
+            _, bg, _ = TIER_COLORS.get(tier, ("#374151", "#f9fafb", "#6b7280"))
+            out.append(f"""
+            <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;background:{bg};">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <strong style="font-size:15px;">{role['title']}</strong>
+                  <span style="color:#6b7280;font-size:13px;margin-left:8px;">{role['company']}</span>
+                </div>
+                <span style="font-size:20px;font-weight:700;color:#4f46e5;">{s['overall_score']}</span>
+              </div>
+              <p style="margin:8px 0 0;font-size:13px;color:#4b5563;">{rationale}</p>
+              <a href="{role['url']}" style="display:inline-block;margin-top:10px;color:#4f46e5;font-size:13px;text-decoration:none;font-weight:500;">View Posting &rarr;</a>
+            </div>""")
+        return "".join(out)
+
+    sections = []
+    if perfect_roles:
+        sections.append(f"""
+        <div style="margin-bottom:24px;">
+          <h2 style="font-size:16px;color:#111827;margin:0 0 12px;">Perfect Matches Today ({perfect_count})</h2>
+          {_render_cards(perfect_roles)}
         </div>""")
-    top_html = f"""
-    <div style="margin-bottom:24px;">
-      <h2 style="font-size:16px;color:#111827;margin:0 0 12px;">Perfect Matches Today</h2>
-      {"".join(cards)}
-    </div>"""
+    if strong_roles:
+        sections.append(f"""
+        <div style="margin-bottom:24px;">
+          <h2 style="font-size:16px;color:#111827;margin:0 0 12px;">Strong Matches Today ({strong_count})</h2>
+          {_render_cards(strong_roles)}
+        </div>""")
+    top_html = "".join(sections)
     other_html = ""
     unlikely_html = ""
 
@@ -249,7 +287,7 @@ async def send_daily_digest_email(
 
       <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
         <p style="margin:0 0 4px;font-size:15px;font-weight:600;color:#111827;">
-          {perfect_count} Perfect Match{'es' if perfect_count != 1 else ''} today
+          {perfect_count} Perfect + {strong_count} Strong today
         </p>
         <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">
           {total_new} new role{'s' if total_new != 1 else ''} scanned across {companies_searched} {'companies' if companies_searched != 1 else 'company'}
@@ -266,17 +304,26 @@ async def send_daily_digest_email(
 
     # ── Send ──────────────────────────────────────────────────────────
     try:
+        subject_parts = []
+        if perfect_count:
+            subject_parts.append(f"{perfect_count} Perfect")
+        if strong_count:
+            subject_parts.append(f"{strong_count} Strong")
+        subject_summary = " + ".join(subject_parts) if subject_parts else "0"
+
         params: resend.Emails.SendParams = {
             "from": "Job Search Intel <onboarding@resend.dev>",
             "to": [settings.notification_email],
-            "subject": f"Perfect Match Digest: {perfect_count} today — {formatted_date}",
+            "subject": f"Match Digest: {subject_summary} today — {formatted_date}",
             "html": html_body,
         }
 
         email = resend.Emails.send(params)
-        logger.info(f"Perfect-match digest sent ({perfect_count} perfects): {email}")
+        logger.info(
+            f"Match digest sent (perfect={perfect_count}, strong={strong_count}): {email}"
+        )
         return True
 
     except Exception as e:
-        logger.error(f"Failed to send perfect-match digest: {e}")
+        logger.error(f"Failed to send match digest: {e}")
         return False
