@@ -362,11 +362,18 @@ def _write_metadata(output_dir: Path, role: dict, score_data: dict | None, tailo
 # ---------------------------------------------------------------------------
 
 
-async def generate_anthropic_package(role_id: str) -> dict:
+async def generate_anthropic_package(role_id: str, force: bool = False) -> dict:
     """Generate a full application package (resume + cover letter + Why Anthropic + metadata)
     for a Perfect Match Anthropic role.
 
     Output folder: /Users/Sam/Desktop/samresume/anthropic/perfect_matches/{slug}/
+
+    Args:
+        role_id: The role to tailor.
+        force: When True, bypasses the Perfect-Match gate. Useful for roles
+               Sam wants to apply to that scored below 90 (e.g., partnership
+               or solutions roles whose 0→1 build scope isn't fully captured
+               by the scoring rubric).
 
     Returns a dict describing the output files and key tailoring info.
     """
@@ -392,9 +399,10 @@ async def generate_anthropic_package(role_id: str) -> dict:
     score_result = supabase.table("role_scores").select("*").eq("role_id", role_id).execute()
     score_data = score_result.data[0] if score_result.data else None
 
-    # Gate: only tailor for Perfect Match roles
-    if not score_data or score_data.get("overall_score", 0) < 90:
-        return {"status": "skipped", "reason": "not a Perfect Match (score < 90)"}
+    # Gate: only tailor for Perfect Match roles (unless force=True)
+    if not force:
+        if not score_data or score_data.get("overall_score", 0) < 90:
+            return {"status": "skipped", "reason": "not a Perfect Match (score < 90); use force=True to override"}
 
     # Railway-safe guard: template files live on Sam's local machine.
     # If they're not accessible (e.g., this code is running on Railway), skip
