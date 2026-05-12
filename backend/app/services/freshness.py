@@ -179,8 +179,28 @@ async def _verify_ashby_page(url: str) -> bool | None:
     return None
 
 
+_CLOSED_BODY_SIGNALS = [
+    "no longer accepting applications",
+    "this job has been closed",
+    "position has been filled",
+    "this requisition is closed",
+    "we are no longer accepting",
+    "job not found",
+    "this position is no longer available",
+    "this position is no longer open",
+    "job no longer available",
+    "page not found",
+]
+
+
 async def _check_http(url: str) -> bool | None:
-    """Generic HTTP check — HEAD request with redirect following."""
+    """Generic HTTP check with content-signal awareness.
+
+    Status-based: 404/410/403 → stale. 2xx → continue to content check.
+    Content-based: GET the page and scan body for closed-job phrases. Catches
+    proprietary careers sites (google careers, salesforce careers, etc.) that
+    render a 200 OK shell even when the underlying listing has been pulled.
+    """
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -190,25 +210,27 @@ async def _check_http(url: str) -> bool | None:
 
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            resp = await client.head(url, headers=headers, timeout=CHECK_TIMEOUT)
-            if resp.status_code in DEAD_STATUSES:
-                return False
-            if resp.status_code < 400:
-                return True
-            # Some servers don't support HEAD, try GET
+            # Always GET (not HEAD) so we can inspect body content.
+            # HEAD doesn't return a body, so content-signal check is impossible.
             resp = await client.get(url, headers=headers, timeout=CHECK_TIMEOUT)
             if resp.status_code in DEAD_STATUSES:
                 return False
-            if resp.status_code < 400:
-                return True
+            if resp.status_code >= 400:
+                return None  # Server error etc — don't conclude
+            # Content-signal check on the body
+            body = (resp.text or "").lower()
+            for signal in _CLOSED_BODY_SIGNALS:
+                if signal in body:
+                    logger.info(f"Stale detected via content signal '{signal}' on {url}")
+                    return False
+            # Page loaded clean with no closed signals
+            return True
     except (httpx.TimeoutException, httpx.ConnectError):
         logger.debug(f"Timeout/connection error checking {url}")
         return None  # Transient — don't flag
     except Exception as e:
         logger.debug(f"HTTP check failed for {url}: {e}")
         return None
-
-    return None
 
 
 async def check_role_freshness(role: dict) -> dict | None:
@@ -308,3 +330,52 @@ async def check_all_freshness() -> dict:
         "skipped": skipped,
         "errors": errors,
     }
+
+
+async def deep_scan_freshness(delete_stale: bool = True) -> dict:
+    """Weekly deep-scan: more aggressive staleness detection.
+
+    Differences vs. check_all_freshness():
+    - Force-rechecks every role (clears the listing cache so bulk ATS calls
+      hit the API fresh, not just first time of run).
+    - After the standard check, also explicitly deletes is_live=False rows
+      and their scores (if delete_stale=True) so the dashboard is purged.
+    - Returns a richer summary including per-company stale counts.
+    """
+    supabase = get_supabase_client()
+
+    # Force-fresh ATS listings — don't trust per-process cache from prior runs.
+    _LISTING_CACHE.clear()
+
+    summary = await check_all_freshness()
+
+    # Pull all roles now flagged stale (this run + any prior unflagged ones)
+    stale_q = supabase.table("roles").select(
+        "id, company, title, url"
+    ).eq("is_live", False).execute()
+    stale_rows = stale_q.data or []
+
+    from collections import Counter
+    company_breakdown = dict(Counter(r["company"] for r in stale_rows))
+
+    deleted_roles = 0
+    deleted_scores = 0
+    if delete_stale and stale_rows:
+        ids = [r["id"] for r in stale_rows]
+        chunk = 100
+        for i in range(0, len(ids), chunk):
+            batch = ids[i:i + chunk]
+            score_del = supabase.table("role_scores").delete().in_("role_id", batch).execute()
+            deleted_scores += len(score_del.data) if score_del.data else 0
+            role_del = supabase.table("roles").delete().in_("id", batch).execute()
+            deleted_roles += len(role_del.data) if role_del.data else 0
+        logger.info(
+            f"Deep scan: deleted {deleted_roles} stale roles and "
+            f"{deleted_scores} role_scores"
+        )
+
+    summary["deep_scan"] = True
+    summary["deleted_roles"] = deleted_roles
+    summary["deleted_scores"] = deleted_scores
+    summary["stale_by_company"] = company_breakdown
+    return summary

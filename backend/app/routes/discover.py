@@ -184,14 +184,17 @@ async def discover_cron(
 
         total_new = sum(r["new_roles"] for r in results)
 
-        # Run role-based discovery (search by job title across open market)
+        # Run role-based discovery only when explicitly enabled. This is the
+        # expensive path because it searches broad title keywords every day.
         role_discovery_new = 0
-        try:
-            role_result = await discover_by_role()
-            role_discovery_new = role_result.get("new_roles", 0)
-            total_new += role_discovery_new
-        except Exception as e:
-            logger.warning(f"Role-based discovery failed: {e}")
+        role_result = {"status": "skipped", "reason": "CRON_ENABLE_ROLE_DISCOVERY=false"}
+        if settings.cron_enable_role_discovery:
+            try:
+                role_result = await discover_by_role()
+                role_discovery_new = role_result.get("new_roles", 0)
+                total_new += role_discovery_new
+            except Exception as e:
+                logger.warning(f"Role-based discovery failed: {e}")
 
         # Auto-score any unscored roles (not just new ones — catches retries)
         scored_count, score_failed = await _auto_score_unscored()
@@ -226,6 +229,7 @@ async def discover_cron(
             "company_names": [c["name"] for c in targets],
             "total_new_roles": total_new,
             "role_discovery_new": role_discovery_new,
+            "role_discovery": role_result,
             "auto_scored": scored_count,
             "score_failed": score_failed,
             "stale_found": stale_found,
@@ -251,6 +255,38 @@ async def discover_roles_by_role():
         return result
     except Exception as e:
         logger.error(f"Role-based discovery failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/deep-scan")
+async def deep_scan(
+    authorization: Annotated[str | None, Header()] = None,
+):
+    """Weekly deep freshness scan with mandatory purge.
+
+    Differs from /cron's daily freshness:
+    - Force-rechecks every role (clears ATS listing cache)
+    - Deletes is_live=False roles AND their scores after the scan
+    - Returns per-company stale breakdown
+
+    Requires Bearer token matching CRON_SECRET. Designed to be called
+    by Vercel cron weekly (Sunday 14:00 UTC) but can be triggered
+    manually for ad-hoc deep cleanups.
+    """
+    settings = get_settings()
+    if not settings.cron_secret:
+        raise HTTPException(status_code=500, detail="CRON_SECRET not configured")
+
+    expected = f"Bearer {settings.cron_secret}"
+    if not authorization or authorization != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        from app.services.freshness import deep_scan_freshness
+        summary = await deep_scan_freshness(delete_stale=True)
+        return {"status": "completed", "trigger": "deep-scan-weekly", **summary}
+    except Exception as e:
+        logger.error(f"Deep scan failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
