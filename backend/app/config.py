@@ -15,6 +15,19 @@ def _env_get(key: str, default: str = "") -> str:
     return _dotenv_cache().get(key) or os.environ.get(key, default)
 
 
+def _env_bool(key: str, default: bool = False) -> bool:
+    value = _env_get(key, str(default)).strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def _env_int(key: str, default: int) -> int:
+    value = _env_get(key, str(default)).strip()
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
 @lru_cache
 def _dotenv_cache() -> dict:
     env_path = BACKEND_DIR / ".env"
@@ -33,6 +46,9 @@ def get_settings():
         anthropic_api_key: str = _env_get("ANTHROPIC_API_KEY")
         serper_api_key: str = _env_get("SERPER_API_KEY")
         brave_api_key: str = _env_get("BRAVE_API_KEY")
+        search_provider: str = _env_get("SEARCH_PROVIDER", "brave")
+        serper_daily_limit: int = _env_int("SERPER_DAILY_LIMIT", 25)
+        cron_enable_role_discovery: bool = _env_bool("CRON_ENABLE_ROLE_DISCOVERY", False)
         resend_api_key: str = _env_get("RESEND_API_KEY")
         notification_email: str = _env_get("NOTIFICATION_EMAIL")
         cron_secret: str = _env_get("CRON_SECRET")
