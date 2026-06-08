@@ -142,14 +142,39 @@ def _deterministic_pre_checks(
     }
 
     # Tone: banned characters
-    for artifact, text in artifacts.items():
+    # Two exemptions from the banned-char check:
+    #  1. Year-range date separators in the resume (e.g. "2022–Present",
+    #     "2019–2022") — Word auto-formats these; they aren't author choices.
+    #  2. The markdown header line in why_anthropic (e.g. "# Why Anthropic —
+    #     Role Title") — that's a template label, not body content we write.
+    _year_range_re = re.compile(r"\d{4}[–—](?:\d{4}|Present|present)")
+
+    for artifact, raw_text in artifacts.items():
+        # For why_anthropic, strip the header block before char checks
+        check_text = raw_text
+        if artifact == "why_anthropic":
+            for sep in ["\n\n", "\n---\n", "---\n"]:
+                if sep in check_text:
+                    check_text = check_text.split(sep, 1)[1]
+                    break
+            else:
+                check_text = check_text.split("\n", 1)[-1]
+
         for ch in BANNED_CHARS:
-            if ch in text:
-                # Find a representative quote around the violation
-                idx = text.find(ch)
+            if ch not in check_text:
+                continue
+            pos = 0
+            while True:
+                idx = check_text.find(ch, pos)
+                if idx == -1:
+                    break
+                context = check_text[max(0, idx - 5): idx + 10]
+                if _year_range_re.search(context):
+                    pos = idx + 1
+                    continue  # date-range separator, not a tone violation
                 start = max(0, idx - 60)
-                end = min(len(text), idx + 60)
-                quote = text[start:end].replace("\n", " ").strip()
+                end = min(len(check_text), idx + 60)
+                quote = check_text[start:end].replace("\n", " ").strip()
                 findings["tone_violations"].append(
                     {
                         "artifact": artifact,
@@ -157,6 +182,7 @@ def _deterministic_pre_checks(
                         "quote": quote,
                     }
                 )
+                pos = idx + 1
 
     # Tone: banned phrases
     for artifact, text in artifacts.items():

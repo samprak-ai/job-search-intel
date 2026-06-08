@@ -7,23 +7,52 @@
     "linkedin": "www.linkedin.com/in/prakashsam",
     "github": "github.com/samprak-ai"
   },
-  "headline": "AI-native GTM Builder | Agentic Systems Builder | 6.5+ years at AWS Startups",
+  "headline": "Velocity-Optimizing AI Builder-Operator | AI Product PMF Assessment | Agentic Systems Builder",
   "target_role_types": [
-    "GTM Systems & Agents Lead",
+    "Head of AI Product (hands-on, builder-first)",
     "AI Product Strategy & Growth Lead",
-    "Applied AI Lead (customer-outcome, non-engineering)",
-    "Chief of Staff to CPO / Head of AI / CRO (with build scope)",
-    "Senior / Lead AI Product Manager",
-    "Head of AI Product (hands-on, mid-stage companies)"
+    "Applied AI Lead (customer-outcome flavor, not solutions engineering)",
+    "Product Labs / Incubation Lead at a mature AI company",
+    "Chief of Staff to CPO / Head of AI (with explicit build scope)",
+    "GTM Systems & Agents Lead (xAI-style builder-operator)",
+    "Senior / Lead AI Product Manager"
   ],
+  "positioning": "Velocity-optimizing builder-operator targeting senior IC or first-level leader roles at mature AI-native companies. Best fit is work where the job-to-be-done is assessing AI product-market fit, reading customer/adoption signal, deciding the next hypothesis test, and rapidly prototyping or operationalizing it.",
+  "work_preferences": [
+    "Strategic influence and proximity to senior product, AI, or GTM leadership",
+    "Creative autonomy to build prototypes and use working software as the strategy artifact",
+    "Fast learning loops: brainstorm early in the week, ship an improved prototype by the end of the week",
+    "Cultures where non-engineers are expected to build with AI, not only request work from technical teams",
+    "Performance-based scope expansion or promotion within roughly 18-24 months"
+  ],
+  "role_fit_positive_signals": [
+    "AI product-market fit assessment, product growth, usage/adoption signal analysis, customer-outcome sensemaking",
+    "Prototype-driven strategy, building internal AI tools, agents, automation, or new product workflows",
+    "Labs, incubation, new bets, 0-to-1 launches, greenfield systems, new function creation",
+    "Chief of Staff or strategic projects roles with explicit build scope, not calendar/process ownership",
+    "Applied AI roles focused on customer outcomes and product learning, not solutions engineering"
+  ],
+  "role_fit_negative_signals": [
+    "Engineering, solutions architect, sales engineer, customer engineer, forward deployed engineer, ML engineer, or research engineer titles",
+    "Pure planning operations, BDR operations, territory/quota operations, reporting cadence ownership, or dashboard delivery",
+    "Relationship-only partnerships, account management, customer success operations, onboarding, or enablement roles",
+    "Roles where the main output is executive decks, stakeholder consensus, or scaling an already-settled operating model",
+    "Slow enterprise ceremony where every prototype requires heavy approval"
+  ],
+  "constraints": {
+    "visa": "H1B sponsorship required",
+    "location": "Open to SF or NYC; Seattle/Renton base",
+    "compensation": "Target total compensation floor is approximately $300K; verify cash vs. equity-heavy private-company offers",
+    "career_horizon": "Optimize for 18-24 months of maximum learning and strategic outcome density"
+  },
   "differentiators": [
     "Built production AI systems end-to-end (GenAI-Intel, Forge, Job Search Intel, AWS internal agents)",
-    "11+ years GTM + Sales Ops, 6.5+ years at AWS Startups",
+    "12+ years GTM + Sales Ops, 6.5+ years at AWS Startups",
     "Rare fluency across business strategy, AI infrastructure, and hands-on product building",
     "Live deployed products as proof, not just claims"
   ],
-  "experience_summary": "11+ years driving revenue performance at scale, including 6.5+ years at AWS Startups, with a rare combination of deep sales operations expertise and hands-on AI systems building. Built multiple production AI systems including GenAI-Intel, Forge, Job Search Intel, and internal AWS agentic tooling.",
-  "summary": "AI-native GTM Operations leader with 11+ years driving revenue performance at scale, including 6.5+ years at AWS Startups, with a rare combination of deep sales operations expertise and hands-on AI systems building. Architected agentic intelligence systems that redefined how GTM organizations consume competitive, portfolio, and win/loss data, moving executive workflows from manual effort to autonomous, insight-driven cadences. Known for building performance measurement infrastructure that gets adopted at the leadership level, from frameworks that shaped organizational goal setting to reports delivered directly to AWS CEO and Board offices.",
+  "experience_summary": "12+ years driving revenue performance and executive decision systems at scale, including 6.5+ years at AWS Startups, with a rare combination of GTM strategy, AI product-market-fit sensemaking, and hands-on AI systems building. Built multiple production AI systems including GenAI-Intel, Forge, Job Search Intel, and internal AWS agentic tooling; strongest when using prototypes and data products to help senior leaders decide what to build next.",
+  "summary": "Velocity-optimizing AI builder-operator with 12+ years driving revenue performance and executive decision systems at scale, including 6.5+ years at AWS Startups. Strongest at the intersection of AI product strategy, GTM signal, and rapid prototyping: turning ambiguous customer/adoption signals into working systems that help leaders assess product-market fit and choose the next build. Architected agentic intelligence systems that moved executive workflows from manual analysis and reporting into autonomous, insight-driven cadences.",
   "skills": [
     "FastAPI",
     "Next.js",
@@ -47,12 +76,12 @@
     },
     {
       "title": "Forge",
-      "subtitle": "Communication OS",
+      "subtitle": "Communication & Interview Practice OS",
       "url": "forge-pi-livid.vercel.app",
       "github": "github.com/samprak-ai/forge",
-      "description": "Built to systematize professional communication practice the way athletes train - structured daily reps with AI scoring, not ad-hoc preparation before interviews. A live practice platform with two core loops: (1) timed writing prompts scored by Claude Sonnet across 4 dimensions (clarity, structure, concision, persuasion), (2) speaking practice via OpenAI Whisper transcription + AI delivery analysis across 5 dimensions (delivery, vocabulary, confidence, articulation, alignment). Includes an interview prep mode with company-specific and role-specific prompts, a curated prompt library, and a progress analytics view with SVG trend charts, per-dimension tracking, and company/role filtering. Tracks practice streaks, rep history, and provides on-demand coaching notes. Full auth flow with RLS-protected Supabase database, 6-table schema, and a clean indigo design system. Built end-to-end using Claude Code.",
-      "stack": "Next.js 16, TypeScript, Tailwind CSS v4, Supabase, Claude API (Anthropic), OpenAI Whisper, Vercel",
-      "outcome": "Live at forge-pi-livid.vercel.app. Daily practice system with AI-scored writing and speaking reps, interview prep with company-targeted prompts, progress analytics with trend visualization, and streak tracking."
+      "description": "Built to systematize professional communication and interview preparation the way athletes train - structured reps, AI scoring, and progress tracking instead of ad-hoc practice. A live Next.js practice OS with two daily loops: (1) writing prompts scored by Claude across clarity, structure, concision, and persuasion, and (2) speaking practice with browser audio recording, OpenAI Whisper transcription, and Claude-based delivery feedback. Includes an interview-prep mode that imports company/role-specific prompt packs from Job Search Intel through a secured server-to-server API, organizes them in a prompt library, and runs full mock interview rounds with multi-question recording, transcript capture, holistic readiness verdicts, per-question scoring, strengths, and improvement areas. Tracks streaks, recent reps, skill radar, score history, coaching notes, and progress analytics by company and role. Built end-to-end using Claude Code.",
+      "stack": "Next.js 16, React 19, TypeScript, Tailwind CSS v4, Supabase Auth/Postgres/RLS, Claude API (Anthropic), OpenAI Whisper, Vercel",
+      "outcome": "Live at forge-pi-livid.vercel.app. Integrated with Job Search Intel as the Phase 2 interview-practice handoff target: scored roles can generate Forge-ready company/role prompt packs, which Forge imports into mock interviews and progress analytics for targeted preparation."
     },
     {
       "title": "Job Search Intel",
@@ -68,8 +97,8 @@
     {
       "title": "AI Executive Reporting Toolkit - Startup Pulse",
       "description": "Architected a multi-agent AI system powering two CEO-facing reporting cadences - bi-weekly (top newly funded startups) and quarterly (top funded across an 18-month window). Each report delivers a 360-degree view across internal metrics, CRM engagement, external funding signals, customer snapshots, and cloud/AI provider inference, assembled autonomously across a coordinated agent pipeline.",
-      "stack": "Amazon Bedrock Agents (PCP, Metadata, and Industry agents), Salesforce MCP integration, Amazon Q Spaces & Flows, internal dashboards",
-      "outcome": "Reduced end-to-end report production from 6 weeks to under 2 weeks, a >65% reduction in manual effort, recovering 480 hours of work across 3 individuals per cycle and enabling consistent, scalable executive delivery without analyst bottlenecks."
+      "stack": "Amazon Kiro (Opus 4.7 backend), Amazon Quick (frontend), PizzaBot, Salesforce MCP integration",
+      "outcome": "Reduced end-to-end report production from 6 weeks to under a week — a 70% reduction in report generation time — recovering 600 hours per cycle across three individuals and enabling consistent, scalable executive delivery without analyst bottlenecks. Cited by Andy Jassy in Amazon's Q1 2026 earnings call."
     },
     {
       "title": "Portfolio Intelligence Engine",
