@@ -199,34 +199,40 @@ async def score_role(role_id: str, force: bool = False) -> dict:
         f"{score_data['match_tier']} ({score_data['overall_score']})"
     )
 
-    # Send email notification for Strong Match (80+) or Perfect Match (90+) roles
+    # Strong+ (80+) handling. For Anthropic, run the full agentic application
+    # package pipeline (gate → align → spec → draft → critic → heal → email).
+    # The pipeline sends its OWN email with attachments, so we suppress the
+    # duplicate Strong Match notification for Anthropic only.
     if score_data.get("overall_score", 0) >= 80:
-        try:
-            from app.services.notifications import send_match_notification_email
-            await send_match_notification_email(role, score_data)
-        except Exception as e:
-            logger.error(f"Failed to send match notification: {e}")
+        company_lower = (role.get("company") or "").lower().replace(" ", "")
+        anthropic_handled = False
 
-        # Auto-generate a tailored application package for Anthropic Perfect Matches.
-        # Non-blocking: scoring still succeeds even if tailoring fails.
-        # Currently wired for Anthropic only; extend with per-company templates as needed.
-        try:
-            company_lower = (role.get("company") or "").lower().replace(" ", "")
-            if "anthropic" in company_lower:
-                from app.services.application_tailor import generate_anthropic_package
-                pkg_result = await generate_anthropic_package(role_id)
-                if pkg_result.get("status") == "generated":
-                    logger.info(
-                        f"Auto-generated application package for {role['title']}: "
-                        f"{pkg_result['output_dir']}"
-                    )
-                else:
-                    logger.info(
-                        f"Skipped package generation for {role['title']}: "
-                        f"{pkg_result.get('reason')}"
-                    )
-        except Exception as e:
-            logger.error(f"Failed to auto-generate application package: {e}")
+        if "anthropic" in company_lower:
+            try:
+                from app.services.agents.pipeline import run_pipeline
+                pipeline_result = await run_pipeline(role_id)
+                pipeline_status = pipeline_result.get("status")
+                logger.info(
+                    f"Application pipeline for {role['title']}: {pipeline_status} "
+                    f"(send_mode={pipeline_result.get('send_mode')}, "
+                    f"findings={pipeline_result.get('findings_count')}, "
+                    f"healed={pipeline_result.get('self_healed')})"
+                )
+                # Suppress duplicate notification only if the pipeline actually
+                # sent the package email (not for skipped/failed/short-circuit).
+                if pipeline_status in {"auto_sent", "awaiting_review"}:
+                    anthropic_handled = True
+            except Exception as e:
+                logger.error(f"Application pipeline failed for {role_id}: {e}")
+                # Fall through to standard notification email as a backstop.
+
+        # Standard Strong Match notification (skipped if pipeline already emailed).
+        if not anthropic_handled:
+            try:
+                from app.services.notifications import send_match_notification_email
+                await send_match_notification_email(role, score_data)
+            except Exception as e:
+                logger.error(f"Failed to send match notification: {e}")
 
     return {
         "role_id": role_id,

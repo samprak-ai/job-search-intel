@@ -89,7 +89,7 @@ LOCKED-IN FACTS (use these exact numbers, names, and phrasings. DO NOT paraphras
 
 ## Sam's Title / Experience
 - NO formal Product Manager title. Positions as "founder portfolio, measured by what runs in production."
-- EXACTLY "11+ years total experience" AND "6.5+ years at AWS Startups". NEVER "11+ years at AWS Startups" (that conflates the two).
+- EXACTLY "12+ years total experience" AND "6.5+ years at AWS Startups". NEVER "12+ years at AWS Startups" (that conflates the two).
 - Current role: Sr. GTM Sales Operations Manager, Startups, at Amazon Web Services (2022-Present).
 
 ## Live AI Products (shipped independently on Claude Code)
@@ -115,7 +115,7 @@ TASK:
 Given the JD, produce a JSON object with these fields:
 
 {
-  "subtitle": "Resume subtitle (under 100 chars, 2-3 elements separated by ' · '). Must signal the role category (AI Product Builder | Systems & Automation | GTM Builder-Operator | etc.) AND experience distinction. Examples: 'AI Product Builder · Founder-Adjacent · 11+ Years GTM/Strategy (6.5+ at AWS)' or 'AI Systems & Automation · Builder-Operator · 11+ Years (6.5+ at AWS)'.",
+  "subtitle": "Resume subtitle (under 100 chars, 2-3 elements separated by ' · '). Must signal the role category (AI Product Builder | Systems & Automation | GTM Builder-Operator | etc.) AND experience distinction. Examples: 'AI Product Builder · Founder-Adjacent · 12+ Years GTM/Strategy (6.5+ at AWS)' or 'AI Systems & Automation · Builder-Operator · 12+ Years (6.5+ at AWS)'.",
 
   "professional_summary": "80-120 word Professional Summary tuned to THIS specific role. Must distinguish 11+ total from 6.5+ AWS. Must cite concrete builds. Must name the honest gap if relevant (e.g., 'no formal PM title yet'). Anchor on role-relevant achievements.",
 
@@ -190,8 +190,19 @@ def _scrub_tailoring(tailoring: dict) -> dict:
     return scrubbed
 
 
-def _call_claude_for_tailoring(role: dict, score_data: dict | None, profile: dict) -> dict:
-    """Invoke Claude API to produce the tailoring JSON object."""
+def _call_claude_for_tailoring(
+    role: dict,
+    score_data: dict | None,
+    profile: dict,
+    extra_context: str | None = None,
+) -> dict:
+    """Invoke Claude API to produce the tailoring JSON object.
+
+    Args:
+        extra_context: Optional additional context appended to the user message.
+            Used by the agentic pipeline to pass selected angles (first pass)
+            or prior critic findings (self-heal pass).
+    """
     settings = get_settings()
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
@@ -213,9 +224,12 @@ def _call_claude_for_tailoring(role: dict, score_data: dict | None, profile: dic
 {role.get('raw_jd', '(No JD text stored; use only title + company to infer role scope, but note the limited context)')}
 
 ## Prior score
-{json.dumps(score_data or {}, indent=2) if score_data else '(no score data)'}
+{json.dumps(score_data or {}, indent=2) if score_data else '(no score data)'}"""
 
-Produce the tailoring JSON now."""
+    if extra_context:
+        user_msg += f"\n\n## Pipeline context\n{extra_context}"
+
+    user_msg += "\n\nProduce the tailoring JSON now."
 
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -362,7 +376,11 @@ def _write_metadata(output_dir: Path, role: dict, score_data: dict | None, tailo
 # ---------------------------------------------------------------------------
 
 
-async def generate_anthropic_package(role_id: str, force: bool = False) -> dict:
+async def generate_anthropic_package(
+    role_id: str,
+    force: bool = False,
+    extra_context: str | None = None,
+) -> dict:
     """Generate a full application package (resume + cover letter + Why Anthropic + metadata)
     for a Perfect Match Anthropic role.
 
@@ -419,7 +437,7 @@ async def generate_anthropic_package(role_id: str, force: bool = False) -> dict:
 
     # Call Claude for tailoring JSON, then scrub for voice violations
     logger.info(f"Generating package for Anthropic role: {role['title']}")
-    tailoring = _call_claude_for_tailoring(role, score_data, profile)
+    tailoring = _call_claude_for_tailoring(role, score_data, profile, extra_context=extra_context)
     tailoring = _scrub_tailoring(tailoring)
 
     # Create output folder
