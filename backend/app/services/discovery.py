@@ -173,9 +173,9 @@ async def discover_via_ats(company: dict) -> dict:
         if not url:
             continue
 
-        # Normalize URL
+        # Normalize URL — always https, strip query/fragment
         parsed = urlparse(url)
-        clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        clean_url = f"https://{parsed.netloc}{parsed.path}"
 
         roles.append({
             "company": company_name,
@@ -187,11 +187,37 @@ async def discover_via_ats(company: dict) -> dict:
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
 
-    # Deduplicate against existing DB entries
+    # ── Dedup Step 1: URL check against DB ───────────────────────────
     urls = [r["url"] for r in roles]
-    existing = supabase.table("roles").select("url").in_("url", urls).execute()
-    existing_urls = {r["url"] for r in existing.data}
-    new_roles = [r for r in roles if r["url"] not in existing_urls]
+    existing_url_result = supabase.table("roles").select("url").in_("url", urls).execute()
+    existing_urls = {r["url"] for r in existing_url_result.data}
+
+    # ── Dedup Step 2: (company, title) check against DB ──────────────
+    # Catches the same role posted under multiple ATS requisition IDs
+    # (e.g., multiple headcount for "PM, Growth") and http/https variants
+    # that slipped through URL normalization.
+    url_filtered = [r for r in roles if r["url"] not in existing_urls]
+    candidate_titles = list({r["title"] for r in url_filtered})
+    existing_title_set: set[str] = set()
+    if candidate_titles:
+        title_result = (
+            supabase.table("roles")
+            .select("title")
+            .eq("company", company_name)
+            .in_("title", candidate_titles)
+            .execute()
+        )
+        existing_title_set = {r["title"].lower().strip() for r in title_result.data}
+
+    # ── Dedup Step 3: within-batch title dedup (first URL wins) ──────
+    seen_titles: set[str] = set()
+    new_roles = []
+    for r in url_filtered:
+        t = r["title"].lower().strip()
+        if t in existing_title_set or t in seen_titles:
+            continue
+        seen_titles.add(t)
+        new_roles.append(r)
 
     # Insert and auto-score
     inserted = 0

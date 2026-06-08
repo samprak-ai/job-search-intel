@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 
 from app.config import get_settings, get_supabase_client, load_profile
 from app.services.web_search import web_search
-from app.services.discovery import is_junk_role
+from app.services.discovery import is_junk_role, looks_non_us_search_result
 from app.services.scoring import score_role
 
 logger = logging.getLogger(__name__)
@@ -34,26 +34,34 @@ ATS_SITE_FILTER = (
     "site:jobs.lever.co OR site:boards.greenhouse.io"
 )
 
+US_LOCATION_QUERY_FILTER = (
+    '"United States" OR "USA" OR "US" OR "San Francisco" OR '
+    '"New York" OR "Seattle"'
+)
+
 # Role search queries aligned with Sam's sharpened target_role_types.
 # Excludes engineer / solutions-architect / scaling-ops / relationship-mgmt roles.
-# Targets: 0→1 builder-operator roles at AI-native companies.
+# Targets: PMF-assessment, product-growth, and 0→1 builder-operator roles
+# at AI-native companies.
 ROLE_SEARCH_QUERIES = [
+    # PMF assessment / AI product growth
+    '"AI Product Growth" lead',
+    '"Product Growth" AI OR LLM',
+    '"AI Product Strategy" lead OR head',
+    '"Product Strategy" AI OR ML',
+    '"product-market fit" AI product',
+    '"customer outcomes" "Applied AI" lead',
     # GTM Systems & Agents (xAI-style builder-operator)
     '"GTM Systems" AI OR agents',
     '"AI Systems" lead OR head',
     '"GTM Automation" lead',
     '"AI Automation" lead OR head',
-    # AI Product Strategy & Growth
-    '"AI Product Strategy" lead OR head',
-    '"AI Product Growth" lead',
-    '"Product Growth" AI OR LLM',
-    '"Product Strategy" AI OR ML',
     # Applied AI (customer-outcome flavor)
     '"Applied AI" lead OR head',
     '"AI Applications" lead',
     # Chief of Staff (with build scope at an AI company)
     '"Chief of Staff" AI',
-    '"Chief of Staff" product',
+    '"Chief of Staff" product AI',
     # Senior / Lead AI Product Manager
     '"Senior Product Manager" AI OR "machine learning"',
     '"Lead Product Manager" AI OR "machine learning"',
@@ -181,7 +189,7 @@ async def discover_by_role() -> dict:
     queries_run = 0
 
     for query_phrase in ROLE_SEARCH_QUERIES:
-        full_query = f"{query_phrase} ({ATS_SITE_FILTER})"
+        full_query = f"{query_phrase} ({US_LOCATION_QUERY_FILTER}) ({ATS_SITE_FILTER})"
         try:
             results = await web_search(
                 full_query,
@@ -225,6 +233,9 @@ async def discover_by_role() -> dict:
         if not url or not title:
             continue
 
+        if looks_non_us_search_result(title, description):
+            continue
+
         # Only keep real ATS job postings
         if not _is_ats_job_url(url):
             continue
@@ -233,9 +244,9 @@ async def discover_by_role() -> dict:
         if not _is_approved_company_url(url):
             continue
 
-        # Normalize URL
+        # Normalize URL — always https, strip query/fragment
         parsed = urlparse(url)
-        clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        clean_url = f"https://{parsed.netloc}{parsed.path}"
 
         # Extract company name from ATS URL
         company = _extract_company_from_url(url)
@@ -255,19 +266,46 @@ async def discover_by_role() -> dict:
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
 
-    # Deduplicate against existing DB entries
+    # ── Dedup Step 1: URL check against DB (chunked for large batches) ──
     urls = [r["url"] for r in roles]
+    existing_urls: set[str] = set()
     if urls:
-        # Batch URL check (supabase .in_ has a limit, chunk if needed)
-        existing_urls = set()
         chunk_size = 100
         for i in range(0, len(urls), chunk_size):
             chunk = urls[i:i + chunk_size]
             existing = supabase.table("roles").select("url").in_("url", chunk).execute()
             existing_urls.update(r["url"] for r in existing.data)
-        new_roles = [r for r in roles if r["url"] not in existing_urls]
-    else:
-        new_roles = []
+
+    # ── Dedup Step 2: (company, title) check against DB ──────────────
+    # Catches the same role posted under multiple ATS requisition IDs.
+    url_filtered = [r for r in roles if r["url"] not in existing_urls]
+    existing_title_set: set[str] = set()
+    if url_filtered:
+        # Group by company to keep DB queries narrow
+        companies_in_batch = list({r["company"] for r in url_filtered})
+        for company in companies_in_batch:
+            company_titles = [r["title"] for r in url_filtered if r["company"] == company]
+            if not company_titles:
+                continue
+            title_result = (
+                supabase.table("roles")
+                .select("title, company")
+                .eq("company", company)
+                .in_("title", company_titles)
+                .execute()
+            )
+            for row in title_result.data:
+                existing_title_set.add(f"{row['company']}||{row['title'].lower().strip()}")
+
+    # ── Dedup Step 3: within-batch title dedup (first URL wins) ──────
+    seen_title_keys: set[str] = set()
+    new_roles = []
+    for r in url_filtered:
+        key = f"{r['company']}||{r['title'].lower().strip()}"
+        if key in existing_title_set or key in seen_title_keys:
+            continue
+        seen_title_keys.add(key)
+        new_roles.append(r)
 
     # Insert and auto-score
     inserted = 0
