@@ -44,7 +44,11 @@ For each artifact, find every:
 - HALLUCINATION: claim with no evidence in persona/narrative/locked-in facts. Example: "I led a team of 12" when persona shows no team-lead role.
 - UNSUPPORTED_CLAIM: claim that needs a citation/quantification but doesn't have one in source. Example: "improved revenue by 30%" when no 30% figure exists.
 - FACTUAL_ERROR: claim that contradicts source. Example: "12+ years at AWS" when source says "6.5+ at AWS, 12+ total." Or a number that doesn't match the locked-in facts exactly (e.g., "65% reduction" instead of "70% reduction").
-- TONE_VIOLATION: em dashes, banned jargon phrases ("uniquely positioned", "mission-critical", "synergy", "transformative", "passionate about", "cross-functional alignment", "drive outcomes", "scale initiatives"), marketing-speak.
+- TONE_VIOLATION: banned jargon phrases ONLY ("uniquely positioned", "mission-critical", "synergy", "transformative", "passionate about", "cross-functional alignment", "drive outcomes", "scale initiatives"), and any other overt marketing-speak.
+  DO NOT flag em dashes, en dashes, or the interpunct separator (·) — those are checked separately via deterministic rules before this review, not your job.
+  DO NOT flag year-range date separators (e.g. "2022–Present", "2019–2022") — correct formatting.
+  DO NOT flag header lines like "# Why Anthropic — Role Title" — that is a template label, not authored content.
+  If you flag a dash-related or interpunct issue, that finding will be automatically discarded.
 - LENGTH_VIOLATION: artifact body word count falls outside spec target range.
 - ROLE_FIT_DRIFT: claim that drifts from the role's actual JD hooks or the selected angles.
 

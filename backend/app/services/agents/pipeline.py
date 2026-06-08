@@ -160,7 +160,14 @@ async def run_pipeline(role_id: str, allow_retry: bool = False) -> dict:
         self_healed = False
 
         # 10. Self-heal once if needed
-        if has_findings(findings_v1):
+        # Only trigger on semantic findings (hallucinations, factual errors, unsupported
+        # claims, role_fit_drift) — NOT on tone or length violations alone.
+        # Sending tone/length issues to the drafter causes it to rewrite sections that
+        # were already correct, which can introduce new hallucinations or factual errors.
+        semantic_keys = ("hallucinations", "unsupported_claims", "factual_errors", "role_fit_drift")
+        has_semantic_findings = any(findings_v1.get(k) for k in semantic_keys)
+
+        if has_semantic_findings:
             _set_status(role_id, "self_healing")
             draft_result_v2 = await draft(role_id, angles, prior_findings=findings_v1, attempt=2)
             if draft_result_v2.get("status") != "generated":
