@@ -152,35 +152,39 @@ async def send_daily_digest_email(
 
     resend.api_key = settings.resend_api_key
 
-    # ── Fetch today's roles + scores ──────────────────────────────────
+    # ── Fetch today's scores + roles ──────────────────────────────────
+    # Anchor on role_scores.scored_at (immutable) rather than
+    # roles.date_found + is_live.  The freshness check runs in the same
+    # cron pass and can flip is_live to False for newly-discovered roles
+    # before the digest query executes, causing it to silently skip.
+    # scored_at is set at scoring time and never mutated by freshness.
     supabase = get_supabase_client()
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    # Only surface live roles in the digest — stale roles (is_live=False)
-    # would create false Perfect Matches after freshness check flips them.
-    roles_result = (
-        supabase.table("roles")
-        .select("id, company, title, url, date_found, is_live")
-        .gte("date_found", today)
-        .neq("is_live", False)
-        .order("company", desc=False)
-        .execute()
-    )
-    today_roles = roles_result.data or []
-
-    if not today_roles:
-        logger.info("No roles with today's date_found — skipping digest")
-        return False
-
-    role_ids = [r["id"] for r in today_roles]
 
     scores_result = (
         supabase.table("role_scores")
         .select("role_id, match_tier, overall_score, rationale")
-        .in_("role_id", role_ids)
+        .gte("scored_at", today)
         .execute()
     )
-    score_map = {s["role_id"]: s for s in (scores_result.data or [])}
+    today_scores = scores_result.data or []
+
+    if not today_scores:
+        logger.info("No roles scored today — skipping digest")
+        return False
+
+    role_ids = [s["role_id"] for s in today_scores]
+    score_map = {s["role_id"]: s for s in today_scores}
+
+    # Fetch role metadata — don't filter on is_live; freshness may have
+    # already flipped it within the same cron pass.
+    roles_result = (
+        supabase.table("roles")
+        .select("id, company, title, url, date_found, is_live")
+        .in_("id", role_ids)
+        .execute()
+    )
+    role_map = {r["id"]: r for r in (roles_result.data or [])}
 
     # ── Group by tier ─────────────────────────────────────────────────
     tier_order = [
@@ -191,16 +195,15 @@ async def send_daily_digest_email(
         "Unlikely Match",
     ]
     grouped: dict[str, list[dict]] = {t: [] for t in tier_order}
-    grouped["Unscored"] = []
 
-    for role in today_roles:
-        score = score_map.get(role["id"])
+    for score in today_scores:
+        role = role_map.get(score["role_id"])
+        if not role:
+            continue
+        role = dict(role)  # don't mutate the map
         role["score"] = score
-        if score:
-            tier = score.get("match_tier", "Unscored")
-            grouped.setdefault(tier, []).append(role)
-        else:
-            grouped["Unscored"].append(role)
+        tier = score.get("match_tier", "Unlikely Match")
+        grouped.setdefault(tier, []).append(role)
 
     # Only notify when at least one Strong (80+) or Perfect (90+) match is found.
     qualifying_roles = grouped["Perfect Match"] + grouped["Strong Match"]
