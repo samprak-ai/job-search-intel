@@ -1,0 +1,5 @@
+{
+  "_comment": "Approved calibration notes from the /reflect loop. The reflection pass PROPOSES changes; nothing here is auto-written — Sam adds an entry after approving a proposal. global_notes apply to every role; company_notes[company] apply only to that company. These are appended to the scoring prompt as guidance.",
+  "global_notes": [],
+  "company_notes": {}
+}

@@ -19,11 +19,12 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.config import get_supabase_client
+from app.services.outcomes import OUTCOME_STATUSES, record_outcome
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-VALID_STATUSES = {"applied", "interview", "offer", "rejected", "ghosted", "skipped"}
+VALID_STATUSES = OUTCOME_STATUSES
 
 
 class OutcomeIn(BaseModel):
@@ -110,56 +111,7 @@ async def upsert_outcome(role_id: str, body: OutcomeIn):
     role = sb.table("roles").select("id, title, company").eq("id", role_id).execute()
     if not role.data:
         raise HTTPException(status_code=404, detail="role_id not found")
-    role_row = role.data[0]
 
-    fields: dict = {
-        "role_id": role_id,
-        "status": status,
-        "notes": body.notes,
-    }
-    if body.outcome_date is not None:
-        fields["outcome_date"] = body.outcome_date.isoformat()
-
-    # Snapshot the prediction only on first log — preserve original prediction.
-    existing = (
-        sb.table("application_outcomes")
-        .select("id, predicted_match_tier")
-        .eq("role_id", role_id)
-        .execute()
-    )
-    if not existing.data:
-        score = (
-            sb.table("role_scores")
-            .select("match_tier, overall_score")
-            .eq("role_id", role_id)
-            .order("scored_at", desc=True)
-            .limit(1)
-            .execute()
-        )
-        if score.data:
-            fields["predicted_match_tier"] = score.data[0].get("match_tier")
-            fields["predicted_overall_score"] = score.data[0].get("overall_score")
-
-    result = (
-        sb.table("application_outcomes")
-        .upsert(fields, on_conflict="role_id", returning="representation")
-        .execute()
-    )
-    logger.info(f"Logged outcome '{status}' for role {role_id}")
-
-    # Auto-capture: compare this outcome to the prediction and log a calibration
-    # gap if they disagree. Non-blocking — never fail the outcome write on this.
-    saved = result.data[0] if result.data else {}
-    try:
-        from app.services.gaps import evaluate_outcome_gap
-
-        evaluate_outcome_gap(
-            role_row,
-            status,
-            saved.get("predicted_overall_score"),
-            saved.get("predicted_match_tier"),
-        )
-    except Exception as e:  # pragma: no cover - defensive
-        logger.warning(f"Outcome gap evaluation failed for {role_id}: {e}")
-
+    outcome_date_iso = body.outcome_date.isoformat() if body.outcome_date is not None else None
+    saved = record_outcome(role.data[0], status, body.notes, outcome_date_iso)
     return saved or {"role_id": role_id, "status": status}

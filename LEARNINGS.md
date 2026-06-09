@@ -54,6 +54,10 @@ These are harder to assert statically. Follow the procedure; promote to a
 - **M4 — Normalize title abbreviations.** Amazon truncates "Manager"→"Mgr" and
   uses "PMT"/"PMM"; these break spelled-out keyword filters. Normalize in the
   fetcher.
+- **M5 — One write path for outcomes.** Role `application_status` (selector) and
+  `application_outcomes` (return path) must not drift into competing state. Both
+  funnel through `services/outcomes.record_outcome()`; don't write
+  `application_outcomes` directly from a new caller.
 
 ---
 

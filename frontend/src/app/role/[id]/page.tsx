@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { API_BASE as API } from "@/lib/api";
@@ -20,6 +20,7 @@ const statusColor: Record<string, string> = {
   interviewing: "bg-purple-100 text-purple-800",
   offer: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800",
+  ghosted: "bg-orange-100 text-orange-800",
   skipped: "bg-yellow-100 text-yellow-800",
 };
 
@@ -29,6 +30,7 @@ const statusOptions = [
   "interviewing",
   "offer",
   "rejected",
+  "ghosted",
   "skipped",
 ];
 
@@ -133,17 +135,17 @@ export default function RoleDetail() {
   const [tailoringLoading, setTailoringLoading] = useState(false);
   const [downloadingResume, setDownloadingResume] = useState(false);
 
-  useEffect(() => {
-    fetchRole();
-  }, [id]);
-
-  async function fetchRole() {
+  const fetchRole = useCallback(async () => {
     setLoading(true);
     const res = await fetch(`${API}/roles/${id}`);
     const data = await res.json();
     setRole(data);
     setLoading(false);
-  }
+  }, [id]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchRole);
+  }, [fetchRole]);
 
   async function scoreRole() {
     setScoring(true);

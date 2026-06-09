@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.config import get_supabase_client
+from app.services.outcomes import map_role_status_to_outcome, record_outcome
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -111,7 +112,7 @@ async def get_role(role_id: str):
     return role
 
 
-VALID_STATUSES = {"unreviewed", "applied", "interviewing", "offer", "rejected", "skipped"}
+VALID_STATUSES = {"unreviewed", "applied", "interviewing", "offer", "rejected", "ghosted", "skipped"}
 
 
 class StatusUpdate(BaseModel):
@@ -120,7 +121,13 @@ class StatusUpdate(BaseModel):
 
 @router.patch("/{role_id}")
 async def update_role_status(role_id: str, body: StatusUpdate):
-    """Update a role's application status."""
+    """Update a role's application status.
+
+    A status that maps to a real outcome also feeds the scoring loop's return
+    path: it records an application_outcome (snapshotting the prediction) and
+    auto-captures a calibration gap on disagreement. Single write path via
+    record_outcome() — no parallel outcome state.
+    """
     if body.application_status not in VALID_STATUSES:
         raise HTTPException(
             status_code=400,
@@ -129,12 +136,20 @@ async def update_role_status(role_id: str, body: StatusUpdate):
 
     supabase = get_supabase_client()
 
-    result = supabase.table("roles").select("id").eq("id", role_id).execute()
+    result = supabase.table("roles").select("id, title, company").eq("id", role_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Role not found")
 
     supabase.table("roles").update(
         {"application_status": body.application_status}
     ).eq("id", role_id).execute()
+
+    # Feed the return path when the status maps to a recordable outcome.
+    outcome_status = map_role_status_to_outcome(body.application_status)
+    if outcome_status:
+        try:
+            record_outcome(result.data[0], outcome_status)
+        except Exception as e:  # never fail the status update on outcome logging
+            logger.warning(f"record_outcome failed for {role_id}: {e}")
 
     return {"status": "updated", "role_id": role_id, "application_status": body.application_status}

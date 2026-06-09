@@ -74,3 +74,21 @@ def load_profile() -> dict:
 def load_companies() -> list[dict]:
     with open(CONFIG_DIR / "companies.json") as f:
         return json.load(f)["target_companies"]
+
+
+def load_scoring_adjustments() -> dict:
+    """Approved calibration notes from the reflection loop, fed into scoring.
+
+    Shape: {"global_notes": [str], "company_notes": {company: [str]}}.
+    Returns an empty structure if the file is missing/unreadable so scoring
+    never breaks on a bad adjustments file.
+    """
+    try:
+        with open(CONFIG_DIR / "scoring_adjustments.json") as f:
+            data = json.load(f)
+        return {
+            "global_notes": data.get("global_notes", []) or [],
+            "company_notes": data.get("company_notes", {}) or {},
+        }
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"global_notes": [], "company_notes": {}}

@@ -3,7 +3,12 @@ import logging
 
 import anthropic
 
-from app.config import get_settings, get_supabase_client, load_profile
+from app.config import (
+    get_settings,
+    get_supabase_client,
+    load_profile,
+    load_scoring_adjustments,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -103,12 +108,35 @@ The candidate is a CURRENT Amazon employee (Sr. GTM / Sales Operations Manager, 
 """
 
 
+def _calibration_block(company: str | None) -> str:
+    """Approved reflection-loop notes, injected as scoring guidance.
+
+    This is how the self-improvement loop actually closes: once Sam approves a
+    calibration finding, it lands in config/scoring_adjustments.json and shows
+    up here, nudging future scores. Empty by default → no-op.
+    """
+    adj = load_scoring_adjustments()
+    notes = list(adj["global_notes"])
+    for name, company_notes in adj["company_notes"].items():
+        if name.lower().replace(" ", "") in (company or "").lower().replace(" ", ""):
+            notes.extend(company_notes)
+    if not notes:
+        return ""
+    bullets = "\n".join(f"- {n}" for n in notes)
+    return (
+        "## Calibration adjustments (approved from observed outcomes)\n"
+        "Apply these learned corrections when they fit this role:\n"
+        f"{bullets}\n\n"
+    )
+
+
 def build_scoring_message(role: dict, profile: dict) -> str:
     """Build the user message with role and profile context."""
     internal_block = (
         _INTERNAL_TRANSFER_CONTEXT + "\n" if _is_internal_transfer(role.get("company")) else ""
     )
-    return f"""{internal_block}## Job Posting
+    calibration_block = _calibration_block(role.get("company"))
+    return f"""{calibration_block}{internal_block}## Job Posting
 **Company:** {role['company']}
 **Title:** {role['title']}
 **Source:** {role.get('source', 'unknown')}
