@@ -174,7 +174,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 The Vercel cron (14:00 UTC daily) calls `/discover/cron` on the Railway backend, which scans the companies named in the `CRON_COMPANIES` env var. Current value (set on Railway and mirrored in local `.env`):
 
 ```
-CRON_COMPANIES=Anthropic,OpenAI,xAI,Perplexity,Mistral,Databricks,Salesforce,Glean,Notion,Ramp
+CRON_COMPANIES=Anthropic,OpenAI,Amazon,Alphabet
 ```
 
 These 10 are a deliberately bounded subset of the 26-company whitelist to keep cron runtime under ~15 minutes. The other 16 companies in `companies.json` are still discoverable via the manual `/discover/{company}` endpoint and via role-based discovery — they're just not scanned daily.
