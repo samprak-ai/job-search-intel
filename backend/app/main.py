@@ -15,6 +15,7 @@ from app.routes import (
     resume_tailor,
     roles,
     score,
+    scoring_adjustments,
     usage,
 )
 
@@ -49,6 +50,7 @@ app.include_router(application_packages.router, prefix="/application-packages", 
 app.include_router(application_outcomes.router, prefix="/application-outcomes", tags=["application-outcomes"])
 app.include_router(detected_gaps.router, prefix="/detected-gaps", tags=["detected-gaps"])
 app.include_router(reflect.router, prefix="/reflect", tags=["reflect"])
+app.include_router(scoring_adjustments.router, prefix="/scoring-adjustments", tags=["scoring-adjustments"])
 
 
 @app.get("/health")

@@ -79,16 +79,48 @@ def load_companies() -> list[dict]:
 def load_scoring_adjustments() -> dict:
     """Approved calibration notes from the reflection loop, fed into scoring.
 
+    Merges two sources:
+      1. config/scoring_adjustments.json — optional manual / versioned override.
+      2. scoring_adjustments table — persistent, written by one-click "approve"
+         (the Railway filesystem is ephemeral, so the DB is the durable store).
+
     Shape: {"global_notes": [str], "company_notes": {company: [str]}}.
-    Returns an empty structure if the file is missing/unreadable so scoring
-    never breaks on a bad adjustments file.
+    Never raises — scoring must not break on a bad source.
     """
+    global_notes: list[str] = []
+    company_notes: dict[str, list[str]] = {}
+
+    # 1. File override
     try:
         with open(CONFIG_DIR / "scoring_adjustments.json") as f:
             data = json.load(f)
-        return {
-            "global_notes": data.get("global_notes", []) or [],
-            "company_notes": data.get("company_notes", {}) or {},
-        }
+        global_notes.extend(data.get("global_notes", []) or [])
+        for company, notes in (data.get("company_notes", {}) or {}).items():
+            company_notes.setdefault(company, []).extend(notes or [])
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"global_notes": [], "company_notes": {}}
+        pass
+
+    # 2. Approved rows from the DB
+    try:
+        rows = (
+            get_supabase_client()
+            .table("scoring_adjustments")
+            .select("scope, note")
+            .eq("active", True)
+            .execute()
+            .data
+            or []
+        )
+        for r in rows:
+            scope = (r.get("scope") or "").strip()
+            note = r.get("note")
+            if not note:
+                continue
+            if scope.lower() == "global":
+                global_notes.append(note)
+            elif scope:
+                company_notes.setdefault(scope, []).append(note)
+    except Exception:  # DB unreachable / table missing — fall back to file only
+        pass
+
+    return {"global_notes": global_notes, "company_notes": company_notes}
