@@ -196,6 +196,15 @@ If you change this list:
 
 ---
 
+## Self-improvement loop (gap → guard → tune)
+The system is built to get monotonically better as gaps are found. A gap is never "just fixed" — it must leave a durable artifact. Three planes:
+
+1. **Guard (engineering regressions)** — `LEARNINGS.md` registry + `backend/selfcheck.py` deterministic checks (one per learning). The Claude Code **Stop hook** (`.claude/settings.json`) runs the static checks on every task end and blocks completion (exit 2) if any invariant regressed. Run manually: `cd backend && python3 selfcheck.py [--db]`. **A gap isn't done until it has a selfcheck entry or a manual procedure in LEARNINGS.md.**
+2. **Auto-capture (runtime/product gaps)** — `detected_gaps` table. The system logs its own gaps: `prediction_overconfident` / `prediction_underconfident` / `taste_mismatch` (from `application_outcomes` vs the snapshotted prediction, via `services/gaps.py`), `stale_high_score` (freshness), plus `manual` gaps via `POST /detected-gaps`. The **return path** is `application_outcomes` (predicted tier/score snapshotted at log time; `GET /application-outcomes/calibration`).
+3. **Reflection (tuning)** — `POST /reflect` (`services/reflection.py`) reads outcomes + open gaps, and Claude proposes calibration findings + concrete changes (scoring notes, new guards, discovery keywords, intel refresh). **Nothing auto-applies** — it emails/returns a report for Sam to approve. Intended to run weekly.
+
+Adding a learning: append to `LEARNINGS.md`, add a `@check` to `selfcheck.py` (confirm it fails-on-bad / passes-on-fix), commit both together.
+
 ## Key Design Principles
 - **Single user app** — no multi-tenancy needed, keep auth simple
 - **Manual triggers first** — no complex scheduling until core loop works

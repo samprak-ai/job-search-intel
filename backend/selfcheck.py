@@ -127,6 +127,23 @@ def _l6():
     return []
 
 
+# ── L8: every route module must be imported AND registered in main.py ───────
+@check("L8-routers-registered")
+def _l8():
+    routes_dir = BACKEND / "app/routes"
+    main = _read(BACKEND / "app/main.py")
+    problems = []
+    for f in sorted(routes_dir.glob("*.py")):
+        mod = f.stem
+        if mod == "__init__":
+            continue
+        if mod not in main:
+            problems.append(f'route module "{mod}" is not imported in main.py')
+        elif f"{mod}.router" not in main:
+            problems.append(f'route module "{mod}" is imported but never include_router()-ed')
+    return problems
+
+
 # ── L7 (DB): no role may have more than one role_scores row ──────────────────
 @check("L7-no-duplicate-role-scores", kind="db")
 def _l7():

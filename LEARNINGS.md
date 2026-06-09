@@ -34,6 +34,7 @@ check yet) · `open` (found, not yet guarded — should be empty).
 | **L5** | `CRON_COMPANIES` names must match `companies.json` exactly (e.g. "Alphabet" not "Google") or discovery silently no-ops. | Every documented `CRON_COMPANIES` name must exist in `companies.json`. | `L5-cron-companies-valid` |
 | **L6** | The generic freshness check treated 403 as dead; amazon.jobs bot-throttles with 403, which would wrongly kill live roles. | Amazon freshness must route through `_check_amazon` (404/410 = dead; 403 = inconclusive). | `L6-amazon-freshness-403-safe` |
 | **L7** | Re-scoring inserted new `role_scores` rows instead of replacing, creating duplicates. | No role may have more than one `role_scores` row. | `L7-no-duplicate-role-scores` (db) |
+| **L8** | Easy to add a route module and forget to import/register it in `main.py` (silently dead endpoint). | Every `app/routes/*.py` module must be imported and `include_router()`-ed in `main.py`. | `L8-routers-registered` |
 
 ---
 

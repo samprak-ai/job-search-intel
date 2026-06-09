@@ -107,9 +107,10 @@ async def upsert_outcome(role_id: str, body: OutcomeIn):
     sb = get_supabase_client()
 
     # Role must exist.
-    role = sb.table("roles").select("id").eq("id", role_id).execute()
+    role = sb.table("roles").select("id, title, company").eq("id", role_id).execute()
     if not role.data:
         raise HTTPException(status_code=404, detail="role_id not found")
+    role_row = role.data[0]
 
     fields: dict = {
         "role_id": role_id,
@@ -145,4 +146,20 @@ async def upsert_outcome(role_id: str, body: OutcomeIn):
         .execute()
     )
     logger.info(f"Logged outcome '{status}' for role {role_id}")
-    return result.data[0] if result.data else {"role_id": role_id, "status": status}
+
+    # Auto-capture: compare this outcome to the prediction and log a calibration
+    # gap if they disagree. Non-blocking — never fail the outcome write on this.
+    saved = result.data[0] if result.data else {}
+    try:
+        from app.services.gaps import evaluate_outcome_gap
+
+        evaluate_outcome_gap(
+            role_row,
+            status,
+            saved.get("predicted_overall_score"),
+            saved.get("predicted_match_tier"),
+        )
+    except Exception as e:  # pragma: no cover - defensive
+        logger.warning(f"Outcome gap evaluation failed for {role_id}: {e}")
+
+    return saved or {"role_id": role_id, "status": status}

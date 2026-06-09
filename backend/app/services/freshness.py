@@ -302,6 +302,44 @@ async def check_role_freshness(role: dict) -> dict | None:
     return {"is_live": result, "last_checked_at": now}
 
 
+def _maybe_log_stale_high_score(supabase, role_id: str) -> None:
+    """If a role that just went stale had a Strong+ score, log a detected gap.
+
+    Catches the "we surfaced/emailed a job that was already closing" class —
+    the dead 'View Original' link problem. Non-blocking.
+    """
+    try:
+        score = (
+            supabase.table("role_scores")
+            .select("overall_score, match_tier")
+            .eq("role_id", role_id)
+            .order("scored_at", desc=True)
+            .limit(1)
+            .execute()
+        ).data
+        if not score or (score[0].get("overall_score") or 0) < 80:
+            return
+        role = (
+            supabase.table("roles").select("title, company").eq("id", role_id).execute()
+        ).data
+        label = (
+            f"{role[0].get('title', '?')} @ {role[0].get('company', '?')}" if role else None
+        )
+        from app.services.gaps import log_gap
+
+        log_gap(
+            "stale_high_score",
+            f"A {score[0].get('match_tier')} ({score[0].get('overall_score')}) role went dead — "
+            f"it may have been surfaced or emailed while already closing.",
+            severity="medium",
+            role_id=role_id,
+            role_label=label,
+            detail={"overall_score": score[0].get("overall_score")},
+        )
+    except Exception as e:  # pragma: no cover - defensive
+        logger.debug(f"stale_high_score gap check failed for {role_id}: {e}")
+
+
 async def check_all_freshness() -> dict:
     """Check freshness for all active roles.
 
@@ -349,6 +387,7 @@ async def check_all_freshness() -> dict:
                     logger.info(
                         f"Stale role detected: {role['url']}"
                     )
+                    _maybe_log_stale_high_score(supabase, role["id"])
             except Exception as e:
                 errors += 1
                 logger.warning(f"Failed to update freshness for {role['id']}: {e}")
