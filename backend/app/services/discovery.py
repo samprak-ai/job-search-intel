@@ -154,21 +154,6 @@ def clean_search_title(title: str) -> str:
     return t.strip(" -|").strip()
 
 
-# Amazon is enormous; Sam targets AWS roles only. A role counts as AWS if its
-# title or description names AWS or an unambiguous AWS service. Word boundaries
-# keep "amazon q" (the product) from matching "Amazon Quick...", etc.
-AWS_ROLE_RE = re.compile(
-    r"\b(aws|amazon web services|bedrock|sagemaker|amazon q|ec2|"
-    r"cloudwatch|dynamodb|redshift)\b",
-    re.IGNORECASE,
-)
-
-
-def _is_aws_role(title: str, description: str) -> bool:
-    """True if the role looks like an AWS posting (Amazon-only filter)."""
-    return bool(AWS_ROLE_RE.search(f"{title} {description}"))
-
-
 # ---------------------------------------------------------------------------
 # ATS-based discovery (primary path)
 # ---------------------------------------------------------------------------
@@ -307,25 +292,9 @@ def _build_brave_query(company: dict) -> str:
     company_name = company["name"]
     careers_domain = urlparse(company["careers_url"]).netloc
 
-    # Amazon: enormous proprietary job board (amazon.jobs). A generic query
-    # drowns in non-AI roles, AWS-partner noise, and third-party listings.
-    # Tighten to AI-org builder-operator roles aligned with Sam's target
-    # role types, restricted to amazon.jobs only.
-    if company_name.lower() == "amazon" or "amazon.jobs" in careers_domain:
-        # Amazon focus is AWS only — that's where Sam's 6.5 yrs of experience
-        # and the builder-operator AI teams (Bedrock, SageMaker, Amazon Q) sit.
-        # Brave rejects long/complex queries (HTTP 422), so this stays compact:
-        # AWS signal AND a PM-level group AND an AWS-AI service group, restricted
-        # to amazon.jobs. The query maximizes recall of AWS-AI PM roles; the
-        # _is_aws_role() post-filter in discover_via_web_search() then drops any
-        # non-AWS roles (Alexa, Ads, retail, AGI/Nova org) that slip through.
-        role_keywords = (
-            '"Senior Product Manager" OR "Principal Product Manager"'
-        )
-        aws_ai_keywords = 'Bedrock OR SageMaker OR "Amazon Q" OR "generative AI"'
-        return (
-            f"AWS ({role_keywords}) ({aws_ai_keywords}) site:amazon.jobs"
-        )
+    # NOTE: Amazon does NOT use this Brave path — it's routed through the
+    # structured amazon.jobs ATS client (fetch_amazon_jobs in ats_clients.py),
+    # which filters precisely on Seattle + AWS/AGI org via the search.json API.
 
     role_keywords = (
         '"AI" OR "solutions engineer" OR "product manager" OR '
@@ -431,9 +400,6 @@ async def discover_via_web_search(company: dict) -> dict:
     roles = []
     rejected_landing = 0
     rejected_url_pattern = 0
-    rejected_non_aws = 0
-    # Amazon discovery is scoped to AWS roles only.
-    aws_only = company_name.lower() == "amazon"
     for result in results:
         url = result.get("url", "")
         title = clean_search_title(result.get("title", ""))
@@ -443,11 +409,6 @@ async def discover_via_web_search(company: dict) -> dict:
             continue
 
         if looks_non_us_search_result(title, description):
-            continue
-
-        # Amazon: keep only confirmed-AWS roles, drop Alexa/Ads/retail/AGI.
-        if aws_only and not _is_aws_role(title, description):
-            rejected_non_aws += 1
             continue
 
         # Reject obvious landing-page / non-posting URLs and titles. This
@@ -477,12 +438,11 @@ async def discover_via_web_search(company: dict) -> dict:
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
 
-    if rejected_url_pattern or rejected_landing or rejected_non_aws:
+    if rejected_url_pattern or rejected_landing:
         logger.info(
             f"Web search for {company_name}: rejected "
             f"{rejected_url_pattern} non-job URLs, "
-            f"{rejected_landing} landing-page titles, "
-            f"{rejected_non_aws} non-AWS roles"
+            f"{rejected_landing} landing-page titles"
         )
 
     # Deduplicate

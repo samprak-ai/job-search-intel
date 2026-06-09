@@ -28,6 +28,8 @@ ATS_TIMEOUT = 30.0
 US_LOCATION_KEYWORDS = [
     "united states", "usa", "us ", " us,", "(us)", "u.s.",
     "remote", "anywhere",
+    "remote - us", "remote, us", "remote us", "remote (us)",
+    "remote - united states", "remote, united states",
     # US states and major cities
     "california", "new york", "san francisco", "seattle", "austin",
     "boston", "chicago", "denver", "los angeles", "washington",
@@ -40,30 +42,42 @@ US_LOCATION_KEYWORDS = [
     ", ca", ", ny", ", wa", ", tx", ", ma", ", co", ", il",
     ", ga", ", fl", ", or", ", nc", ", tn", ", az", ", ut",
     ", va", ", pa", ", oh", ", mn", ", mo", ", md", ", ct",
-    "north america",
+]
+
+NON_US_LOCATION_KEYWORDS = [
+    "canada", "toronto", "vancouver", "united kingdom", " uk",
+    "london", "dublin", "ireland", "france", "paris", "germany",
+    "berlin", "netherlands", "amsterdam", "spain", "madrid",
+    "switzerland", "zurich", "japan", "tokyo", "korea", "seoul",
+    "singapore", "australia", "sydney", "melbourne", "india",
+    "bengaluru", "bangalore",
 ]
 
 # Role title keywords that match Sam's target profile.
-# Tuned to GTM, Partnerships, Product, and Strategy roles.
-# Engineer / Solutions Architect titles are explicitly excluded — Sam is
-# pivoting away from IC engineering tracks toward GTM/Product/Strategy.
+# Tuned to AI product PMF assessment, product growth, incubation, and
+# builder-operator roles. Engineer / Solutions Architect titles are
+# explicitly excluded.
 ROLE_KEYWORDS = [
-    # Applied AI / customer-facing (non-engineer titles)
-    "applied ai", "customer success", "technical deployment",
-    "evangelist",
-    # Partnerships & BD
-    "partner", "partnerships", "business development",
-    # GTM / Strategy
-    "gtm", "go-to-market", "go to market",
-    # Product roles (scoped — "product manager", "product lead", "product marketing")
+    # AI product / product strategy / growth
+    "ai product", "product strategy", "product growth",
+    "growth product", "product lead", "product manager",
     "product manager", "product lead", "product marketing",
     "product owner", "product management",
-    # Sales roles (excluding sales engineer / sales architect)
-    "account executive", "sales intelligence",
-    # Strategy & Ops
-    "strategy & operations", "strategic account",
-    "strategic growth",
-    # Head / Director level
+    "head of product", "head of ai product",
+    "senior product manager", "lead product manager",
+    "pmt",  # Amazon abbrev: Product Manager Technical (e.g. "Sr. PMT-ES, Bedrock")
+    # Applied AI / labs / incubation
+    "applied ai", "ai applications", "ai automation",
+    "ai agents", "agents", "labs", "incubation",
+    "new products", "new bets", "strategic projects",
+    # GTM systems builder roles
+    "gtm systems", "gtm automation", "go-to-market systems",
+    "go to market systems", "sales intelligence",
+    "business systems", "ai operations", "systems and ai",
+    "partner business systems",
+    # Chief of staff with likely product/AI/GTM altitude
+    "chief of staff",
+    # Senior leadership titles are allowed only when paired with relevant text.
     "head of",
 ]
 
@@ -74,9 +88,22 @@ ROLE_KEYWORDS = [
 ROLE_EXCLUDE_KEYWORDS = [
     "engineer", "engineering",
     "solutions architect", "solution architect",
+    "sales engineer", "customer engineer", "forward deployed engineer",
+    "account executive", "account manager", "customer success",
+    "partner manager", "partner sales", "business development",
+    "planning operations", "bdr operations", "sales operations",
+    "revenue operations", "territory", "quota", "enablement",
+    "onboarding", "implementation", "deployment",
+    "finance systems", "workday", "hcm", "hris",
     "video", "recruiter", "recruiting", "counsel",
     "accounting", "accountant", "finance &",
     "supply chain", "security fellow", "safety fellow",
+]
+
+ROLE_CONTEXT_KEYWORDS = [
+    "ai", "agent", "automation", "product", "growth", "strategy",
+    "incubation", "labs", "0-to-1", "prototype", "customer outcomes",
+    "adoption", "usage", "activation", "product-market fit",
 ]
 
 
@@ -97,10 +124,12 @@ def _is_us_location(location: str) -> bool:
     if not location:
         return False
     lower = location.lower()
+    if any(kw in lower for kw in NON_US_LOCATION_KEYWORDS):
+        return False
     return any(kw in lower for kw in US_LOCATION_KEYWORDS)
 
 
-def _matches_role_keywords(title: str) -> bool:
+def _matches_role_keywords(title: str, raw_jd: str = "", department: str = "") -> bool:
     """Check if a job title matches Sam's target role types.
 
     Must match at least one ROLE_KEYWORD and not match any ROLE_EXCLUDE_KEYWORDS.
@@ -108,7 +137,13 @@ def _matches_role_keywords(title: str) -> bool:
     lower = title.lower()
     if any(ex in lower for ex in ROLE_EXCLUDE_KEYWORDS):
         return False
-    return any(kw in lower for kw in ROLE_KEYWORDS)
+    if not any(kw in lower for kw in ROLE_KEYWORDS):
+        return False
+
+    context = f"{title} {department} {raw_jd[:3000]}".lower()
+    if "chief of staff" in lower or lower.startswith("head of"):
+        return any(kw in context for kw in ROLE_CONTEXT_KEYWORDS)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +319,103 @@ async def fetch_lever_jobs(slug: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Amazon (amazon.jobs structured search API)
+# ---------------------------------------------------------------------------
+# Amazon runs a proprietary board with a public JSON search endpoint that
+# returns structured location + org (business_category) data — far better
+# than scraping Brave snippets. Sam's Amazon focus is narrow:
+#   • AWS + AGI orgs only (business_category aws / amazon-artificial-...)
+#   • Seattle only
+#   • Product Manager roles
+# The endpoint's location facet doesn't filter strictly, so we post-filter
+# on normalized_location. Sorted by recency; capped per run to bound the
+# number of inline scoring calls (dedup surfaces the rest on later runs).
+
+AMAZON_SEARCH_URL = "https://www.amazon.jobs/en/search.json"
+AMAZON_TARGET_BUSINESS_CATEGORIES = [
+    "aws",
+    "amazon-artificial-general-intelligence",
+]
+AMAZON_TARGET_CITY = "seattle"
+AMAZON_RESULT_CAP = 30
+
+
+async def fetch_amazon_jobs(slug: str = "amazon") -> list[dict]:
+    """Fetch Seattle AWS/AGI Product Manager roles from amazon.jobs."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+        "Accept": "application/json",
+    }
+    base_params = [("business_category[]", c) for c in AMAZON_TARGET_BUSINESS_CATEGORIES]
+    base_params += [("base_query", "Product Manager"), ("sort", "recent")]
+
+    jobs: list[dict] = []
+    seen: set[str] = set()
+    offset, page_size = 0, 100
+
+    async with httpx.AsyncClient() as client:
+        for _ in range(5):  # safeguard against runaway pagination
+            params = base_params + [
+                ("result_limit", str(page_size)),
+                ("offset", str(offset)),
+            ]
+            try:
+                resp = await client.get(
+                    AMAZON_SEARCH_URL, params=params, headers=headers, timeout=ATS_TIMEOUT
+                )
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as e:
+                logger.error(f"Amazon jobs API error (offset={offset}): {e}")
+                break
+
+            page = data.get("jobs", [])
+            if not page:
+                break
+
+            for j in page:
+                location = j.get("normalized_location") or ""
+                if AMAZON_TARGET_CITY not in location.lower():
+                    continue
+                path = j.get("job_path") or ""
+                if not path:
+                    continue
+                posting_url = f"https://www.amazon.jobs{path}"
+                if posting_url in seen:
+                    continue
+                seen.add(posting_url)
+
+                raw = j.get("description") or j.get("description_short") or ""
+                # Amazon truncates "Manager" → "Mgr" in many titles, which
+                # breaks the spelled-out "product manager" keyword match.
+                # Normalize for both matching and clean display.
+                title = re.sub(r"\bMgr\b", "Manager", j.get("title", ""))
+                jobs.append({
+                    "title": title,
+                    "url": posting_url,
+                    "location": location,
+                    "department": j.get("business_category", ""),
+                    "raw_jd": _strip_html_tags(raw) if raw else "",
+                })
+                if len(jobs) >= AMAZON_RESULT_CAP:
+                    break
+
+            if len(jobs) >= AMAZON_RESULT_CAP:
+                break
+
+            total = data.get("hits", 0)
+            offset += page_size
+            if offset >= total:
+                break
+
+    logger.info(
+        f"Amazon [{slug}]: fetched {len(jobs)} Seattle AWS/AGI jobs "
+        f"(cap {AMAZON_RESULT_CAP})"
+    )
+    return jobs
+
+
+# ---------------------------------------------------------------------------
 # Unified fetcher
 # ---------------------------------------------------------------------------
 
@@ -295,6 +427,8 @@ async def fetch_jobs_from_ats(platform: str, slug: str) -> list[dict]:
         return await fetch_ashby_jobs(slug)
     elif platform == "lever":
         return await fetch_lever_jobs(slug)
+    elif platform == "amazon":
+        return await fetch_amazon_jobs(slug)
     else:
         logger.warning(f"Unknown ATS platform: {platform}")
         return []
@@ -311,7 +445,11 @@ def filter_jobs_for_profile(jobs: list[dict]) -> list[dict]:
     for job in jobs:
         if not _is_us_location(job["location"]):
             continue
-        if not _matches_role_keywords(job["title"]):
+        if not _matches_role_keywords(
+            job["title"],
+            job.get("raw_jd", ""),
+            job.get("department", ""),
+        ):
             continue
         filtered.append(job)
 
