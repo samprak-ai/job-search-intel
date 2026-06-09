@@ -65,7 +65,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
   ],
   "differentiators": [
     "Built production AI systems end-to-end (GenAI-Intel, Forge, AWS internal agents)",
-    "11+ years GTM + Sales Ops at AWS Startups",
+    "12+ years GTM + Sales Ops at AWS Startups",
     "Rare fluency across business strategy, AI infrastructure, and hands-on product building",
     "Live deployed products as proof, not just claims"
   ],
@@ -124,7 +124,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 }
 ```
 
-### Full Company List (26)
+### Full Company List (27)
 
 **Scope:** Frontier model labs + Big Tech AI divisions + mature AI-forward startups (horizontal and vertical) + frontier research orgs. Focus on **0→1 builder-operator roles** at companies where AI is the product (not a feature) and everyone builds by default. Role-based discovery is gated by this whitelist — any ATS posting from a company outside this list is filtered out before scoring.
 
@@ -143,26 +143,27 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 10. Snowflake — confirmed H1B
 11. Salesforce (verify team has build-first culture) — confirmed H1B
 12. LinkedIn — confirmed H1B
+13. Amazon (Sam's current employer; target AGI, Bedrock, Amazon Q teams; amazon.jobs proprietary ATS) — confirmed H1B
 
 **Mature Horizontal AI Startups**
-13. Notion — confirmed H1B
-14. Glean — likely H1B
-15. Ramp — confirmed H1B
-16. Hugging Face — likely H1B
-17. Weights & Biases — likely H1B
-18. Replit — likely H1B
-19. Runway — likely H1B
+14. Notion — confirmed H1B
+15. Glean — likely H1B
+16. Ramp — confirmed H1B
+17. Hugging Face — likely H1B
+18. Weights & Biases — likely H1B
+19. Replit — likely H1B
+20. Runway — likely H1B
 
 **AI-Native Vertical SaaS**
-20. Harvey (legal AI) — likely H1B
-21. Sierra (customer experience AI) — likely H1B
-22. Decagon (customer service AI) — likely H1B
-23. Cresta (contact center AI) — likely H1B
-24. Abridge (healthcare AI) — likely H1B
+21. Harvey (legal AI) — likely H1B
+22. Sierra (customer experience AI) — likely H1B
+23. Decagon (customer service AI) — likely H1B
+24. Cresta (contact center AI) — likely H1B
+25. Abridge (healthcare AI) — likely H1B
 
 **Frontier Research Orgs**
-25. Ai2 (Allen Institute for AI) — likely H1B (comp may be tight for non-research roles)
-26. Imbue (reasoning + agents research) — likely H1B
+26. Ai2 (Allen Institute for AI) — likely H1B (comp may be tight for non-research roles)
+27. Imbue (reasoning + agents research) — likely H1B
 
 ### Notifications policy
 - **Per-role emails:** fire for Strong Match (overall_score ≥ 80) and Perfect Match (≥ 90). Email subject + header adapt to the role's actual match_tier.

@@ -58,7 +58,7 @@
       "careers_url": "https://mistral.ai/careers",
       "ats_platform": "lever",
       "ats_slug": "mistral",
-      "notes": "US operations — verify H1B sponsorship before tailoring"
+      "notes": "US operations \u2014 verify H1B sponsorship before tailoring"
     },
     {
       "name": "xAI",
@@ -108,7 +108,7 @@
       "careers_url": "https://www.salesforce.com/company/careers/",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "Enterprise-sales-led culture — verify team/manager has build-first culture before tailoring"
+      "notes": "Enterprise-sales-led culture \u2014 verify team/manager has build-first culture before tailoring"
     },
     {
       "name": "LinkedIn",
@@ -118,13 +118,23 @@
       "careers_url": "https://careers.linkedin.com",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "Microsoft subsidiary — proprietary ATS, uses Brave Search fallback"
+      "notes": "Microsoft subsidiary \u2014 proprietary ATS, uses Brave Search fallback"
+    },
+    {
+      "name": "Amazon",
+      "tier": "big_tech_cloud_ai",
+      "h1b_status": "confirmed",
+      "priority": 13,
+      "careers_url": "https://www.amazon.jobs/",
+      "ats_platform": null,
+      "ats_slug": null,
+      "notes": "Sam's current employer \u2014 6.5+ years at AWS Startups. Target AI-adjacent teams with builder-operator mandate (e.g. AGI, Bedrock, Amazon Q). Amazon.jobs uses proprietary ATS \u2014 Brave Search fallback for discovery."
     },
     {
       "name": "Notion",
       "tier": "mature_ai_startup",
       "h1b_status": "confirmed",
-      "priority": 13,
+      "priority": 14,
       "careers_url": "https://www.notion.com/careers",
       "ats_platform": "ashby",
       "ats_slug": "notion",
@@ -134,7 +144,7 @@
       "name": "Glean",
       "tier": "mature_ai_startup",
       "h1b_status": "likely",
-      "priority": 14,
+      "priority": 15,
       "careers_url": "https://www.glean.com/careers",
       "ats_platform": "greenhouse",
       "ats_slug": "gleanwork",
@@ -144,7 +154,7 @@
       "name": "Ramp",
       "tier": "mature_ai_startup",
       "h1b_status": "confirmed",
-      "priority": 15,
+      "priority": 16,
       "careers_url": "https://ramp.com/careers",
       "ats_platform": "ashby",
       "ats_slug": "ramp",
@@ -154,17 +164,17 @@
       "name": "Hugging Face",
       "tier": "mature_ai_startup",
       "h1b_status": "likely",
-      "priority": 16,
+      "priority": 17,
       "careers_url": "https://huggingface.co/careers",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "AI ML platform — uses Workable, Brave Search fallback"
+      "notes": "AI ML platform \u2014 uses Workable, Brave Search fallback"
     },
     {
       "name": "Weights & Biases",
       "tier": "mature_ai_startup",
       "h1b_status": "likely",
-      "priority": 17,
+      "priority": 18,
       "careers_url": "https://wandb.ai/site/careers",
       "ats_platform": "ashby",
       "ats_slug": "wandb",
@@ -174,7 +184,7 @@
       "name": "Replit",
       "tier": "mature_ai_startup",
       "h1b_status": "likely",
-      "priority": 18,
+      "priority": 19,
       "careers_url": "https://replit.com/careers",
       "ats_platform": "ashby",
       "ats_slug": "replit",
@@ -184,7 +194,7 @@
       "name": "Runway",
       "tier": "mature_ai_startup",
       "h1b_status": "likely",
-      "priority": 19,
+      "priority": 20,
       "careers_url": "https://runwayml.com/careers",
       "ats_platform": "greenhouse",
       "ats_slug": "runwayml",
@@ -194,71 +204,71 @@
       "name": "Harvey",
       "tier": "ai_vertical_saas",
       "h1b_status": "likely",
-      "priority": 20,
+      "priority": 21,
       "careers_url": "https://www.harvey.ai/careers",
       "ats_platform": "ashby",
       "ats_slug": "harvey",
-      "notes": "Legal AI, Series C ~$5B val, Anthropic-backed, H1B sponsor likely — verify with recruiter"
+      "notes": "Legal AI, Series C ~$5B val, Anthropic-backed, H1B sponsor likely \u2014 verify with recruiter"
     },
     {
       "name": "Sierra",
       "tier": "ai_vertical_saas",
       "h1b_status": "likely",
-      "priority": 21,
+      "priority": 22,
       "careers_url": "https://sierra.ai/careers",
       "ats_platform": "ashby",
       "ats_slug": "sierra",
-      "notes": "Customer experience AI, Bret Taylor's company, Series B ~$4.5B val — verify H1B"
+      "notes": "Customer experience AI, Bret Taylor's company, Series B ~$4.5B val \u2014 verify H1B"
     },
     {
       "name": "Decagon",
       "tier": "ai_vertical_saas",
       "h1b_status": "likely",
-      "priority": 22,
+      "priority": 23,
       "careers_url": "https://decagon.ai/careers",
       "ats_platform": "ashby",
       "ats_slug": "decagon",
-      "notes": "Customer service AI, Series C ~$1.5B val — verify H1B"
+      "notes": "Customer service AI, Series C ~$1.5B val \u2014 verify H1B"
     },
     {
       "name": "Cresta",
       "tier": "ai_vertical_saas",
       "h1b_status": "likely",
-      "priority": 23,
+      "priority": 24,
       "careers_url": "https://cresta.com/careers",
       "ats_platform": "greenhouse",
       "ats_slug": "cresta",
-      "notes": "Contact center AI, Series C ~$1.7B val — verify H1B"
+      "notes": "Contact center AI, Series C ~$1.7B val \u2014 verify H1B"
     },
     {
       "name": "Abridge",
       "tier": "ai_vertical_saas",
       "h1b_status": "likely",
-      "priority": 24,
+      "priority": 25,
       "careers_url": "https://www.abridge.com/careers",
       "ats_platform": "greenhouse",
       "ats_slug": "abridge",
-      "notes": "Healthcare AI (clinical docs), Series C ~$2.75B val — verify H1B"
+      "notes": "Healthcare AI (clinical docs), Series C ~$2.75B val \u2014 verify H1B"
     },
     {
       "name": "Ai2",
       "tier": "frontier_research_org",
       "h1b_status": "likely",
-      "priority": 25,
+      "priority": 26,
       "careers_url": "https://allenai.org/careers",
       "ats_platform": "greenhouse",
       "ats_slug": "allenai",
-      "notes": "Allen Institute for AI. Research nonprofit, Seattle-based. H1B sponsoring. Comp may be below Sam's $300K floor for non-research roles — verify at offer time."
+      "notes": "Allen Institute for AI. Research nonprofit, Seattle-based. H1B sponsoring. Comp may be below Sam's $300K floor for non-research roles \u2014 verify at offer time."
     },
     {
       "name": "Imbue",
       "tier": "frontier_research_org",
       "h1b_status": "likely",
-      "priority": 26,
+      "priority": 27,
       "careers_url": "https://imbue.com/careers/",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "Reasoning + agents research lab, Series B ~$200M raised ~$1B val — verify H1B. Watch list: Thinking Machines Lab and Safe Superintelligence when they open non-engineering roles."
+      "notes": "Reasoning + agents research lab, Series B ~$200M raised ~$1B val \u2014 verify H1B. Watch list: Thinking Machines Lab and Safe Superintelligence when they open non-engineering roles."
     }
   ]
 }
