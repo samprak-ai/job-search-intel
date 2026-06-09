@@ -128,7 +128,7 @@
       "careers_url": "https://www.amazon.jobs/",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "Sam's current employer \u2014 6.5+ years at AWS Startups. Target AI-adjacent teams with builder-operator mandate (e.g. AGI, Bedrock, Amazon Q). Amazon.jobs uses proprietary ATS \u2014 Brave Search fallback for discovery."
+      "notes": "Sam's current employer \u2014 6.5+ years at AWS Startups. AWS roles ONLY (Bedrock, SageMaker, Amazon Q, AWS AI). Non-AWS orgs (Alexa, Amazon Music, Ads, retail, AGI/Nova) are filtered out by _is_aws_role() in discovery.py. Amazon.jobs uses proprietary ATS \u2014 Brave Search fallback for discovery."
     },
     {
       "name": "Notion",

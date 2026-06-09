@@ -143,7 +143,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 10. Snowflake — confirmed H1B
 11. Salesforce (verify team has build-first culture) — confirmed H1B
 12. LinkedIn — confirmed H1B
-13. Amazon (Sam's current employer; target AGI, Bedrock, Amazon Q teams; amazon.jobs proprietary ATS) — confirmed H1B
+13. Amazon (Sam's current employer; **AWS roles only** — Bedrock, SageMaker, Amazon Q, AWS AI; non-AWS orgs filtered out by `_is_aws_role()`; amazon.jobs proprietary ATS) — confirmed H1B
 
 **Mature Horizontal AI Startups**
 14. Notion — confirmed H1B
