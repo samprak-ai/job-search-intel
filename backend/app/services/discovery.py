@@ -46,8 +46,16 @@ JUNK_TITLE_SIGNALS = [
     "what i learned", "apollo vs", "beyond outreach",
 ]
 
-# Matches "27,000+ ... jobs", "1000+ ... jobs", "154,000+ jobs", etc.
-AGGREGATION_RE = re.compile(r"\d[\d,]*\+?\s+.*?\bjobs?\b", re.IGNORECASE)
+# Matches aggregation/listing-page titles: "27,000+ ... jobs", "1000+ jobs",
+# "154,000+ jobs", "1,234 jobs in Seattle".
+# Requires a real count signal — a thousands-comma OR a trailing '+' — within
+# a few words of "jobs". A bare number like an Amazon "Job ID: 2873677"
+# (no comma, no '+') followed by the "Amazon.jobs" site suffix must NOT match.
+AGGREGATION_RE = re.compile(
+    r"\b\d{1,3}(?:,\d{3})+\+?\s+(?:\S+\s+){0,3}jobs?\b"  # comma-grouped count near 'jobs'
+    r"|\b\d+\+\s+(?:\S+\s+){0,3}jobs?\b",                 # 'NNN+' count near 'jobs'
+    re.IGNORECASE,
+)
 
 
 ATS_SOURCES = {"greenhouse", "ashby", "lever"}
@@ -125,6 +133,25 @@ def looks_non_us_search_result(title: str, description: str) -> bool:
     """Best-effort guard for web-search results that lack structured location."""
     text = f" {title} {description} ".lower()
     return any(signal in text for signal in NON_US_LOCATION_SIGNALS)
+
+
+# Trailing noise that search engines append to job titles:
+#   "Senior PM - Job ID: 2873677 | Amazon.jobs"
+#   "Product Manager | LinkedIn"
+_TITLE_JOB_ID_RE = re.compile(r"\s*[-|]\s*job\s*id:?\s*\d+\b", re.IGNORECASE)
+_TITLE_SITE_SUFFIX_RE = re.compile(r"\s*\|\s*[^|]+$")
+
+
+def clean_search_title(title: str) -> str:
+    """Strip search-engine cruft (site-name suffix, 'Job ID: NNN') from a title.
+
+    Keeps stored titles clean so scoring and the application pipeline don't
+    ingest "| Amazon.jobs" / "Job ID: 12345" noise.
+    """
+    t = (title or "").strip()
+    t = _TITLE_SITE_SUFFIX_RE.sub("", t)   # drop ' | Amazon.jobs'
+    t = _TITLE_JOB_ID_RE.sub("", t)        # drop ' - Job ID: 2873677'
+    return t.strip(" -|").strip()
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +292,26 @@ def _build_brave_query(company: dict) -> str:
     company_name = company["name"]
     careers_domain = urlparse(company["careers_url"]).netloc
 
+    # Amazon: enormous proprietary job board (amazon.jobs). A generic query
+    # drowns in non-AI roles, AWS-partner noise, and third-party listings.
+    # Tighten to AI-org builder-operator roles aligned with Sam's target
+    # role types, restricted to amazon.jobs only.
+    if company_name.lower() == "amazon" or "amazon.jobs" in careers_domain:
+        # Brave rejects long/complex queries (HTTP 422), so this must stay
+        # compact: one role-level group AND one AI-org group AND the site
+        # filter. No location group — non-US Amazon roles are filtered
+        # downstream by looks_non_us_search_result(). This shape surfaces
+        # Principal/Senior PM roles in AGI / Bedrock / GenAI orgs and skips
+        # Amazon's retail/ops/logistics PM volume.
+        role_keywords = (
+            '"Principal Product Manager" OR "Senior Product Manager"'
+        )
+        ai_org_keywords = '"AGI" OR "generative AI" OR Bedrock OR "Amazon Q"'
+        return (
+            f'"{company_name}" ({role_keywords}) ({ai_org_keywords}) '
+            f"site:amazon.jobs"
+        )
+
     role_keywords = (
         '"AI" OR "solutions engineer" OR "product manager" OR '
         '"partnerships" OR "GTM" OR "sales engineer"'
@@ -293,6 +340,9 @@ _JOB_URL_PATTERNS = [
     # Path with /jobs/<id>/ followed by optional slug (e.g. Salesforce, generic ATS)
     _re.compile(r"/jobs?/[a-z][a-z0-9_-]{1,}(/[a-z0-9._-]+)*/?$", _re.I),
     _re.compile(r"/jobs?/view/\d+", _re.I),                          # LinkedIn /jobs/view/12345
+    # Numeric job IDs (Amazon amazon.jobs/en/jobs/2812345/slug, and similar
+    # proprietary boards). Requires 5+ digits to avoid matching years/pages.
+    _re.compile(r"/jobs?/\d{5,}", _re.I),
     _re.compile(r"/careers/(jobs?|positions?|openings?)/[a-z0-9]", _re.I),
     _re.compile(r"/positions?/[a-z0-9]", _re.I),
     _re.compile(r"/openings?/[a-z0-9]", _re.I),
@@ -368,7 +418,7 @@ async def discover_via_web_search(company: dict) -> dict:
     rejected_url_pattern = 0
     for result in results:
         url = result.get("url", "")
-        title = result.get("title", "")
+        title = clean_search_title(result.get("title", ""))
         description = result.get("description", "")
 
         if not url or not title:
