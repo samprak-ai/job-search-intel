@@ -167,6 +167,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 
 ### Notifications policy
 - **Per-role emails:** fire when a role meets its company notification bar. Default bar is Strong Match (overall_score ≥ 80); **Amazon's bar is 70** (Good Match+), because big-company JD-realism score caps push genuinely strong-fit Amazon roles into the 70–79 band. Bar is set in `notification_threshold()` / `COMPANY_NOTIFICATION_THRESHOLDS` in `notifications.py`. Email subject + header adapt to the role's actual match_tier.
+- **Internal-transfer scoring (Amazon):** Sam currently works at Amazon (AWS), so Amazon roles are scored as internal transfers — `build_scoring_message()` injects an "Internal Transfer Context" block (`_is_internal_transfer()` in `scoring.py`). It lifts the big-company 84 cap (internal moves face a lower effective bar, no big-co onboarding friction), sets h1b_likelihood to 100, and tells the scorer to grade on genuine fit. Net effect: AI/GTM builder roles rise into Strong/Perfect while weak-fit roles settle to their true level — it differentiates, it doesn't blanket-inflate.
 - **Daily digest:** sent when ≥1 qualifying match is found that day; body groups Perfect → Strong → Good sections, sorted by score descending within each. A role qualifies if it meets its company bar, so non-Amazon Good Matches (70–79) stay out of the digest while Amazon's appear. Skipped on days with zero qualifying matches.
 - Resend free tier (100/day, 3,000/month) easily fits historical email volume at this threshold (~85 emails/month forecast).
 

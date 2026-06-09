@@ -52,7 +52,7 @@ IMPORTANT: Apply this filter ON TOP of other dimensions. A scaling-ops role at a
 
 Cap overall_score for pure-scaling roles at 82 (Strong Match ceiling), even if other dimensions are perfect — these should not qualify as Perfect Match.
 Cap overall_score at 78 when the role is primarily relationship-only partnerships, account management, customer success, enablement, or executive reporting without explicit build scope.
-Cap overall_score at 84 for big-company AI roles unless the JD shows a specific fast-moving team such as DeepMind, Labs, Research/Product, Incubation, Growth, Applied AI, or an explicitly prototype-driven group.
+Cap overall_score at 84 for big-company AI roles unless the JD shows a specific fast-moving team such as DeepMind, Labs, Research/Product, Incubation, Growth, Applied AI, or an explicitly prototype-driven group, OR the role is an internal transfer at the candidate's current employer (see "Internal Transfer Context" if present). Internal moves clear a lower effective bar and carry no big-company onboarding friction for this candidate, so the 84 cap does NOT apply to them — score those on genuine fit.
 
 Assign a match_tier based on overall score:
 - "Perfect Match" — 90-100 overall, exceptional alignment across all dimensions
@@ -84,9 +84,31 @@ def _format_list(values: list[str] | None) -> str:
     return "\n".join(f"- {value}" for value in values)
 
 
+# The candidate currently works at Amazon (AWS), so Amazon roles are internal
+# transfers, which the scorer must weigh differently (lower effective bar, no
+# visa friction, big-company environment already navigated).
+CURRENT_EMPLOYER_KEY = "amazon"
+
+
+def _is_internal_transfer(company: str | None) -> bool:
+    return CURRENT_EMPLOYER_KEY in (company or "").lower().replace(" ", "")
+
+
+_INTERNAL_TRANSFER_CONTEXT = """## Internal Transfer Context
+The candidate is a CURRENT Amazon employee (Sr. GTM / Sales Operations Manager, AWS Startups, 6.5+ years). This role is an INTERNAL TRANSFER, which changes the realism calculus — score accordingly:
+- Internal transfers clear a LOWER effective hiring bar than external applicants: internal mobility is encouraged, hiring managers favor known performers, and posted minimum qualifications are applied more flexibly to internal movers.
+- No visa/sponsorship friction: set h1b_likelihood to 100 (he is already employed and work-authorized).
+- The big-company environment is not a downside here: he already operates effectively inside Amazon's mechanisms, org structure, and AWS/AI ecosystem (Bedrock, Kiro, Amazon Q, AGI org). That internal fluency is an asset for these roles, not a liability — do NOT apply the big-company 84 cap to this role.
+- Net effect: a role that would be a borderline external match is effectively a stronger match for this candidate. Score on genuine fit; still reserve 90+ for roles that are also a strong builder-operator / AI-product fit, and still apply the engineer/solutions-architect exclusion and the scaling-ops downweight where they apply.
+"""
+
+
 def build_scoring_message(role: dict, profile: dict) -> str:
     """Build the user message with role and profile context."""
-    return f"""## Job Posting
+    internal_block = (
+        _INTERNAL_TRANSFER_CONTEXT + "\n" if _is_internal_transfer(role.get("company")) else ""
+    )
+    return f"""{internal_block}## Job Posting
 **Company:** {role['company']}
 **Title:** {role['title']}
 **Source:** {role.get('source', 'unknown')}
