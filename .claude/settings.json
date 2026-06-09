@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR/backend\" && out=$(python3 selfcheck.py) || { printf '%s\\n' \"$out\" >&2; echo 'Self-check failed — a known invariant regressed. See LEARNINGS.md.' >&2; exit 2; }"
+          }
+        ]
+      }
+    ]
+  }
+}
