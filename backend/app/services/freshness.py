@@ -233,6 +233,41 @@ async def _check_http(url: str) -> bool | None:
         return None
 
 
+async def _check_amazon(url: str) -> bool | None:
+    """Check if an amazon.jobs posting is still live.
+
+    Amazon hard-404s expired postings, so 404/410 is a reliable "gone" signal.
+    But amazon.jobs also bot-throttles with 403/429 under rapid requests — those
+    must stay INCONCLUSIVE (None), or a throttled freshness sweep would wrongly
+    mark live roles stale. (The generic _check_http treats 403 as dead, which is
+    wrong for Amazon — hence this dedicated check.)
+    """
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml",
+    }
+    try:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers, timeout=CHECK_TIMEOUT)
+            if resp.status_code in (404, 410):
+                return False
+            if resp.status_code == 200:
+                body = (resp.text or "").lower()
+                for signal in _CLOSED_BODY_SIGNALS:
+                    if signal in body:
+                        return False
+                return True
+            return None  # 403/429/5xx → throttled or transient, don't conclude
+    except (httpx.TimeoutException, httpx.ConnectError):
+        return None
+    except Exception as e:
+        logger.debug(f"Amazon freshness check failed for {url}: {e}")
+        return None
+
+
 async def check_role_freshness(role: dict) -> dict | None:
     """Check if a single role's URL is still live.
 
@@ -253,9 +288,11 @@ async def check_role_freshness(role: dict) -> dict | None:
         result = await _check_lever(url)
     elif source == "ashby" or "ashbyhq.com" in url:
         result = await _check_ashby(url)
+    elif source == "amazon" or "amazon.jobs" in url:
+        result = await _check_amazon(url)
 
     # Fall back to generic HTTP check
-    if result is None:
+    if result is None and "amazon.jobs" not in url:
         result = await _check_http(url)
 
     if result is None:
