@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import (
+    application_outcomes,
     application_packages,
     discover,
     forge,
@@ -43,6 +44,7 @@ app.include_router(usage.router, prefix="/usage", tags=["usage"])
 app.include_router(resume_tailor.router, prefix="/resume-tailor", tags=["resume-tailor"])
 app.include_router(freshness.router, prefix="/freshness", tags=["freshness"])
 app.include_router(application_packages.router, prefix="/application-packages", tags=["application-packages"])
+app.include_router(application_outcomes.router, prefix="/application-outcomes", tags=["application-outcomes"])
 
 
 @app.get("/health")

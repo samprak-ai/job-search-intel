@@ -81,7 +81,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
   - Score alignment across 5 dimensions: domain fit, technical fit, seniority fit, role type fit, H1B likelihood
   - Apply JD realism filter (posted requirements are often inflated — 65%+ alignment on the right dimensions = strong match)
   - Output structured JSON: `{ match_tier, overall_score, dimension_scores, rationale, gaps, cover_letter_angles }`
-- Match tiers: `Strong` / `Worth Applying` / `Stretch` / `Skip`
+- Match tiers (score bands): `Perfect Match` (90–100) / `Strong Match` (80–89) / `Good Match` (70–79) / `Possible Match` (60–69) / `Unlikely Match` (<60). These are the exact strings emitted by `scoring.py` and stored in `role_scores.match_tier` — keep this list in sync with the prompt's tier definitions.
 - Stored to `role_scores` table
 
 ### Module 4 — Interview Intel (Lite)
