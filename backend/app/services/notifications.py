@@ -8,6 +8,25 @@ from app.config import get_settings, get_supabase_client
 logger = logging.getLogger(__name__)
 
 
+# Per-company notification bar. Most companies notify at Strong+ (80+), but
+# big-company roles get JD-realism score caps (see scoring.py), so genuinely
+# strong-fit Amazon roles cluster in the 70-79 "Good Match" band. Sam wants
+# those surfaced, so Amazon's bar is 70.
+DEFAULT_NOTIFICATION_THRESHOLD = 80
+COMPANY_NOTIFICATION_THRESHOLDS = {
+    "amazon": 70,
+}
+
+
+def notification_threshold(company: str | None) -> int:
+    """Return the minimum overall_score that qualifies a role for notification."""
+    key = (company or "").lower().replace(" ", "")
+    for name, threshold in COMPANY_NOTIFICATION_THRESHOLDS.items():
+        if name in key:
+            return threshold
+    return DEFAULT_NOTIFICATION_THRESHOLD
+
+
 async def send_match_notification_email(role: dict, score_data: dict) -> bool:
     """Send email notification when a Strong (80+) or Perfect (90+) match is found.
 
@@ -21,14 +40,14 @@ async def send_match_notification_email(role: dict, score_data: dict) -> bool:
     overall_score = score_data.get("overall_score", 0)
     match_tier = score_data.get("match_tier", "Strong Match")
 
-    # Guard: don't notify on stale roles or sub-Strong scores
+    # Guard: don't notify on stale roles or sub-threshold scores
     if role.get("is_live") is False:
         logger.info(
             f"Skipping match email — role is stale: "
             f"{role.get('title')} at {role.get('company')}"
         )
         return False
-    if overall_score < 80:
+    if overall_score < notification_threshold(role.get("company")):
         return False
 
     settings = get_settings()
@@ -205,30 +224,36 @@ async def send_daily_digest_email(
         tier = score.get("match_tier", "Unlikely Match")
         grouped.setdefault(tier, []).append(role)
 
-    # Only notify when at least one Strong (80+) or Perfect (90+) match is found.
-    qualifying_roles = grouped["Perfect Match"] + grouped["Strong Match"]
+    # A role qualifies for the digest when its score meets its company's
+    # notification bar (80 default, 70 for Amazon). Perfect/Strong always
+    # qualify; Good Match (70-79) qualifies only for low-bar companies like
+    # Amazon — so non-Amazon Good Matches stay out of the digest.
+    def _qualifies(role: dict) -> bool:
+        score = role["score"].get("overall_score", 0)
+        return score >= notification_threshold(role.get("company"))
+
+    def _sorted_qualifying(tier: str) -> list[dict]:
+        return sorted(
+            (r for r in grouped[tier] if _qualifies(r)),
+            key=lambda r: r["score"].get("overall_score", 0),
+            reverse=True,
+        )
+
+    perfect_roles = _sorted_qualifying("Perfect Match")
+    strong_roles = _sorted_qualifying("Strong Match")
+    good_roles = _sorted_qualifying("Good Match")
+
+    qualifying_roles = perfect_roles + strong_roles + good_roles
     if not qualifying_roles:
         logger.info(
-            f"Daily digest skipped — no Strong+ Matches today "
+            f"Daily digest skipped — no qualifying matches today "
             f"(scan summary: {total_new} new, {auto_scored} scored)"
         )
         return False
 
-    perfect_count = len(grouped["Perfect Match"])
-    strong_count = len(grouped["Strong Match"])
-
-    # Sort within each tier by overall_score descending so the strongest
-    # candidates surface first within each section.
-    perfect_roles = sorted(
-        grouped["Perfect Match"],
-        key=lambda r: r["score"].get("overall_score", 0),
-        reverse=True,
-    )
-    strong_roles = sorted(
-        grouped["Strong Match"],
-        key=lambda r: r["score"].get("overall_score", 0),
-        reverse=True,
-    )
+    perfect_count = len(perfect_roles)
+    strong_count = len(strong_roles)
+    good_count = len(good_roles)
 
     def _render_cards(roles_subset):
         out = []
@@ -264,6 +289,12 @@ async def send_daily_digest_email(
           <h2 style="font-size:16px;color:#111827;margin:0 0 12px;">Strong Matches Today ({strong_count})</h2>
           {_render_cards(strong_roles)}
         </div>""")
+    if good_roles:
+        sections.append(f"""
+        <div style="margin-bottom:24px;">
+          <h2 style="font-size:16px;color:#111827;margin:0 0 12px;">Good Matches Today ({good_count})</h2>
+          {_render_cards(good_roles)}
+        </div>""")
     top_html = "".join(sections)
     other_html = ""
     unlikely_html = ""
@@ -290,7 +321,7 @@ async def send_daily_digest_email(
 
       <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
         <p style="margin:0 0 4px;font-size:15px;font-weight:600;color:#111827;">
-          {perfect_count} Perfect + {strong_count} Strong today
+          {perfect_count} Perfect + {strong_count} Strong{f' + {good_count} Good' if good_count else ''} today
         </p>
         <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">
           {total_new} new role{'s' if total_new != 1 else ''} scanned across {companies_searched} {'companies' if companies_searched != 1 else 'company'}
@@ -312,6 +343,8 @@ async def send_daily_digest_email(
             subject_parts.append(f"{perfect_count} Perfect")
         if strong_count:
             subject_parts.append(f"{strong_count} Strong")
+        if good_count:
+            subject_parts.append(f"{good_count} Good")
         subject_summary = " + ".join(subject_parts) if subject_parts else "0"
 
         params: resend.Emails.SendParams = {

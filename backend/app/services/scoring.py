@@ -199,11 +199,14 @@ async def score_role(role_id: str, force: bool = False) -> dict:
         f"{score_data['match_tier']} ({score_data['overall_score']})"
     )
 
-    # Strong+ (80+) handling. For Anthropic, run the full agentic application
-    # package pipeline (gate → align → spec → draft → critic → heal → email).
-    # The pipeline sends its OWN email with attachments, so we suppress the
-    # duplicate Strong Match notification for Anthropic only.
-    if score_data.get("overall_score", 0) >= 80:
+    # Match handling. The notification bar is company-aware (80 default, 70 for
+    # Amazon — see notification_threshold). For Anthropic, run the full agentic
+    # application package pipeline (gate → align → spec → draft → critic → heal
+    # → email); the pipeline sends its OWN email with attachments, so we
+    # suppress the duplicate Strong Match notification for Anthropic only.
+    from app.services.notifications import notification_threshold
+
+    if score_data.get("overall_score", 0) >= notification_threshold(role.get("company")):
         company_lower = (role.get("company") or "").lower().replace(" ", "")
         anthropic_handled = False
 

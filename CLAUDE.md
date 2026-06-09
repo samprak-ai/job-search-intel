@@ -166,8 +166,8 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 27. Imbue (reasoning + agents research) — likely H1B
 
 ### Notifications policy
-- **Per-role emails:** fire for Strong Match (overall_score ≥ 80) and Perfect Match (≥ 90). Email subject + header adapt to the role's actual match_tier.
-- **Daily digest:** sent when ≥1 Strong+ Match is found that day; body groups Perfect Matches first, Strong Matches second, sorted by score descending within each section. Skipped on days with zero Strong+ matches.
+- **Per-role emails:** fire when a role meets its company notification bar. Default bar is Strong Match (overall_score ≥ 80); **Amazon's bar is 70** (Good Match+), because big-company JD-realism score caps push genuinely strong-fit Amazon roles into the 70–79 band. Bar is set in `notification_threshold()` / `COMPANY_NOTIFICATION_THRESHOLDS` in `notifications.py`. Email subject + header adapt to the role's actual match_tier.
+- **Daily digest:** sent when ≥1 qualifying match is found that day; body groups Perfect → Strong → Good sections, sorted by score descending within each. A role qualifies if it meets its company bar, so non-Amazon Good Matches (70–79) stay out of the digest while Amazon's appear. Skipped on days with zero qualifying matches.
 - Resend free tier (100/day, 3,000/month) easily fits historical email volume at this threshold (~85 emails/month forecast).
 
 ### Daily cron scope
