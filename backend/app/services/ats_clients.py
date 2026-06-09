@@ -70,11 +70,13 @@ ROLE_KEYWORDS = [
     "applied ai", "ai applications", "ai automation",
     "ai agents", "agents", "labs", "incubation",
     "new products", "new bets", "strategic projects",
-    # GTM systems builder roles
+    # GTM systems builder roles + GTM specialist (AWS WWSO-style GTM roles)
     "gtm systems", "gtm automation", "go-to-market systems",
     "go to market systems", "sales intelligence",
     "business systems", "ai operations", "systems and ai",
     "partner business systems",
+    "gtm specialist", "go-to-market specialist", "gtm lead",
+    "go-to-market lead", "gtm strategy", "go-to-market strategy",
     # Chief of staff with likely product/AI/GTM altitude
     "chief of staff",
     # Senior leadership titles are allowed only when paired with relevant text.
@@ -323,94 +325,118 @@ async def fetch_lever_jobs(slug: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Amazon runs a proprietary board with a public JSON search endpoint that
 # returns structured location + org (business_category) data — far better
-# than scraping Brave snippets. Sam's Amazon focus is narrow:
+# than scraping Brave snippets. Sam's Amazon focus:
 #   • AWS + AGI orgs only (business_category aws / amazon-artificial-...)
-#   • Seattle only
-#   • Product Manager roles
+#   • Seattle (incl. roles where Seattle is one of several posted locations)
+#   • Product Manager AND GTM Specialist roles (both are Sam target types)
 # The endpoint's location facet doesn't filter strictly, so we post-filter
-# on normalized_location. Sorted by recency; capped per run to bound the
-# number of inline scoring calls (dedup surfaces the rest on later runs).
+# on the job's full locations list. Sorted by recency; capped per run to
+# bound inline scoring calls (dedup surfaces the rest on later runs).
 
 AMAZON_SEARCH_URL = "https://www.amazon.jobs/en/search.json"
 AMAZON_TARGET_BUSINESS_CATEGORIES = [
     "aws",
     "amazon-artificial-general-intelligence",
 ]
+# One search pass per query phrase. Amazon's base_query is a relevance search,
+# so a "GTM Specialist" role won't surface under "Product Manager" — each
+# target role family needs its own pass.
+AMAZON_BASE_QUERIES = ["Product Manager", "GTM Specialist"]
 AMAZON_TARGET_CITY = "seattle"
-AMAZON_RESULT_CAP = 30
+# Per-query cap so each role family gets fair representation — otherwise the
+# first (high-volume) query exhausts the budget before the next one runs.
+AMAZON_RESULT_CAP_PER_QUERY = 20
+
+
+def _amazon_job_in_target_city(job: dict) -> bool:
+    """True if the target city is the primary OR any listed location.
+
+    Many Amazon roles post to several cities (e.g. SF / Austin / Seattle) with
+    a non-Seattle primary `normalized_location`. The full `locations` list (a
+    list of JSON-string blobs) is the source of truth — a substring check on it
+    is enough to tell whether Seattle is one of the options.
+    """
+    if AMAZON_TARGET_CITY in (job.get("normalized_location") or "").lower():
+        return True
+    for loc in job.get("locations") or []:
+        if AMAZON_TARGET_CITY in str(loc).lower():
+            return True
+    return False
 
 
 async def fetch_amazon_jobs(slug: str = "amazon") -> list[dict]:
-    """Fetch Seattle AWS/AGI Product Manager roles from amazon.jobs."""
+    """Fetch Seattle AWS/AGI Product Manager + GTM roles from amazon.jobs."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
         "Accept": "application/json",
     }
-    base_params = [("business_category[]", c) for c in AMAZON_TARGET_BUSINESS_CATEGORIES]
-    base_params += [("base_query", "Product Manager"), ("sort", "recent")]
+    category_params = [("business_category[]", c) for c in AMAZON_TARGET_BUSINESS_CATEGORIES]
 
     jobs: list[dict] = []
     seen: set[str] = set()
-    offset, page_size = 0, 100
 
     async with httpx.AsyncClient() as client:
-        for _ in range(5):  # safeguard against runaway pagination
-            params = base_params + [
-                ("result_limit", str(page_size)),
-                ("offset", str(offset)),
-            ]
-            try:
-                resp = await client.get(
-                    AMAZON_SEARCH_URL, params=params, headers=headers, timeout=ATS_TIMEOUT
-                )
-                resp.raise_for_status()
-                data = resp.json()
-            except Exception as e:
-                logger.error(f"Amazon jobs API error (offset={offset}): {e}")
-                break
-
-            page = data.get("jobs", [])
-            if not page:
-                break
-
-            for j in page:
-                location = j.get("normalized_location") or ""
-                if AMAZON_TARGET_CITY not in location.lower():
-                    continue
-                path = j.get("job_path") or ""
-                if not path:
-                    continue
-                posting_url = f"https://www.amazon.jobs{path}"
-                if posting_url in seen:
-                    continue
-                seen.add(posting_url)
-
-                raw = j.get("description") or j.get("description_short") or ""
-                # Amazon truncates "Manager" → "Mgr" in many titles, which
-                # breaks the spelled-out "product manager" keyword match.
-                # Normalize for both matching and clean display.
-                title = re.sub(r"\bMgr\b", "Manager", j.get("title", ""))
-                jobs.append({
-                    "title": title,
-                    "url": posting_url,
-                    "location": location,
-                    "department": j.get("business_category", ""),
-                    "raw_jd": _strip_html_tags(raw) if raw else "",
-                })
-                if len(jobs) >= AMAZON_RESULT_CAP:
+        for base_query in AMAZON_BASE_QUERIES:
+            kept_this_query = 0
+            offset, page_size = 0, 100
+            for _ in range(5):  # safeguard against runaway pagination
+                params = category_params + [
+                    ("base_query", base_query),
+                    ("sort", "recent"),
+                    ("result_limit", str(page_size)),
+                    ("offset", str(offset)),
+                ]
+                try:
+                    resp = await client.get(
+                        AMAZON_SEARCH_URL, params=params, headers=headers, timeout=ATS_TIMEOUT
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                except Exception as e:
+                    logger.error(f"Amazon jobs API error (q={base_query!r}, offset={offset}): {e}")
                     break
 
-            if len(jobs) >= AMAZON_RESULT_CAP:
-                break
+                page = data.get("jobs", [])
+                if not page:
+                    break
 
-            total = data.get("hits", 0)
-            offset += page_size
-            if offset >= total:
-                break
+                for j in page:
+                    if not _amazon_job_in_target_city(j):
+                        continue
+                    path = j.get("job_path") or ""
+                    if not path:
+                        continue
+                    posting_url = f"https://www.amazon.jobs{path}"
+                    if posting_url in seen:
+                        continue
+                    seen.add(posting_url)
+
+                    raw = j.get("description") or j.get("description_short") or ""
+                    # Amazon truncates "Manager" → "Mgr" in many titles, which
+                    # breaks the spelled-out "product manager" keyword match.
+                    # Normalize for both matching and clean display.
+                    title = re.sub(r"\bMgr\b", "Manager", j.get("title", ""))
+                    jobs.append({
+                        "title": title,
+                        "url": posting_url,
+                        "location": j.get("normalized_location") or "",
+                        "department": j.get("business_category", ""),
+                        "raw_jd": _strip_html_tags(raw) if raw else "",
+                    })
+                    kept_this_query += 1
+                    if kept_this_query >= AMAZON_RESULT_CAP_PER_QUERY:
+                        break
+
+                if kept_this_query >= AMAZON_RESULT_CAP_PER_QUERY:
+                    break
+                total = data.get("hits", 0)
+                offset += page_size
+                if offset >= total:
+                    break
 
     logger.info(
-        f"Amazon [{slug}]: fetched {len(jobs)} Seattle AWS/AGI jobs "
-        f"(cap {AMAZON_RESULT_CAP})"
+        f"Amazon [{slug}]: fetched {len(jobs)} Seattle AWS/AGI PM+GTM jobs "
+        f"({AMAZON_RESULT_CAP_PER_QUERY}/query)"
     )
     return jobs
 

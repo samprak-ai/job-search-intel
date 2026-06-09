@@ -128,7 +128,7 @@
       "careers_url": "https://www.amazon.jobs/",
       "ats_platform": "amazon",
       "ats_slug": "amazon",
-      "notes": "Sam's current employer \u2014 6.5+ years at AWS Startups. Scoped to Seattle + AWS/AGI orgs + Product Manager roles via the amazon.jobs search.json API (fetch_amazon_jobs in ats_clients.py). business_category filters to 'aws' and 'amazon-artificial-general-intelligence'; location post-filtered to Seattle; capped at 30 most-recent per run (dedup surfaces the rest)."
+      "notes": "Sam's current employer \u2014 6.5+ years at AWS Startups. Scoped to Seattle + AWS/AGI orgs + Product Manager & GTM Specialist roles via the amazon.jobs search.json API (fetch_amazon_jobs in ats_clients.py). business_category filters to 'aws' and 'amazon-artificial-general-intelligence'; one search pass per role family (Product Manager, GTM Specialist); Seattle match includes multi-location roles where Seattle is one of several posted locations; capped 20 per query-family per run (dedup surfaces the rest)."
     },
     {
       "name": "Notion",

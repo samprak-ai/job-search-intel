@@ -143,7 +143,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 10. Snowflake — confirmed H1B
 11. Salesforce (verify team has build-first culture) — confirmed H1B
 12. LinkedIn — confirmed H1B
-13. Amazon (Sam's current employer; scoped to **Seattle + AWS/AGI orgs + Product Manager roles** via the amazon.jobs `search.json` API — `fetch_amazon_jobs()` in ats_clients.py; capped 30/run) — confirmed H1B
+13. Amazon (Sam's current employer; scoped to **Seattle + AWS/AGI orgs + Product Manager & GTM Specialist roles** via the amazon.jobs `search.json` API — `fetch_amazon_jobs()` in ats_clients.py. Seattle match includes multi-location roles where Seattle is one of several posted locations; 20/query-family per run) — confirmed H1B
 
 **Mature Horizontal AI Startups**
 14. Notion — confirmed H1B
