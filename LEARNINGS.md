@@ -59,6 +59,13 @@ These are harder to assert statically. Follow the procedure; promote to a
   `application_outcomes` (return path) must not drift into competing state. Both
   funnel through `services/outcomes.record_outcome()`; don't write
   `application_outcomes` directly from a new caller.
+- **M7 — Verify clean dependency resolution before pushing requirements.txt.**
+  An *incremental* local `pip install --upgrade <pkg>` can leave the venv working
+  while `requirements.txt` is unresolvable on a fresh install (it bumps transitive
+  deps past their pins silently) — which then fails Railway's clean build. Before
+  pushing a dep change, run `pip install --dry-run --ignore-installed -r
+  requirements.txt` and confirm exit 0. (Bit us: supabase 2.31 → realtime needs
+  pydantic>=2.11.7 vs the pinned 2.10.4.)
 - **M6 — Supabase key + RLS posture.** RLS is ENABLED on every table (no public
   policies). The backend MUST authenticate with a privileged key — the new
   `sb_secret_*` secret key (preferred) or the legacy `service_role` JWT — which
