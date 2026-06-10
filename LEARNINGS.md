@@ -59,6 +59,14 @@ These are harder to assert statically. Follow the procedure; promote to a
   `application_outcomes` (return path) must not drift into competing state. Both
   funnel through `services/outcomes.record_outcome()`; don't write
   `application_outcomes` directly from a new caller.
+- **M6 — Supabase key + RLS posture.** RLS is ENABLED on every table (no public
+  policies). The backend MUST authenticate with a privileged key — the new
+  `sb_secret_*` secret key (preferred) or the legacy `service_role` JWT — which
+  bypasses RLS. The public `anon` key has zero access. Two gotchas: (1) the new
+  `sb_secret_*` keys are NOT JWTs, so they need `supabase-py >= 2.15` (2.11
+  rejected them as "Invalid API key"); (2) never expose the secret key
+  client-side (`NEXT_PUBLIC_*`, frontend bundle, git). Set via
+  `SUPABASE_SERVICE_KEY` (config falls back to `SUPABASE_KEY`).
 
 ---
 
