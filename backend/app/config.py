@@ -42,7 +42,11 @@ def get_settings():
 
     class Settings:
         supabase_url: str = _env_get("SUPABASE_URL")
-        supabase_key: str = _env_get("SUPABASE_KEY")
+        # Prefer the service_role key (server-side only — bypasses RLS) so we can
+        # enable Row-Level Security on every table and lock out the public anon
+        # key. Falls back to SUPABASE_KEY (anon) so nothing breaks before the
+        # service key is set in the environment.
+        supabase_key: str = _env_get("SUPABASE_SERVICE_KEY", "") or _env_get("SUPABASE_KEY")
         anthropic_api_key: str = _env_get("ANTHROPIC_API_KEY")
         serper_api_key: str = _env_get("SERPER_API_KEY")
         brave_api_key: str = _env_get("BRAVE_API_KEY")

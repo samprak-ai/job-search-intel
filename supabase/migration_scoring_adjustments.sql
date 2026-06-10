@@ -22,4 +22,4 @@ CREATE TABLE IF NOT EXISTS scoring_adjustments (
 CREATE INDEX IF NOT EXISTS idx_scoring_adjustments_scope ON scoring_adjustments(scope);
 CREATE INDEX IF NOT EXISTS idx_scoring_adjustments_active ON scoring_adjustments(active);
 
-ALTER TABLE scoring_adjustments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE scoring_adjustments ENABLE ROW LEVEL SECURITY;

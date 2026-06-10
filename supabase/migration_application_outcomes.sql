@@ -62,5 +62,5 @@ CREATE TRIGGER trg_application_outcomes_touch_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION application_outcomes_touch_updated_at();
 
--- RLS: single-user app; disable RLS to match the pattern used by other tables.
-ALTER TABLE application_outcomes DISABLE ROW LEVEL SECURITY;
+-- RLS: single-user app; RLS enabled with no public policies — only the service_role backend can access (the anon key is locked out).
+ALTER TABLE application_outcomes ENABLE ROW LEVEL SECURITY;

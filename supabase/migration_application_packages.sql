@@ -81,7 +81,7 @@ CREATE TRIGGER trg_application_packages_touch_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION application_packages_touch_updated_at();
 
--- RLS: single-user app; disable RLS to match the pattern used by other tables
+-- RLS: single-user app; RLS enabled with no public policies — only the service_role backend can access (the anon key is locked out)
 -- (roles, role_scores, etc.). The backend uses SUPABASE_KEY (service role)
 -- so authorization happens at the API layer, not row-level.
-ALTER TABLE application_packages DISABLE ROW LEVEL SECURITY;
+ALTER TABLE application_packages ENABLE ROW LEVEL SECURITY;

@@ -37,4 +37,4 @@ CREATE INDEX IF NOT EXISTS idx_detected_gaps_status ON detected_gaps(status);
 CREATE INDEX IF NOT EXISTS idx_detected_gaps_type ON detected_gaps(gap_type);
 CREATE INDEX IF NOT EXISTS idx_detected_gaps_detected_at ON detected_gaps(detected_at DESC);
 
-ALTER TABLE detected_gaps DISABLE ROW LEVEL SECURITY;
+ALTER TABLE detected_gaps ENABLE ROW LEVEL SECURITY;

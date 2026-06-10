@@ -144,6 +144,17 @@ def _l8():
     return problems
 
 
+# ── L9: no migration may DISABLE row-level security ─────────────────────────
+@check("L9-no-rls-disabled-in-migrations")
+def _l9():
+    sql_dir = REPO / "supabase"
+    problems = []
+    for f in sorted(sql_dir.glob("*.sql")):
+        if "DISABLE ROW LEVEL SECURITY" in _read(f).upper():
+            problems.append(f"{f.name} disables RLS — public tables must keep RLS enabled")
+    return problems
+
+
 # ── L7 (DB): no role may have more than one role_scores row ──────────────────
 @check("L7-no-duplicate-role-scores", kind="db")
 def _l7():
