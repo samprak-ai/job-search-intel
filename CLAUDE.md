@@ -124,47 +124,15 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 }
 ```
 
-### Full Company List (27)
+### Full Company List (5)
 
-**Scope:** Frontier model labs + Big Tech AI divisions + mature AI-forward startups (horizontal and vertical) + frontier research orgs. Focus on **0→1 builder-operator roles** at companies where AI is the product (not a feature) and everyone builds by default. Role-based discovery is gated by this whitelist — any ATS posting from a company outside this list is filtered out before scoring.
+**Scope:** Deliberately narrowed to the 5 companies Sam is actively targeting (June 2026). Everything else was removed from `companies.json` AND purged from the database — these are the only companies tracked. Role-based discovery is gated by this whitelist; any ATS posting outside it is filtered out before scoring. (Prior 27-company list is in git history if a company needs to be re-added.)
 
-**Model Providers (frontier labs)**
-1. Anthropic — confirmed H1B
-2. OpenAI — confirmed H1B
-3. Cohere — confirmed H1B
-4. Together AI — likely H1B
-5. Perplexity — likely H1B
-6. Mistral (US) — unknown H1B (verify)
-7. xAI — unknown H1B (verify)
-
-**Big Tech / Cloud AI**
-8. Google DeepMind (Google's frontier AI lab; structured Greenhouse board, slug `deepmind`. Replaced the old web-search "Alphabet" entry — postings are branded Google/DeepMind, not "Alphabet") — confirmed H1B
-8b. Google (broader Google: Cloud AI, Labs, Workspace, YouTube; web-search entry, Google-specific query in `_build_brave_query` scoped to careers + LinkedIn. Companion to Google DeepMind so discovery covers both) — confirmed H1B
-9. Databricks — confirmed H1B
-10. Snowflake — confirmed H1B
-11. Salesforce (verify team has build-first culture) — confirmed H1B
-12. LinkedIn — confirmed H1B
-13. Amazon (Sam's current employer; scoped to **Seattle + AWS/AGI orgs + Product Manager & GTM Specialist roles** via the amazon.jobs `search.json` API — `fetch_amazon_jobs()` in ats_clients.py. Seattle match includes multi-location roles where Seattle is one of several posted locations; 20/query-family per run) — confirmed H1B
-
-**Mature Horizontal AI Startups**
-14. Notion — confirmed H1B
-15. Glean — likely H1B
-16. Ramp — confirmed H1B
-17. Hugging Face — likely H1B
-18. Weights & Biases — likely H1B
-19. Replit — likely H1B
-20. Runway — likely H1B
-
-**AI-Native Vertical SaaS**
-21. Harvey (legal AI) — likely H1B
-22. Sierra (customer experience AI) — likely H1B
-23. Decagon (customer service AI) — likely H1B
-24. Cresta (contact center AI) — likely H1B
-25. Abridge (healthcare AI) — likely H1B
-
-**Frontier Research Orgs**
-26. Ai2 (Allen Institute for AI) — likely H1B (comp may be tight for non-research roles)
-27. Imbue (reasoning + agents research) — likely H1B
+1. **Anthropic** — Greenhouse (`anthropic`) — confirmed H1B
+2. **OpenAI** — Ashby (`openai`) — confirmed H1B
+3. **Amazon** — Sam's current employer; scoped to **Seattle + AWS/AGI orgs + Product Manager & GTM Specialist roles** via the amazon.jobs `search.json` API (`fetch_amazon_jobs()`); internal-transfer scoring — confirmed H1B
+4. **Google DeepMind** — Google's frontier AI lab; structured Greenhouse board (`deepmind`) — confirmed H1B
+5. **Google** (broader: Cloud AI, Labs, Workspace, YouTube) — web-search entry, Google-specific query in `_build_brave_query` scoped to careers + LinkedIn. Companion to Google DeepMind so discovery covers both — confirmed H1B
 
 ### Notifications policy
 - **Per-role emails:** fire when a role meets its company notification bar. Default bar is Strong Match (overall_score ≥ 80); **Amazon's bar is 70** (Good Match+), because big-company JD-realism score caps push genuinely strong-fit Amazon roles into the 70–79 band. Bar is set in `notification_threshold()` / `COMPANY_NOTIFICATION_THRESHOLDS` in `notifications.py`. Email subject + header adapt to the role's actual match_tier.

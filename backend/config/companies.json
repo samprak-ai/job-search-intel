@@ -21,264 +21,34 @@
       "notes": ""
     },
     {
-      "name": "Cohere",
-      "tier": "model_provider",
-      "h1b_status": "confirmed",
-      "priority": 3,
-      "careers_url": "https://cohere.com/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "cohere",
-      "notes": ""
-    },
-    {
-      "name": "Together AI",
-      "tier": "model_provider",
-      "h1b_status": "likely",
-      "priority": 4,
-      "careers_url": "https://www.together.ai/careers",
-      "ats_platform": "greenhouse",
-      "ats_slug": "togetherai",
-      "notes": ""
-    },
-    {
-      "name": "Perplexity",
-      "tier": "model_provider",
-      "h1b_status": "likely",
-      "priority": 5,
-      "careers_url": "https://www.perplexity.ai/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "perplexity",
-      "notes": ""
-    },
-    {
-      "name": "Mistral",
-      "tier": "model_provider",
-      "h1b_status": "unknown",
-      "priority": 6,
-      "careers_url": "https://mistral.ai/careers",
-      "ats_platform": "lever",
-      "ats_slug": "mistral",
-      "notes": "US operations \u2014 verify H1B sponsorship before tailoring"
-    },
-    {
-      "name": "xAI",
-      "tier": "model_provider",
-      "h1b_status": "unknown",
-      "priority": 7,
-      "careers_url": "https://x.ai/careers",
-      "ats_platform": "greenhouse",
-      "ats_slug": "xai",
-      "notes": "Verify H1B sponsorship before further interview effort"
-    },
-    {
-      "name": "Google DeepMind",
-      "tier": "big_tech_cloud_ai",
-      "h1b_status": "confirmed",
-      "priority": 8,
-      "careers_url": "https://deepmind.google/careers/",
-      "ats_platform": "greenhouse",
-      "ats_slug": "deepmind",
-      "notes": "Google's frontier AI lab. Structured Greenhouse board (slug 'deepmind') — the high-signal Google AI target. Replaced the old 'Alphabet' web-search entry, which searched the literal holding-company name and matched ~nothing (postings are branded Google / Google DeepMind). Companion to the broader 'Google' web-search entry below; together they cover both Google and DeepMind."
-    },
-    {
-      "name": "Google",
-      "tier": "big_tech_cloud_ai",
-      "h1b_status": "confirmed",
-      "priority": 8,
-      "careers_url": "https://www.google.com/about/careers/applications/",
-      "ats_platform": null,
-      "ats_slug": null,
-      "notes": "Broader Google (Cloud AI, Labs, Workspace, YouTube) via web search — no clean ATS. Companion to the 'Google DeepMind' Greenhouse entry. Google-specific query in _build_brave_query() scopes to google.com/about/careers + LinkedIn job views with PM/AI/GTM keywords. Some Cloud/Workspace roles carry AWS-style big-co pain — scoring's big-company cap handles that."
-    },
-    {
-      "name": "Databricks",
-      "tier": "big_tech_cloud_ai",
-      "h1b_status": "confirmed",
-      "priority": 9,
-      "careers_url": "https://www.databricks.com/company/careers",
-      "ats_platform": "greenhouse",
-      "ats_slug": "databricks",
-      "notes": ""
-    },
-    {
-      "name": "Snowflake",
-      "tier": "big_tech_cloud_ai",
-      "h1b_status": "confirmed",
-      "priority": 10,
-      "careers_url": "https://careers.snowflake.com",
-      "ats_platform": "ashby",
-      "ats_slug": "snowflake",
-      "notes": ""
-    },
-    {
-      "name": "Salesforce",
-      "tier": "big_tech_cloud_ai",
-      "h1b_status": "confirmed",
-      "priority": 11,
-      "careers_url": "https://www.salesforce.com/company/careers/",
-      "ats_platform": null,
-      "ats_slug": null,
-      "notes": "Enterprise-sales-led culture \u2014 verify team/manager has build-first culture before tailoring"
-    },
-    {
-      "name": "LinkedIn",
-      "tier": "big_tech_cloud_ai",
-      "h1b_status": "confirmed",
-      "priority": 12,
-      "careers_url": "https://careers.linkedin.com",
-      "ats_platform": null,
-      "ats_slug": null,
-      "notes": "Microsoft subsidiary \u2014 proprietary ATS, uses Brave Search fallback"
-    },
-    {
       "name": "Amazon",
       "tier": "big_tech_cloud_ai",
       "h1b_status": "confirmed",
-      "priority": 13,
+      "priority": 3,
       "careers_url": "https://www.amazon.jobs/",
       "ats_platform": "amazon",
       "ats_slug": "amazon",
       "notes": "Sam's current employer \u2014 6.5+ years at AWS Startups. Scoped to Seattle + AWS/AGI orgs + Product Manager & GTM Specialist roles via the amazon.jobs search.json API (fetch_amazon_jobs in ats_clients.py). business_category filters to 'aws' and 'amazon-artificial-general-intelligence'; one search pass per role family (Product Manager, GTM Specialist); Seattle match includes multi-location roles where Seattle is one of several posted locations; capped 20 per query-family per run (dedup surfaces the rest)."
     },
     {
-      "name": "Notion",
-      "tier": "mature_ai_startup",
+      "name": "Google DeepMind",
+      "tier": "big_tech_cloud_ai",
       "h1b_status": "confirmed",
-      "priority": 14,
-      "careers_url": "https://www.notion.com/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "notion",
-      "notes": "AI-native productivity"
-    },
-    {
-      "name": "Glean",
-      "tier": "mature_ai_startup",
-      "h1b_status": "likely",
-      "priority": 15,
-      "careers_url": "https://www.glean.com/careers",
+      "priority": 4,
+      "careers_url": "https://deepmind.google/careers/",
       "ats_platform": "greenhouse",
-      "ats_slug": "gleanwork",
-      "notes": "AI enterprise search"
+      "ats_slug": "deepmind",
+      "notes": "Google's frontier AI lab. Structured Greenhouse board (slug 'deepmind') \u2014 the high-signal Google AI target. Replaced the old 'Alphabet' web-search entry, which searched the literal holding-company name and matched ~nothing (postings are branded Google / Google DeepMind). Companion to the broader 'Google' web-search entry below; together they cover both Google and DeepMind."
     },
     {
-      "name": "Ramp",
-      "tier": "mature_ai_startup",
+      "name": "Google",
+      "tier": "big_tech_cloud_ai",
       "h1b_status": "confirmed",
-      "priority": 16,
-      "careers_url": "https://ramp.com/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "ramp",
-      "notes": "AI-native fintech"
-    },
-    {
-      "name": "Hugging Face",
-      "tier": "mature_ai_startup",
-      "h1b_status": "likely",
-      "priority": 17,
-      "careers_url": "https://huggingface.co/careers",
+      "priority": 5,
+      "careers_url": "https://www.google.com/about/careers/applications/",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "AI ML platform \u2014 uses Workable, Brave Search fallback"
-    },
-    {
-      "name": "Weights & Biases",
-      "tier": "mature_ai_startup",
-      "h1b_status": "likely",
-      "priority": 18,
-      "careers_url": "https://wandb.ai/site/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "wandb",
-      "notes": "ML platform"
-    },
-    {
-      "name": "Replit",
-      "tier": "mature_ai_startup",
-      "h1b_status": "likely",
-      "priority": 19,
-      "careers_url": "https://replit.com/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "replit",
-      "notes": "AI-native coding"
-    },
-    {
-      "name": "Runway",
-      "tier": "mature_ai_startup",
-      "h1b_status": "likely",
-      "priority": 20,
-      "careers_url": "https://runwayml.com/careers",
-      "ats_platform": "greenhouse",
-      "ats_slug": "runwayml",
-      "notes": "AI video/creative"
-    },
-    {
-      "name": "Harvey",
-      "tier": "ai_vertical_saas",
-      "h1b_status": "likely",
-      "priority": 21,
-      "careers_url": "https://www.harvey.ai/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "harvey",
-      "notes": "Legal AI, Series C ~$5B val, Anthropic-backed, H1B sponsor likely \u2014 verify with recruiter"
-    },
-    {
-      "name": "Sierra",
-      "tier": "ai_vertical_saas",
-      "h1b_status": "likely",
-      "priority": 22,
-      "careers_url": "https://sierra.ai/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "sierra",
-      "notes": "Customer experience AI, Bret Taylor's company, Series B ~$4.5B val \u2014 verify H1B"
-    },
-    {
-      "name": "Decagon",
-      "tier": "ai_vertical_saas",
-      "h1b_status": "likely",
-      "priority": 23,
-      "careers_url": "https://decagon.ai/careers",
-      "ats_platform": "ashby",
-      "ats_slug": "decagon",
-      "notes": "Customer service AI, Series C ~$1.5B val \u2014 verify H1B"
-    },
-    {
-      "name": "Cresta",
-      "tier": "ai_vertical_saas",
-      "h1b_status": "likely",
-      "priority": 24,
-      "careers_url": "https://cresta.com/careers",
-      "ats_platform": "greenhouse",
-      "ats_slug": "cresta",
-      "notes": "Contact center AI, Series C ~$1.7B val \u2014 verify H1B"
-    },
-    {
-      "name": "Abridge",
-      "tier": "ai_vertical_saas",
-      "h1b_status": "likely",
-      "priority": 25,
-      "careers_url": "https://www.abridge.com/careers",
-      "ats_platform": "greenhouse",
-      "ats_slug": "abridge",
-      "notes": "Healthcare AI (clinical docs), Series C ~$2.75B val \u2014 verify H1B"
-    },
-    {
-      "name": "Ai2",
-      "tier": "frontier_research_org",
-      "h1b_status": "likely",
-      "priority": 26,
-      "careers_url": "https://allenai.org/careers",
-      "ats_platform": "greenhouse",
-      "ats_slug": "allenai",
-      "notes": "Allen Institute for AI. Research nonprofit, Seattle-based. H1B sponsoring. Comp may be below Sam's $300K floor for non-research roles \u2014 verify at offer time."
-    },
-    {
-      "name": "Imbue",
-      "tier": "frontier_research_org",
-      "h1b_status": "likely",
-      "priority": 27,
-      "careers_url": "https://imbue.com/careers/",
-      "ats_platform": null,
-      "ats_slug": null,
-      "notes": "Reasoning + agents research lab, Series B ~$200M raised ~$1B val \u2014 verify H1B. Watch list: Thinking Machines Lab and Safe Superintelligence when they open non-engineering roles."
+      "notes": "Broader Google (Cloud AI, Labs, Workspace, YouTube) via web search \u2014 no clean ATS. Companion to the 'Google DeepMind' Greenhouse entry. Google-specific query in _build_brave_query() scopes to google.com/about/careers + LinkedIn job views with PM/AI/GTM keywords. Some Cloud/Workspace roles carry AWS-style big-co pain \u2014 scoring's big-company cap handles that."
     }
   ]
 }
