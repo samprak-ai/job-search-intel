@@ -138,7 +138,8 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 7. xAI — unknown H1B (verify)
 
 **Big Tech / Cloud AI**
-8. Google DeepMind (Google's frontier AI lab; structured Greenhouse board, slug `deepmind`. Replaced the old web-search "Alphabet" entry — postings are branded Google/DeepMind, not "Alphabet". Broader Google Cloud/Workspace AI not on this board and risks AWS-style big-co pain) — confirmed H1B
+8. Google DeepMind (Google's frontier AI lab; structured Greenhouse board, slug `deepmind`. Replaced the old web-search "Alphabet" entry — postings are branded Google/DeepMind, not "Alphabet") — confirmed H1B
+8b. Google (broader Google: Cloud AI, Labs, Workspace, YouTube; web-search entry, Google-specific query in `_build_brave_query` scoped to careers + LinkedIn. Companion to Google DeepMind so discovery covers both) — confirmed H1B
 9. Databricks — confirmed H1B
 10. Snowflake — confirmed H1B
 11. Salesforce (verify team has build-first culture) — confirmed H1B
@@ -175,7 +176,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 The Vercel cron (14:00 UTC daily) calls `/discover/cron` on the Railway backend, which scans the companies named in the `CRON_COMPANIES` env var. Current value (set on Railway and mirrored in local `.env`):
 
 ```
-CRON_COMPANIES=Anthropic,OpenAI,Amazon,Google DeepMind
+CRON_COMPANIES=Anthropic,OpenAI,Amazon,Google DeepMind,Google
 ```
 
 These 10 are a deliberately bounded subset of the 26-company whitelist to keep cron runtime under ~15 minutes. The other 16 companies in `companies.json` are still discoverable via the manual `/discover/{company}` endpoint and via role-based discovery — they're just not scanned daily.

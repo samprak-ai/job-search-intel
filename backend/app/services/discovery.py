@@ -296,6 +296,20 @@ def _build_brave_query(company: dict) -> str:
     # structured amazon.jobs ATS client (fetch_amazon_jobs in ats_clients.py),
     # which filters precisely on Seattle + AWS/AGI org via the search.json API.
 
+    # Google (broader than DeepMind, which has its own Greenhouse board). No
+    # clean ATS, so scope tightly to google.com/about/careers + LinkedIn job
+    # views with PM/AI/GTM keywords — searching the bare name is too noisy.
+    if company_name.lower() == "google":
+        role_keywords = (
+            '"Product Manager" OR "Head of Product" OR "Applied AI" OR '
+            '"Product Lead" OR "GTM"'
+        )
+        us = '"United States" OR "Mountain View" OR "New York" OR "Seattle"'
+        return (
+            f"Google ({role_keywords}) "
+            f"(site:google.com/about/careers OR site:linkedin.com/jobs/view) ({us})"
+        )
+
     role_keywords = (
         '"AI" OR "solutions engineer" OR "product manager" OR '
         '"partnerships" OR "GTM" OR "sales engineer"'
