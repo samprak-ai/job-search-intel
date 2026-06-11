@@ -166,6 +166,16 @@ def _l9():
     return problems
 
 
+# ── L10: freshness must not treat 403 as a dead posting ─────────────────────
+@check("L10-freshness-403-not-dead")
+def _l10():
+    fresh = _read(BACKEND / "app/services/freshness.py")
+    m = re.search(r"DEAD_STATUSES\s*=\s*\{([^}]*)\}", fresh)
+    if m and "403" in m.group(1):
+        return ["freshness DEAD_STATUSES includes 403 — 403 is rate-limit/bot-block, not a removed posting (it false-deletes live roles in a burst sweep)"]
+    return []
+
+
 # ── L7 (DB): no role may have more than one role_scores row ──────────────────
 @check("L7-no-duplicate-role-scores", kind="db")
 def _l7():

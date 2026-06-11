@@ -24,8 +24,12 @@ GREENHOUSE_ID_RE = re.compile(r"greenhouse\.io/.*?/jobs/(\d+)")
 LEVER_ID_RE = re.compile(r"lever\.co/([^/]+)/([a-f0-9-]+)")
 ASHBY_ID_RE = re.compile(r"ashbyhq\.com/([^/]+)/([a-f0-9-]+)")
 
-# HTTP statuses that indicate the posting is gone
-DEAD_STATUSES = {404, 410, 403}
+# HTTP statuses that definitively mean the posting is gone. 403 is deliberately
+# EXCLUDED: sites like Google Careers and LinkedIn return 403 to bot/rapid
+# traffic (rate-limiting), which is inconclusive — not a removed posting. A
+# burst freshness sweep that treated 403 as dead would wrongly mark live roles
+# stale (it did, to Google Careers roles). 403/429 now fall through to None.
+DEAD_STATUSES = {404, 410}
 
 
 async def _check_greenhouse(url: str) -> bool | None:

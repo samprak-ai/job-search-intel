@@ -36,6 +36,7 @@ check yet) · `open` (found, not yet guarded — should be empty).
 | **L7** | Re-scoring inserted new `role_scores` rows instead of replacing, creating duplicates. | No role may have more than one `role_scores` row. | `L7-no-duplicate-role-scores` (db) |
 | **L8** | Easy to add a route module and forget to import/register it in `main.py` (silently dead endpoint). | Every `app/routes/*.py` module must be imported and `include_router()`-ed in `main.py`. | `L8-routers-registered` |
 | **L9** | Migrations copied a `DISABLE ROW LEVEL SECURITY` line, leaving public tables world-readable/writable via the anon key (Supabase `rls_disabled_in_public`). | No migration may disable RLS; public tables keep RLS enabled (backend uses the `service_role` key, which bypasses RLS). | `L9-no-rls-disabled-in-migrations` |
+| **L10** | A burst freshness sweep got 403-rate-limited by Google Careers and treated 403 as "dead" → false-marked live roles stale → they were deleted (lost the strong-fit Google roles). Same trap as L6 (Amazon) but in the generic path. | Freshness `DEAD_STATUSES` must not include 403 (or 429) — those are rate-limit/bot-block, inconclusive. Only 404/410 = gone. | `L10-freshness-403-not-dead` |
 
 ---
 
