@@ -257,6 +257,24 @@ async def score_role(role_id: str, force: bool = False) -> dict:
     from app.services.notifications import notification_threshold
 
     if score_data.get("overall_score", 0) >= notification_threshold(role.get("company")):
+        # Verify the posting is still live BEFORE emailing — don't push a match
+        # for a job that has already closed (e.g. an expired LinkedIn posting).
+        # Only skip on a CONFIRMED-dead result; inconclusive (None) still sends.
+        try:
+            from app.services.freshness import check_role_freshness
+
+            fresh = await check_role_freshness(role)
+            if fresh is not None and fresh["is_live"] is False:
+                supabase.table("roles").update({"is_live": False}).eq("id", role_id).execute()
+                logger.info(f"Skipping notification — posting already closed: {role['title']}")
+                return {
+                    "role_id": role_id, "company": role["company"], "title": role["title"],
+                    "match_tier": score_data["match_tier"], "overall_score": score_data["overall_score"],
+                    "notified": False, "reason": "posting closed",
+                }
+        except Exception as e:
+            logger.debug(f"verify-before-email freshness check failed for {role_id}: {e}")
+
         company_lower = (role.get("company") or "").lower().replace(" ", "")
         anthropic_handled = False
 

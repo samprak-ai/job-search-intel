@@ -272,6 +272,41 @@ async def _check_amazon(url: str) -> bool | None:
         return None
 
 
+async def _check_linkedin(url: str) -> bool | None:
+    """Check a LinkedIn posting via the public guest job endpoint.
+
+    The careers page itself blocks bots, but jobs-guest/jobPosting/{id} returns
+    200 for live postings and 404/410 once a job is pulled. 403/429 = throttled
+    → inconclusive (None).
+    """
+    m = re.search(r"/jobs/view/(?:.*-)?(\d+)", url)
+    if not m:
+        return None
+    job_id = m.group(1)
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+    }
+    try:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            resp = await client.get(
+                f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}",
+                headers=headers, timeout=CHECK_TIMEOUT,
+            )
+            if resp.status_code in (404, 410):
+                return False
+            if resp.status_code == 200:
+                return True
+            return None  # 403/429/5xx — throttled, inconclusive
+    except (httpx.TimeoutException, httpx.ConnectError):
+        return None
+    except Exception as e:
+        logger.debug(f"LinkedIn freshness check failed for {url}: {e}")
+        return None
+
+
 async def check_role_freshness(role: dict) -> dict | None:
     """Check if a single role's URL is still live.
 
@@ -280,13 +315,18 @@ async def check_role_freshness(role: dict) -> dict | None:
     url = role.get("url", "")
     source = role.get("source", "")
 
-    # Skip LinkedIn — always blocks automated requests
-    if "linkedin.com" in url:
+    # Google Careers is a client-rendered SPA: a bot fetch returns 200 with a
+    # generic shell for BOTH live and dead jobs, so HTTP freshness is meaningless
+    # (it would either always-live or always-dead). Treat as inconclusive — these
+    # roles should come from the verifiable LinkedIn source instead.
+    if "google.com/about/careers" in url:
         return None
 
-    # Try ATS-specific checks first (more reliable)
+    # Try ATS-specific / source-specific checks first (more reliable)
     result = None
-    if source == "greenhouse" or "greenhouse.io" in url:
+    if "linkedin.com" in url:
+        result = await _check_linkedin(url)
+    elif source == "greenhouse" or "greenhouse.io" in url:
         result = await _check_greenhouse(url)
     elif source == "lever" or "lever.co" in url:
         result = await _check_lever(url)
@@ -295,8 +335,8 @@ async def check_role_freshness(role: dict) -> dict | None:
     elif source == "amazon" or "amazon.jobs" in url:
         result = await _check_amazon(url)
 
-    # Fall back to generic HTTP check
-    if result is None and "amazon.jobs" not in url:
+    # Fall back to generic HTTP check (not for amazon.jobs / linkedin / google careers)
+    if result is None and not any(s in url for s in ("amazon.jobs", "linkedin.com")):
         result = await _check_http(url)
 
     if result is None:

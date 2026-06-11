@@ -570,6 +570,10 @@ async def discover_for_company(company: dict) -> dict:
     plus LinkedIn guest-search as a supplementary source when configured."""
     if company.get("ats_platform") and company.get("ats_slug"):
         result = await discover_via_ats(company)
+    elif company.get("linkedin_company_id") and company.get("linkedin_only"):
+        # LinkedIn is the primary (and verifiable) source — used for Google,
+        # whose careers web-search produced unverifiable, mostly-dead URLs.
+        return await discover_via_linkedin(company)
     else:
         result = await discover_via_web_search(company)
 

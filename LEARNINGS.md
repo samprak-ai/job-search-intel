@@ -60,6 +60,13 @@ These are harder to assert statically. Follow the procedure; promote to a
   `application_outcomes` (return path) must not drift into competing state. Both
   funnel through `services/outcomes.record_outcome()`; don't write
   `application_outcomes` directly from a new caller.
+- **M8 — Only ingest/notify on freshness-verifiable sources.** Google Careers is
+  a client-rendered SPA: a bot fetch returns 200 + a generic shell for both live
+  and dead jobs, so its URLs can't be verified (we emailed a dead Strong Match).
+  Prefer sources with a real liveness signal — ATS listing APIs, amazon.jobs
+  (404), LinkedIn guest jobPosting (404). Google = LinkedIn-only (`linkedin_only`).
+  Scoring now does verify-before-email: skip the notification if the posting is
+  confirmed dead.
 - **M7 — Verify clean dependency resolution before pushing requirements.txt.**
   An *incremental* local `pip install --upgrade <pkg>` can leave the venv working
   while `requirements.txt` is unresolvable on a fresh install (it bumps transitive
