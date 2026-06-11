@@ -105,6 +105,7 @@ def _l4():
 # ── L5: every CRON_COMPANIES name must exist in companies.json ──────────────
 @check("L5-cron-companies-valid")
 def _l5():
+    problems = []
     claude = _read(REPO / "CLAUDE.md")
     m = re.search(r"CRON_COMPANIES=([^\n`]+)", claude)
     if not m:
@@ -112,10 +113,20 @@ def _l5():
     names = [n.strip() for n in m.group(1).split(",") if n.strip()]
     companies = json.loads(_read(BACKEND / "config/companies.json"))
     valid = {c["name"] for c in companies.get("target_companies", [])}
-    return [
+    problems += [
         f'CRON_COMPANIES name "{n}" is not in companies.json'
         for n in names if n not in valid
     ]
+    # The code default must match the documented cron scope (drift guard).
+    disc = _read(BACKEND / "app/routes/discover.py")
+    dm = re.search(r"DEFAULT_CRON_COMPANIES\s*=\s*\[([^\]]*)\]", disc)
+    if dm:
+        defaults = [s.strip().strip("\"'") for s in dm.group(1).split(",") if s.strip()]
+        if set(defaults) != set(names):
+            problems.append(
+                f"DEFAULT_CRON_COMPANIES {defaults} != CLAUDE.md CRON_COMPANIES {names}"
+            )
+    return problems
 
 
 # ── L6: Amazon freshness must not treat 403 as dead (bot-throttle trap) ──────

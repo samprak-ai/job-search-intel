@@ -12,6 +12,10 @@ from app.services.jd_scraper import enrich_missing_jds
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# Bounded daily-cron default when CRON_COMPANIES is unset. Keep in sync with the
+# "Daily cron scope" section of CLAUDE.md (guarded by selfcheck L5).
+DEFAULT_CRON_COMPANIES = ["Anthropic", "OpenAI", "Amazon", "Alphabet"]
+
 
 async def _auto_score_unscored() -> tuple[int, int]:
     """Score all unscored roles. Returns (scored_count, failed_count)."""
@@ -173,7 +177,14 @@ async def discover_cron(
                     detail=f"None of CRON_COMPANIES matched: {cron_names}",
                 )
         else:
-            targets = all_companies
+            # No env override → scan the bounded default set, NOT all 27
+            # (all-27 blows the ~15-min runtime budget). Keeps Amazon in scope
+            # even if the Railway env var is cleared.
+            targets = [c for c in all_companies if c["name"] in DEFAULT_CRON_COMPANIES]
+
+        logger.info(
+            f"Cron scanning {len(targets)} companies: {[c['name'] for c in targets]}"
+        )
 
         # Run discovery for each target company
         results = []
