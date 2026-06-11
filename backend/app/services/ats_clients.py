@@ -13,6 +13,7 @@ Common output format per job:
 }
 """
 
+import asyncio
 import logging
 import re
 from html import unescape
@@ -77,6 +78,8 @@ ROLE_KEYWORDS = [
     "partner business systems",
     "gtm specialist", "go-to-market specialist", "gtm lead",
     "go-to-market lead", "gtm strategy", "go-to-market strategy",
+    "strategy and operations", "strategy & operations",
+    "business operations and strategy", "sales strategy", "revenue strategy",
     # Chief of staff with likely product/AI/GTM altitude
     "chief of staff",
     # Senior leadership titles are allowed only when paired with relevant text.
@@ -438,6 +441,141 @@ async def fetch_amazon_jobs(slug: str = "amazon") -> list[dict]:
         f"Amazon [{slug}]: fetched {len(jobs)} Seattle AWS/AGI PM+GTM jobs "
         f"({AMAZON_RESULT_CAP_PER_QUERY}/query)"
     )
+    return jobs
+
+
+# ---------------------------------------------------------------------------
+# LinkedIn (public guest job-search API — no login)
+# ---------------------------------------------------------------------------
+# Brave/Serper barely index LinkedIn job pages, so LinkedIn-posted roles get
+# missed. LinkedIn exposes a public guest endpoint that SEARCHES jobs by company
+# id (f_C) + keywords and returns HTML job cards, plus a per-job endpoint for the
+# description — no auth. This is a supplementary source for companies that carry
+# a linkedin_company_id in companies.json (e.g. Google = 1441).
+
+LINKEDIN_GUEST_SEARCH_URL = (
+    "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
+)
+LINKEDIN_GUEST_JOB_URL = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{id}"
+
+# Keyword passes aligned to Sam's target role types (incl. Strategy & Ops, which
+# Google posts heavily and the PM/AI-only queries were missing). LinkedIn
+# rate-limits a burst hard, so we take only a few per query and cycle through
+# all of them first (diversity over depth) — leading with Sam's distinctive
+# targets so they land before any block.
+LINKEDIN_QUERIES = [
+    "strategy and operations",
+    "go-to-market strategy",
+    "AI product manager",
+    "chief of staff",
+    "product strategy growth",
+]
+LINKEDIN_CAP_PER_QUERY = 6
+LINKEDIN_CAP_PER_COMPANY = 25
+
+
+def _linkedin_headers() -> dict:
+    return {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml",
+    }
+
+
+def _clean_card_text(m) -> str:
+    return unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip() if m else ""
+
+
+def _parse_linkedin_cards(html: str) -> list[dict]:
+    """Parse guest-search HTML into {id, title, location, url} cards."""
+    out = []
+    for li in re.findall(r"<li>(.*?)</li>", html, re.S):
+        link = re.search(r'href="(https://www\.linkedin\.com/jobs/view/[^?"]+)', li)
+        if not link:
+            continue
+        jid = re.search(r"-(\d+)(?:/|$)", link.group(1))
+        if not jid:
+            continue
+        job_id = jid.group(1)
+        title = _clean_card_text(
+            re.search(r"(?:base-search-card__title|job-search-card__title)[^>]*>(.*?)</", li, re.S)
+        )
+        loc = _clean_card_text(
+            re.search(r"job-search-card__location[^>]*>(.*?)</", li, re.S)
+        )
+        if not title:
+            continue
+        out.append({
+            "id": job_id,
+            "title": title,
+            "location": loc,
+            "url": f"https://www.linkedin.com/jobs/view/{job_id}",
+        })
+    return out
+
+
+async def _fetch_linkedin_jd(client: httpx.AsyncClient, job_id: str) -> str:
+    """Fetch a single LinkedIn job's description text (best-effort)."""
+    try:
+        resp = await client.get(
+            LINKEDIN_GUEST_JOB_URL.format(id=job_id),
+            headers=_linkedin_headers(),
+            timeout=ATS_TIMEOUT,
+        )
+        if resp.status_code != 200:
+            return ""
+        m = re.search(r'(?:show-more-less-html__markup|description__text)[^>]*>(.*?)</div>', resp.text, re.S)
+        return _strip_html_tags(m.group(1)) if m else ""
+    except Exception:
+        return ""
+
+
+async def fetch_linkedin_jobs(company_id: str, company_name: str) -> list[dict]:
+    """Search LinkedIn (guest) for a company's roles across Sam's keyword passes."""
+    jobs: list[dict] = []
+    seen: set[str] = set()
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        for query in LINKEDIN_QUERIES:
+            if len(jobs) >= LINKEDIN_CAP_PER_COMPANY:
+                break
+            params = {
+                "f_C": company_id,
+                "keywords": query,
+                "location": "United States",
+                "start": 0,
+            }
+            try:
+                resp = await client.get(
+                    LINKEDIN_GUEST_SEARCH_URL, params=params,
+                    headers=_linkedin_headers(), timeout=ATS_TIMEOUT,
+                )
+                if resp.status_code != 200:
+                    logger.info(f"LinkedIn [{company_name}] '{query}' -> {resp.status_code} (rate-limited); stopping")
+                    break
+                cards = _parse_linkedin_cards(resp.text)
+            except Exception as e:
+                logger.warning(f"LinkedIn search failed ({company_name}, '{query}'): {e}")
+                break
+            kept = 0
+            for c in cards:
+                if c["url"] in seen:
+                    continue
+                seen.add(c["url"])
+                c_jd = await _fetch_linkedin_jd(client, c["id"])
+                jobs.append({
+                    "title": c["title"],
+                    "url": c["url"],
+                    "location": c["location"],
+                    "department": "",
+                    "raw_jd": c_jd,
+                })
+                kept += 1
+                if kept >= LINKEDIN_CAP_PER_QUERY or len(jobs) >= LINKEDIN_CAP_PER_COMPANY:
+                    break
+            await asyncio.sleep(1.0)  # be gentle with LinkedIn between queries
+    logger.info(f"LinkedIn [{company_name}]: fetched {len(jobs)} jobs (cap {LINKEDIN_CAP_PER_COMPANY})")
     return jobs
 
 

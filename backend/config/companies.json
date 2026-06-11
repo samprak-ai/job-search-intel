@@ -48,7 +48,8 @@
       "careers_url": "https://www.google.com/about/careers/applications/",
       "ats_platform": null,
       "ats_slug": null,
-      "notes": "Broader Google (Cloud AI, Labs, Workspace, YouTube) via web search \u2014 no clean ATS. Companion to the 'Google DeepMind' Greenhouse entry. Google-specific query in _build_brave_query() scopes to google.com/about/careers + LinkedIn job views with PM/AI/GTM keywords. Some Cloud/Workspace roles carry AWS-style big-co pain \u2014 scoring's big-company cap handles that."
+      "notes": "Broader Google (Cloud AI, Labs, Workspace, YouTube) via web search \u2014 no clean ATS. Companion to the 'Google DeepMind' Greenhouse entry. Google-specific query in _build_brave_query() scopes to google.com/about/careers + LinkedIn job views with PM/AI/GTM keywords. Some Cloud/Workspace roles carry AWS-style big-co pain \u2014 scoring's big-company cap handles that.",
+      "linkedin_company_id": "1441"
     }
   ]
 }

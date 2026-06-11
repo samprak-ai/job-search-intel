@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from app.config import get_settings, get_supabase_client, load_companies, load_profile
-from app.services.ats_clients import fetch_jobs_from_ats, filter_jobs_for_profile
+from app.services.ats_clients import fetch_jobs_from_ats, fetch_linkedin_jobs, filter_jobs_for_profile
 from app.services.web_search import web_search
 from app.services.scoring import score_role
 
@@ -499,12 +499,90 @@ async def discover_via_web_search(company: dict) -> dict:
 # Orchestration
 # ---------------------------------------------------------------------------
 
+async def discover_via_linkedin(company: dict) -> dict:
+    """Supplementary discovery via LinkedIn's public guest search API.
+
+    For companies carrying a `linkedin_company_id`. Catches roles that Brave
+    can't index (LinkedIn job pages) — e.g. Google's Strategy & Operations roles.
+    """
+    supabase = get_supabase_client()
+    company_name = company["name"]
+    company_id = str(company["linkedin_company_id"])
+
+    all_jobs = await fetch_linkedin_jobs(company_id, company_name)
+    matched = filter_jobs_for_profile(all_jobs)
+    if not matched:
+        return {"company": company_name, "source": "linkedin", "total_on_board": len(all_jobs), "new_roles": 0, "scored": 0}
+
+    roles = []
+    for job in matched:
+        url = job["url"]
+        if not url:
+            continue
+        roles.append({
+            "company": company_name,
+            "title": job["title"],
+            "url": url,
+            "source": "linkedin",
+            "raw_jd": job.get("raw_jd", ""),
+            "date_found": datetime.now(timezone.utc).isoformat(),
+        })
+
+    # 3-step dedup (URL → (company,title) DB → within-batch), mirroring ATS.
+    urls = [r["url"] for r in roles]
+    existing_urls = set()
+    if urls:
+        existing = supabase.table("roles").select("url").in_("url", urls).execute()
+        existing_urls = {r["url"] for r in existing.data}
+    url_filtered = [r for r in roles if r["url"] not in existing_urls]
+    titles = list({r["title"] for r in url_filtered})
+    existing_titles = set()
+    if titles:
+        tr = supabase.table("roles").select("title").eq("company", company_name).in_("title", titles).execute()
+        existing_titles = {r["title"].lower().strip() for r in tr.data}
+    seen_titles, new_roles = set(), []
+    for r in url_filtered:
+        t = r["title"].lower().strip()
+        if t in existing_titles or t in seen_titles:
+            continue
+        seen_titles.add(t)
+        new_roles.append(r)
+
+    inserted = scored = 0
+    for role in new_roles:
+        try:
+            res = supabase.table("roles").insert(role).execute()
+            inserted += 1
+            try:
+                await score_role(res.data[0]["id"]); scored += 1
+            except Exception as e:
+                logger.warning(f"[linkedin] score failed {role['title']}: {e}")
+            await asyncio.sleep(0.3)
+        except Exception as e:
+            logger.warning(f"[linkedin] insert failed {role['url']}: {e}")
+
+    logger.info(f"LinkedIn discovery {company_name}: {len(all_jobs)} fetched, {len(matched)} matched, {inserted} new, {scored} scored")
+    return {"company": company_name, "source": "linkedin", "total_on_board": len(all_jobs), "matched_filters": len(matched), "new_roles": inserted, "scored": scored}
+
+
 async def discover_for_company(company: dict) -> dict:
-    """Discover roles for a single company via the best available method."""
+    """Discover roles for a single company via the best available method,
+    plus LinkedIn guest-search as a supplementary source when configured."""
     if company.get("ats_platform") and company.get("ats_slug"):
-        return await discover_via_ats(company)
+        result = await discover_via_ats(company)
     else:
-        return await discover_via_web_search(company)
+        result = await discover_via_web_search(company)
+
+    if company.get("linkedin_company_id"):
+        try:
+            li = await discover_via_linkedin(company)
+            result["linkedin_new_roles"] = li.get("new_roles", 0)
+            result["new_roles"] = result.get("new_roles", 0) + li.get("new_roles", 0)
+            result["scored"] = result.get("scored", 0) + li.get("scored", 0)
+        except Exception as e:
+            logger.warning(f"LinkedIn supplementary discovery failed for {company['name']}: {e}")
+
+    return result
 
 
 async def discover_all() -> list[dict]:
