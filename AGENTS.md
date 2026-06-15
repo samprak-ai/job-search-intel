@@ -71,7 +71,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
   ],
   "experience_summary": "...",
   "skills": ["FastAPI", "Next.js", "Supabase", "Codex API", "Python", "SQL", "Salesforce", "AWS"],
-  "education": "MBA, W.P. Carey / ASU; B.Tech EE, BPUT"
+  "education": "MBA, W.P. Carey / ASU; B.Tech Civil Engineering, BPUT"
 }
 ```
 

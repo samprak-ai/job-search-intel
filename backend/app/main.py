@@ -11,8 +11,10 @@ from app.routes import (
     forge,
     freshness,
     intel,
+    quick_apply,
     reflect,
     resume_tailor,
+    review,
     roles,
     score,
     scoring_adjustments,
@@ -45,6 +47,8 @@ app.include_router(roles.router, prefix="/roles", tags=["roles"])
 app.include_router(forge.router, prefix="/forge", tags=["forge"])
 app.include_router(usage.router, prefix="/usage", tags=["usage"])
 app.include_router(resume_tailor.router, prefix="/resume-tailor", tags=["resume-tailor"])
+app.include_router(review.router, prefix="/review", tags=["review"])
+app.include_router(quick_apply.router, prefix="/quick-apply", tags=["quick-apply"])
 app.include_router(freshness.router, prefix="/freshness", tags=["freshness"])
 app.include_router(application_packages.router, prefix="/application-packages", tags=["application-packages"])
 app.include_router(application_outcomes.router, prefix="/application-outcomes", tags=["application-outcomes"])

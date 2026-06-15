@@ -71,7 +71,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
   ],
   "experience_summary": "...",
   "skills": ["FastAPI", "Next.js", "Supabase", "Claude API", "Python", "SQL", "Salesforce", "AWS"],
-  "education": "MBA, W.P. Carey / ASU; B.Tech EE, BPUT"
+  "education": "MBA, W.P. Carey / ASU; B.Tech Civil Engineering, BPUT"
 }
 ```
 
@@ -139,6 +139,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 - **Internal-transfer scoring (Amazon):** Sam currently works at Amazon (AWS), so Amazon roles are scored as internal transfers — `build_scoring_message()` injects an "Internal Transfer Context" block (`_is_internal_transfer()` in `scoring.py`). It lifts the big-company 84 cap (internal moves face a lower effective bar, no big-co onboarding friction), sets h1b_likelihood to 100, and tells the scorer to grade on genuine fit. Net effect: AI/GTM builder roles rise into Strong/Perfect while weak-fit roles settle to their true level — it differentiates, it doesn't blanket-inflate.
 - **Daily digest:** sent when ≥1 qualifying match is found that day; body groups Perfect → Strong → Good sections, sorted by score descending within each. A role qualifies if it meets its company bar, so non-Amazon Good Matches (70–79) stay out of the digest while Amazon's appear. Skipped on days with zero qualifying matches.
 - Resend free tier (100/day, 3,000/month) easily fits historical email volume at this threshold (~85 emails/month forecast).
+- **Morning quick-apply digest:** a second, richer email that turns each NEW qualifying match (unreviewed, found in the last ~36h) into a copy-paste "apply in 5 minutes" packet: company, title, apply URL, tier/score, the resume base to attach, and the company-appropriate free-form answer(s) (Anthropic Why / OpenAI Additional Info / Google-DeepMind cover letter / Amazon internal fields). Built by `services/quick_apply.py` and **folded into `/discover/cron`** (no new Vercel cron) — runs after discovery+scoring each day. GENERATE-ONLY for cost: one Claude call per role with the persona prompt-cached, bounded by `QUICK_APPLY_MAX` (default 8); grounding is enforced by the system prompt + locked-in facts, with a deterministic post-scrub of em/en dashes and advisory flags from `agents/ai_tells.py`. Toggle with `CRON_ENABLE_QUICK_APPLY` (default true). Manual trigger/test: `POST /quick-apply/preview` (dry-run, no email) and `POST /quick-apply/cron` (sends), both Bearer `CRON_SECRET`. Deep voice/alignment review stays on the laptop-side scheduled task to keep cloud spend low. (Vercel discover cron moved to 15:00 UTC ≈ 8am PT so the email lands in the morning.)
 
 ### Daily cron scope
 The Vercel cron (14:00 UTC daily) calls `/discover/cron` on the Railway backend, which scans the companies named in the `CRON_COMPANIES` env var. Current value (set on Railway and mirrored in local `.env`):
@@ -206,6 +207,7 @@ Phase 1 is complete when the above loop works for at least one company end-to-en
 - Scheduled daily role discovery (Railway cron)
 - Email/notification when Strong match found
 - Company notes and application status tracking in dashboard
+- **Application-update extractor (planned):** a scheduled mechanism that scans Gmail for application status updates from companies/ATS (Greenhouse `greenhouse-mail.io`, Ashby, amazon.jobs, Gem `appreview.gem.com`, etc.), parses role + status (confirmation / rejection / interview invite / online assessment / offer), matches to `roles`, and auto-updates `application_status` + logs through `services/outcomes.record_outcome()` so the calibration/return-path loop closes without manual entry. Could run as a Cowork scheduled task (Gmail connector) or a backend cron with a Gmail API token. Distinguish real ATS mail from this app's own `onboarding@resend.dev` digests.
 
 ---
 

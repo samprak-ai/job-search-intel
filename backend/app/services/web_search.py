@@ -1,7 +1,8 @@
 """Unified web search client with usage tracking.
 
-Primary: Serper.dev (Google Search API) — fast, cheap, reliable.
-Fallback: Brave Search API — if configured, used when Serper is unavailable.
+Default: Brave Search API.
+Optional: Serper.dev (Google Search API), gated by SEARCH_PROVIDER and
+SERPER_DAILY_LIMIT so paid search cannot run away during cron.
 
 Both providers return results in a normalized format:
 {
@@ -14,6 +15,7 @@ Every query is logged to the api_usage table for cost monitoring.
 """
 
 import logging
+from datetime import datetime, timezone
 
 import httpx
 
@@ -46,6 +48,25 @@ def _track_usage(
         }).execute()
     except Exception as e:
         logger.debug(f"Usage tracking failed (non-critical): {e}")
+
+
+def _daily_provider_usage(provider: str) -> int:
+    """Return today's logged query count for a provider."""
+    try:
+        from app.config import get_supabase_client
+        sb = get_supabase_client()
+        today = datetime.now(timezone.utc).date().isoformat()
+        result = (
+            sb.table("api_usage")
+            .select("id", count="exact")
+            .eq("provider", provider)
+            .gte("created_at", f"{today}T00:00:00+00:00")
+            .execute()
+        )
+        return result.count or 0
+    except Exception as e:
+        logger.debug(f"Usage lookup failed (non-critical): {e}")
+        return 0
 
 
 async def _search_serper(query: str, api_key: str, count: int) -> list[dict]:
@@ -112,17 +133,35 @@ async def web_search(
     count: int = 20,
     caller: str = "unknown",
 ) -> list[dict]:
-    """Run a web search using the best available provider.
+    """Run a web search using the configured provider.
 
-    Tries Serper first (if key provided), falls back to Brave.
+    Defaults to Brave. Set SEARCH_PROVIDER=serper to force Serper, or
+    SEARCH_PROVIDER=auto to try Brave first and then Serper.
     Returns normalized results with 'title', 'url', 'description' keys.
 
     Args:
         caller: identifies who triggered the search ('discovery' or 'intel')
                 for usage tracking.
     """
-    # Try Serper first
-    if serper_api_key:
+    from app.config import get_settings
+
+    settings = get_settings()
+    provider = settings.search_provider.lower().strip()
+    if provider not in {"brave", "serper", "auto"}:
+        logger.warning(f"Invalid SEARCH_PROVIDER={settings.search_provider!r}; using brave")
+        provider = "brave"
+
+    async def try_serper() -> list[dict] | None:
+        if not serper_api_key:
+            return None
+        used_today = _daily_provider_usage("serper")
+        if settings.serper_daily_limit >= 0 and used_today >= settings.serper_daily_limit:
+            logger.warning(
+                "Serper daily limit reached "
+                f"({used_today}/{settings.serper_daily_limit}); skipping paid search"
+            )
+            _track_usage("serper", caller, query, "skipped_daily_limit")
+            return None
         try:
             results = await _search_serper(query, serper_api_key, count)
             _track_usage("serper", caller, query, "success", len(results))
@@ -133,9 +172,11 @@ async def web_search(
         except httpx.RequestError as e:
             logger.warning(f"Serper request failed: {e}")
             _track_usage("serper", caller, query, "error_request")
+        return None
 
-    # Fall back to Brave
-    if brave_api_key:
+    async def try_brave() -> list[dict] | None:
+        if not brave_api_key:
+            return None
         try:
             results = await _search_brave(query, brave_api_key, count)
             _track_usage("brave", caller, query, "success", len(results))
@@ -146,6 +187,23 @@ async def web_search(
         except httpx.RequestError as e:
             logger.error(f"Brave request failed: {e}")
             _track_usage("brave", caller, query, "error_request")
+        return None
+
+    if provider == "brave":
+        results = await try_brave()
+        if results is not None:
+            return results
+    elif provider == "serper":
+        results = await try_serper()
+        if results is not None:
+            return results
+    else:
+        results = await try_brave()
+        if results is not None:
+            return results
+        results = await try_serper()
+        if results is not None:
+            return results
 
     logger.error("No search provider available (both Serper and Brave failed or unconfigured)")
     return []

@@ -57,6 +57,11 @@ def get_settings():
         notification_email: str = _env_get("NOTIFICATION_EMAIL")
         cron_secret: str = _env_get("CRON_SECRET")
         cron_companies: str = _env_get("CRON_COMPANIES")  # comma-separated list
+        # Morning quick-apply digest: generate ready-to-paste packets for new
+        # qualifying matches and email them. Folded into the daily cron (no new
+        # Vercel cron). quick_apply_max bounds Claude spend per run.
+        cron_enable_quick_apply: bool = _env_bool("CRON_ENABLE_QUICK_APPLY", True)
+        quick_apply_max: int = _env_int("QUICK_APPLY_MAX", 8)
         frontend_url: str = _env_get("FRONTEND_URL")
         forge_api_url: str = _env_get("FORGE_API_URL")
         forge_import_key: str = _env_get("FORGE_IMPORT_KEY")

@@ -83,6 +83,66 @@ These are harder to assert statically. Follow the procedure; promote to a
   client-side (`NEXT_PUBLIC_*`, frontend bundle, git). Set via
   `SUPABASE_SERVICE_KEY` (config falls back to `SUPABASE_KEY`).
 
+- **L11 — Reviewer hard-blocks on groundedness; AI-tells are advisory.** The
+  Anthropic-only `agents/critic` does not cover OpenAI/Google/DeepMind/Amazon
+  drafts, and its tone check is only a 9-phrase banned list — it misses the
+  broad "sounds AI-written" class (hype words, LLM-isms, dramatic openers,
+  not-just-X-but-Y, tricolons) and never grades voice against Sam's real
+  writing. The company-agnostic `services/reviewer.py` (POST `/review`) fills
+  this: deterministic format + `agents/ai_tells.py` voice flags, plus LLM
+  graders for groundedness (HARD BLOCK — any unsupported claim makes the verdict
+  "block"), voice-similarity (vs sam-profile.md blockquotes), and company/role
+  alignment (advisory). Invariant: groundedness stays a hard block, the AI-tell
+  lexicon is non-empty, and the `/review` router is registered. Guarded by
+  `L11-reviewer-groundedness-hardblock`.
+
+- **L12 — Quick-apply digest is generate-only, grounded, bounded, and folded
+  into the daily cron.** The morning quick-apply email (`services/quick_apply.py`)
+  must not balloon cloud spend or emit ungrounded text. Invariants: one Claude
+  call per role (no separate LLM reviewer in the cloud path — deep review stays
+  on the laptop task), output bounded by `quick_apply_max`, the generation prompt
+  carries the grounding rule + locked-in facts, it respects the
+  `cron_enable_quick_apply` toggle, it is folded into `/discover/cron` (no new
+  Vercel cron), and the `/quick-apply` router is registered. Guarded by
+  `L12-quick-apply-generate-only-grounded`.
+
+- **L13 — Accuracy guards: qualify "12+ years"; never cite LinkedIn as a source.**
+  Two recurring overclaims to catch: (1) "12+ years" attached to GTM/Strategy/Sales
+  Ops or revenue/decision work (Sam's GTM/strategy tenure is the AWS years, ~6.5;
+  "12+ years" is TOTAL experience only), and (2) citing LinkedIn as a data/discovery
+  source in application materials (it is restricted for automated tools; the
+  linkedin.com profile URL in the contact line is fine). The reviewer's
+  `deterministic_review` flags both (the 12+ years one as must-fix), and selfcheck
+  keeps profile.json clean of them. Guarded by `L13-accuracy-claim-guards`.
+
+- **L14 — Saved-roles are taste ground truth; broaden Amazon discovery + calibrate scoring.**
+  Sam's Amazon-internal saved-roles list (June 2026) exposed two gaps: (1) discovery
+  missed entire families he targets - Partner Specialist, Partner Development Manager,
+  GenAI Strategist, Deal Intelligence/Automation PMT, Worldwide Specialist (Foundation
+  Models / Accelerate Compute); (2) scoring under-rated L6 WWSO GenAI / Data & AI GTM
+  Specialist roles (capped at Strong) that are his actual top picks. Fixed: added those
+  families to `ats_clients.AMAZON_BASE_QUERIES` + `ROLE_KEYWORDS`, and added an Amazon
+  `company_note` in `config/scoring_adjustments.json` that lifts L6 GTM/Partner-Specialist
+  GenAI roles to strong role-type fit (without blanket-inflating unrelated roles). Re-run
+  discovery + `POST /score/rescore` to apply. Guarded by `L14-amazon-saved-roles-calibration`.
+
+- **L15 — Amazon writing-style lint for Amazon artifacts.** Amazon self-assessment
+  writing avoids weasel words (roughly, approximately, various, significantly,
+  many, etc.) and prefers "I" over "we/our" in self-assessment, with quantified
+  claims. `reviewer.deterministic_review` runs an Amazon-only lint (gated on
+  `company == "Amazon"`) flagging weasel words and we/our as advisory. Guarded by
+  `L15-amazon-style-lint`.
+
+- **L16 — Don't undersell the AI products by leading with the tool.** Lead with
+  engineering/product substance and outcomes (multi-agent orchestration, the
+  4-tier attribution engine at ~2,500 searches/day, eval harnesses, grounding,
+  knowledge-graph memory); Claude Code / AI-assisted development is the method,
+  mentioned once ("at the pace of an engineering team"), never the headline. The
+  "shipped solo as a non-engineer" angle is a strength for AI-native companies
+  (Anthropic/OpenAI/DeepMind/xAI) but is DROPPED for Amazon internal artifacts.
+  Guidance in locked_facts; reviewer lints both (framing advisory; Amazon
+  non-engineer must-fix). Guarded by `L16-ai-products-framing`.
+
 ---
 
 ## Adding a new learning

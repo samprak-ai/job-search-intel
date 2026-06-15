@@ -1,0 +1,4 @@
+
+## L17 — Amazon-internal performance language must stay off external artifacts
+**Gap:** "Exceeds High Bar" / "annual review" (Amazon's internal rating vocabulary) leaked onto the OpenAI Strategy-Ops resume. It passed the audit because it is *true* (groundedness ok) and well-formatted — but it's Amazon-only insider detail that means nothing to an external reviewer and signals internal-review copy-paste. The audit lacked a *context-appropriateness* check.
+**Guard:** reviewer.py block (e) flags Amazon-internal performance terms ("exceeds high bar", "annual review", "annual performance rating", "forte goals", "promo doc") as **must_fix** when company != Amazon (advisory when company unknown); silent for Amazon. selfcheck L17 verifies the rule text + behavior (must_fix on external, silent on Amazon). Keep the fact in profile.json/locked_facts/sam-profile.md (true; needed for Amazon packets) — just keep it out of external resumes/letters.

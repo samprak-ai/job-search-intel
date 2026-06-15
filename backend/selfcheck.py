@@ -176,6 +176,27 @@ def _l10():
     return []
 
 
+# ── L11: every hardcoded Claude model id must be a current one ──────────────
+# A retired snapshot (claude-sonnet-4-20250514) 404'd across 10 files and broke
+# all scoring. Keep this set current when models change (see the claude-api skill).
+ALLOWED_MODELS = {
+    "claude-opus-4-8",
+    "claude-sonnet-4-6",
+    "claude-haiku-4-5-20251001",
+    "claude-fable-5",
+}
+
+
+@check("L18-model-ids-current")
+def _l11():
+    problems = []
+    for f in sorted((BACKEND / "app").rglob("*.py")):
+        for mid in re.findall(r'model\s*=\s*["\']([^"\']+)["\']', _read(f)):
+            if mid.startswith("claude") and mid not in ALLOWED_MODELS:
+                problems.append(f'{f.relative_to(BACKEND)}: stale/unknown model id "{mid}"')
+    return problems
+
+
 # ── L7 (DB): no role may have more than one role_scores row ──────────────────
 @check("L7-no-duplicate-role-scores", kind="db")
 def _l7():
@@ -189,6 +210,134 @@ def _l7():
     counts = Counter(r["role_id"] for r in rows)
     dups = [rid for rid, n in counts.items() if n > 1]
     return [f"{len(dups)} role(s) have duplicate role_scores rows: {dups[:5]}"] if dups else []
+
+
+# ── L11: reviewer must hard-block on groundedness; AI-tell lexicon present ──
+@check("L11-reviewer-groundedness-hardblock")
+def _l11():
+    problems = []
+    reviewer = _read(BACKEND / "app/services/reviewer.py")
+    if '= "block"' not in reviewer:
+        problems.append("reviewer.py: no 'block' verdict path found")
+    if "blocking_reasons" not in reviewer:
+        problems.append("reviewer.py: missing blocking_reasons aggregation")
+    if "def grade_groundedness" not in reviewer:
+        problems.append("reviewer.py: missing grade_groundedness grader")
+    if "groundedness: unsupported" not in reviewer:
+        problems.append("reviewer.py: groundedness failures must add a blocking reason")
+    ai = _read(BACKEND / "app/services/agents/ai_tells.py")
+    if "LEXICON" not in ai or "def scan_ai_tells" not in ai:
+        problems.append("ai_tells.py: missing LEXICON or scan_ai_tells")
+    main_py = _read(BACKEND / "app/main.py")
+    if "review.router" not in main_py:
+        problems.append("main.py: /review router not registered")
+    return problems
+
+
+# ── L12: quick-apply digest is generate-only, grounded, bounded, and wired ──
+@check("L12-quick-apply-generate-only-grounded")
+def _l12():
+    problems = []
+    qa = _read(BACKEND / "app/services/quick_apply.py")
+    if "def run_quick_apply" not in qa:
+        problems.append("quick_apply.py: missing run_quick_apply")
+    if "quick_apply_max" not in qa:
+        problems.append("quick_apply.py: output must be bounded by quick_apply_max")
+    if "ABSOLUTE GROUNDING RULE" not in qa:
+        problems.append("quick_apply.py: grounding rule missing from generation prompt")
+    if "LOCKED_IN_FACTS_MARKDOWN" not in qa:
+        problems.append("quick_apply.py: must inject locked-in facts into the prompt")
+    main_py = _read(BACKEND / "app/main.py")
+    if "quick_apply.router" not in main_py:
+        problems.append("main.py: /quick-apply router not registered")
+    disc = _read(BACKEND / "app/routes/discover.py")
+    if "run_quick_apply()" not in disc:
+        problems.append("discover.py: quick-apply not folded into the daily cron")
+    if "cron_enable_quick_apply" not in disc:
+        problems.append("discover.py: quick-apply must respect the cron_enable_quick_apply toggle")
+    return problems
+
+
+# ── L13: accuracy guards — "12+ years" qualified; no LinkedIn-as-source ──
+@check("L13-accuracy-claim-guards")
+def _l13():
+    problems = []
+    rev = _read(BACKEND / "app/services/reviewer.py")
+    if "must be qualified as total experience" not in rev:
+        problems.append("reviewer.py: missing '12+ years' overclaim guard")
+    if "LinkedIn cited as a source" not in rev:
+        problems.append("reviewer.py: missing LinkedIn-as-source guard")
+    prof = _read(BACKEND / "config/profile.json")
+    for bad in ["12+ years GTM", "GTM + Sales Ops", "12+ years driving", "and LinkedIn"]:
+        if bad in prof:
+            problems.append(f'profile.json still contains the overclaim/source "{bad}"')
+    return problems
+
+
+# ── L14: Amazon discovery/scoring calibrated to Sam's saved-roles signal ──
+@check("L14-amazon-saved-roles-calibration")
+def _l14():
+    problems = []
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    if '"Partner Specialist"' not in ats:
+        problems.append("ats_clients.py: AMAZON_BASE_QUERIES missing 'Partner Specialist'")
+    if "partner specialist" not in ats:
+        problems.append("ats_clients.py: ROLE_KEYWORDS missing 'partner specialist'")
+    adj = _read(BACKEND / "config/scoring_adjustments.json")
+    if '"Amazon"' not in adj:
+        problems.append("scoring_adjustments.json: missing Amazon company_note calibration")
+    return problems
+
+
+# ── L15: reviewer carries an Amazon writing-style lint (weasel words, we/our) ──
+@check("L15-amazon-style-lint")
+def _l15():
+    problems = []
+    rev = _read(BACKEND / "app/services/reviewer.py")
+    if "AMAZON_WEASEL" not in rev:
+        problems.append("reviewer.py: missing AMAZON_WEASEL list")
+    if "Amazon style: weasel word" not in rev:
+        problems.append("reviewer.py: missing Amazon weasel-word lint")
+    if "prefer 'I' over 'we/our'" not in rev:
+        problems.append("reviewer.py: missing Amazon we/our self-assessment lint")
+    return problems
+
+
+# ── L16: AI-products framing (substance-first; non-engineer is AI-labs-only) ──
+@check("L16-ai-products-framing")
+def _l16():
+    problems = []
+    lf = _read(BACKEND / "app/services/agents/locked_facts.py")
+    if "Framing the AI products" not in lf:
+        problems.append("locked_facts.py: missing AI-products framing guideline")
+    rev = _read(BACKEND / "app/services/reviewer.py")
+    if "lead with the engineering substance" not in rev:
+        problems.append("reviewer.py: missing AI-products framing lint")
+    if "drop the non-engineer" not in rev:
+        problems.append("reviewer.py: missing Amazon non-engineer-drop lint")
+    return problems
+
+
+# ── L17: Amazon-internal performance language must stay off external artifacts ──
+@check("L17-amazon-internal-language-external-guard")
+def _l17():
+    problems = []
+    rev = _read(BACKEND / "app/services/reviewer.py")
+    if "Amazon-internal performance language on a non-Amazon artifact" not in rev:
+        problems.append("reviewer.py: missing Amazon-internal-language external guard")
+    # behavioral: phrase must be a must_fix for an external company, silent for Amazon
+    try:
+        from app.services.reviewer import deterministic_review
+        sample = "Annual review: Exceeds High Bar for two consecutive years."
+        ext = deterministic_review(sample, company="OpenAI")["format"]
+        amz = deterministic_review(sample, company="Amazon")["format"]
+        if not ext["must_fix"]:
+            problems.append("guard did not must_fix 'Exceeds High Bar' on an external artifact")
+        if any("Amazon-internal" in f["rule"] for f in amz["flags"]):
+            problems.append("guard wrongly flagged 'Exceeds High Bar' on an Amazon artifact")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L17 behavioral check errored: {e}")
+    return problems
 
 
 def main() -> int:

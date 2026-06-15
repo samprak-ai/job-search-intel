@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/discover",
-      "schedule": "0 14 * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/deep-scan",

@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from typing import Annotated
 
-from app.config import get_supabase_client
+from app.config import get_settings, get_supabase_client
 from app.services.scoring import score_role
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,56 @@ async def batch_score_unscored(
         "failed": failed,
         "results": results,
     }
+
+
+@router.post("/rescore")
+async def rescore_live(
+    authorization: Annotated[str | None, Header()] = None,
+    company: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 500,
+):
+    """Re-score LIVE roles against the CURRENT profile (idempotent; replaces the
+    existing score). Auth: Bearer CRON_SECRET. Optional ?company= filter.
+
+    Use this after editing profile.json so existing scores reflect the new profile.
+    """
+    settings = get_settings()
+    if not settings.cron_secret:
+        raise HTTPException(status_code=500, detail="CRON_SECRET not configured")
+    if authorization != f"Bearer {settings.cron_secret}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    supabase = get_supabase_client()
+    q = supabase.table("roles").select("id, title, company").eq("is_live", True)
+    if company:
+        q = q.eq("company", company)
+    roles = (q.execute().data or [])[:limit]
+
+    rescored = failed = changed = 0
+    results = []
+    for role in roles:
+        try:
+            before = (
+                supabase.table("role_scores").select("overall_score")
+                .eq("role_id", role["id"]).execute()
+            )
+            prev = before.data[0]["overall_score"] if before.data else None
+            res = await score_role(role["id"], force=False)
+            if res and not res.get("skipped"):
+                rescored += 1
+                if prev is not None and res["overall_score"] != prev:
+                    changed += 1
+                results.append({
+                    "company": role["company"], "title": role["title"],
+                    "from": prev, "to": res["overall_score"], "tier": res["match_tier"],
+                })
+            await asyncio.sleep(0.3)
+        except Exception as e:
+            failed += 1
+            logger.warning(f"Rescore failed for {role['title']}: {e}")
+
+    return {"status": "completed", "rescored": rescored, "changed": changed,
+            "failed": failed, "results": results}
 
 
 @router.post("/{role_id}")

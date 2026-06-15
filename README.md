@@ -141,11 +141,15 @@ Run `supabase/schema.sql` in the Supabase SQL Editor, then apply migrations in o
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_KEY` | Supabase anon key |
 | `ANTHROPIC_API_KEY` | Claude API key |
+| `SERPER_API_KEY` | Optional Serper API key for paid Google search fallback |
 | `BRAVE_API_KEY` | Brave Search API key |
+| `SEARCH_PROVIDER` | `brave` by default. Use `serper` to force Serper, or `auto` for Brave then Serper fallback |
+| `SERPER_DAILY_LIMIT` | Max Serper queries per UTC day before paid search is skipped. Defaults to `25`; set `0` to disable Serper |
 | `RESEND_API_KEY` | Resend email API key |
 | `NOTIFICATION_EMAIL` | Daily digest recipient |
 | `CRON_SECRET` | Secret for cron endpoint auth |
 | `CRON_COMPANIES` | Comma-separated company list for daily discovery |
+| `CRON_ENABLE_ROLE_DISCOVERY` | Enables broad open-market role searches during daily cron. Defaults to `false`; manual `/discover/by-role` still works |
 | `FORGE_API_URL` | Forge app URL for session handoff |
 | `FORGE_IMPORT_KEY` | Forge API auth key |
 | `FRONTEND_URL` | Frontend URL for CORS |

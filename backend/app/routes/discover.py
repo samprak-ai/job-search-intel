@@ -233,6 +233,16 @@ async def discover_cron(
         except Exception as e:
             logger.warning(f"Digest email failed: {e}")
 
+        # Morning quick-apply packets (generate-only, bounded by quick_apply_max).
+        # Folded into the daily cron so there is no separate Vercel cron.
+        quick_apply_summary = None
+        if settings.cron_enable_quick_apply:
+            try:
+                from app.services.quick_apply import run_quick_apply
+                quick_apply_summary = run_quick_apply()
+            except Exception as e:
+                logger.warning(f"Quick-apply digest failed: {e}")
+
         return {
             "status": "completed",
             "trigger": "cron",
@@ -244,6 +254,7 @@ async def discover_cron(
             "auto_scored": scored_count,
             "score_failed": score_failed,
             "stale_found": stale_found,
+            "quick_apply": quick_apply_summary,
             "results": results,
         }
     except HTTPException:

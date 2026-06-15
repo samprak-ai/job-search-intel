@@ -265,11 +265,6 @@ export default function Dashboard() {
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const [expandedFunctions, setExpandedFunctions] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchRoles();
-    fetchUsage();
-  }, []);
-
   async function fetchRoles() {
     setLoading(true);
     const res = await fetch(`${API}/roles?limit=1000`);
@@ -287,6 +282,13 @@ export default function Dashboard() {
       console.error("Usage fetch failed:", e);
     }
   }
+
+  useEffect(() => {
+    void Promise.resolve().then(async () => {
+      await fetchRoles();
+      await fetchUsage();
+    });
+  }, []);
 
   async function scoreRole(roleId: string) {
     setScoringId(roleId);
@@ -444,6 +446,8 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-center gap-3 mb-4 p-4 bg-white rounded-lg border border-gray-200">
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider mr-1">Actions</span>
 
+        {/* Apply Queue link removed — superseded by the application_packages pipeline */}
+
         {/* Batch prep brief generation */}
         <button
           onClick={batchGeneratePrep}
@@ -598,7 +602,6 @@ export default function Dashboard() {
             <div className="flex items-end gap-1 h-12">
               {usageStats.daily.map((day) => {
                 const maxTotal = Math.max(...usageStats.daily.map((d) => d.total), 1);
-                const heightPct = Math.max((day.total / maxTotal) * 100, 4);
                 return (
                   <div key={day.date} className="flex-1 flex flex-col items-center gap-0.5" title={`${day.date}: ${day.total} queries`}>
                     <div className="w-full flex flex-col justify-end" style={{ height: "36px" }}>
