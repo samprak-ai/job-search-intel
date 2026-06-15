@@ -493,35 +493,41 @@ def _gc_deslug(slug: str) -> str:
 
 
 def _parse_google_careers(html_text: str) -> list[dict]:
-    """Extract job cards (id, title, location, jd snippet, url) from a results page."""
+    """Extract job cards from a results page.
+
+    Each posting is one `<li ... lLd3Je ...>` card — split on that so card
+    boundaries are correct. (The job link repeats within a card as href +
+    aria-label + share link, so naive between-matches segmentation leaked the
+    NEXT card's location/JD into this one — which mis-scored a Singapore/Mumbai
+    role as US.) Location default is empty (NOT "United States"), so a role whose
+    location can't be parsed gets filtered by the US check rather than passed.
+    """
     out: dict[str, dict] = {}
-    matches = list(re.finditer(r"jobs/results/(\d+)-([a-z0-9-]+)", html_text))
-    for i, m in enumerate(matches):
+    cards = re.split(r"<li[^>]*\blLd3Je\b", html_text)[1:]
+    for card in cards:
+        m = re.search(r"jobs/results/(\d+)-([a-z0-9-]+)", card)
+        if not m:
+            continue
         job_id, slug = m.group(1), m.group(2)
         if job_id in out:
             continue
-        end = matches[i + 1].start() if i + 1 < len(matches) else m.end() + 2500
-        seg = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html_text[m.end():end]))).strip()
-        # Location: prefer a clean "City, ST, USA"; else a city after the "place"
-        # icon-label; tack on "+N more" when the card lists multiple.
-        # The card renders "<Company> place <City>, <ST>, <Country>" (the
-        # "place" is a leaked Material-icon label). Grab the city onward.
-        loc_m = re.search(r"place\s+([A-Z][^|]+?)(?:\s*\+\s*\d+\s*more|\s*Minimum|\s*$|<)", seg)
-        if loc_m:
-            location = loc_m.group(1).strip().rstrip(",").strip()
-        else:
-            usa = re.search(r"([A-Z][a-zA-Z.\- ]+?,\s*[A-Z]{2},\s*USA)", seg)
-            location = usa.group(1) if usa else "United States"
-        location = re.sub(r"^[A-Za-z]+ place\s+", "", location).strip()  # drop "Google place " leak
-        more_m = re.search(r"\+\s*(\d+)\s*more", seg)
-        if more_m and "more" not in location:
-            location += f" (+{more_m.group(1)} more)"
+        am = re.search(r'aria-label="Learn more about ([^"]+)"', card)
+        title = unescape(am.group(1)).strip() if am else _gc_deslug(slug)
+
+        text = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", card[:5000]))).strip()
+        # Location follows the "place" icon label, up to share/qualification text.
+        loc_m = re.search(
+            r"\bplace\s+(.+?)(?:\s+(?:share|bookmark|bar_chart|corporate_fare|Minimum|Learn more|Apply)\b|$)",
+            text,
+        )
+        location = re.sub(r"\s*;\s*", "; ", loc_m.group(1).strip()) if loc_m else ""
+
         out[job_id] = {
-            "title": _gc_deslug(slug),
+            "title": title,
             "url": f"https://www.google.com/about/careers/applications/jobs/results/{job_id}-{slug}/",
             "location": location,
             "department": "",
-            "raw_jd": seg[:1500],
+            "raw_jd": text[:1500],
         }
     return list(out.values())
 
