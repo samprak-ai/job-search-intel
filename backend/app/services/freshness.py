@@ -307,6 +307,38 @@ async def _check_linkedin(url: str) -> bool | None:
         return None
 
 
+async def _check_google_careers(url: str) -> bool | None:
+    """Check a Google Careers posting via its <title> signal.
+
+    The job page is a client-rendered SPA, but the server-set <title> is
+    reliable: a live job renders "<Job Title> — Google Careers", while a pulled
+    job falls back to "Jobs search — Google Careers".
+    """
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+    }
+    try:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers, timeout=CHECK_TIMEOUT)
+            if resp.status_code in (404, 410):
+                return False
+            if resp.status_code != 200:
+                return None
+            m = re.search(r"<title>(.*?)</title>", resp.text, re.S)
+            title = (m.group(1).strip() if m else "").lower()
+            if not title:
+                return None
+            return not title.startswith("jobs search")
+    except (httpx.TimeoutException, httpx.ConnectError):
+        return None
+    except Exception as e:
+        logger.debug(f"Google Careers freshness check failed for {url}: {e}")
+        return None
+
+
 async def check_role_freshness(role: dict) -> dict | None:
     """Check if a single role's URL is still live.
 
@@ -315,16 +347,11 @@ async def check_role_freshness(role: dict) -> dict | None:
     url = role.get("url", "")
     source = role.get("source", "")
 
-    # Google Careers is a client-rendered SPA: a bot fetch returns 200 with a
-    # generic shell for BOTH live and dead jobs, so HTTP freshness is meaningless
-    # (it would either always-live or always-dead). Treat as inconclusive — these
-    # roles should come from the verifiable LinkedIn source instead.
-    if "google.com/about/careers" in url:
-        return None
-
     # Try ATS-specific / source-specific checks first (more reliable)
     result = None
-    if "linkedin.com" in url:
+    if "google.com/about/careers" in url:
+        result = await _check_google_careers(url)
+    elif "linkedin.com" in url:
         result = await _check_linkedin(url)
     elif source == "greenhouse" or "greenhouse.io" in url:
         result = await _check_greenhouse(url)
@@ -335,8 +362,11 @@ async def check_role_freshness(role: dict) -> dict | None:
     elif source == "amazon" or "amazon.jobs" in url:
         result = await _check_amazon(url)
 
-    # Fall back to generic HTTP check (not for amazon.jobs / linkedin / google careers)
-    if result is None and not any(s in url for s in ("amazon.jobs", "linkedin.com")):
+    # Fall back to generic HTTP check (not for amazon.jobs / linkedin / google careers,
+    # which have dedicated checks above — the generic check would misread their SPAs).
+    if result is None and not any(
+        s in url for s in ("amazon.jobs", "linkedin.com", "google.com/about/careers")
+    ):
         result = await _check_http(url)
 
     if result is None:

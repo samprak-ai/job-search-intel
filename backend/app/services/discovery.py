@@ -211,6 +211,7 @@ async def discover_via_ats(company: dict) -> dict:
             "source": source_name,
             "raw_jd": job.get("raw_jd", ""),
             "department": job.get("department", ""),
+            "location": job.get("location", ""),
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
 
@@ -449,6 +450,7 @@ async def discover_via_web_search(company: dict) -> dict:
             "url": clean_url,
             "source": source,
             "raw_jd": description,
+            "location": "",
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
 
@@ -525,6 +527,7 @@ async def discover_via_linkedin(company: dict) -> dict:
             "url": url,
             "source": "linkedin",
             "raw_jd": job.get("raw_jd", ""),
+            "location": job.get("location", ""),
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
 

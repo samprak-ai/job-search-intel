@@ -80,6 +80,13 @@ ROLE_KEYWORDS = [
     "go-to-market lead", "gtm strategy", "go-to-market strategy",
     "strategy and operations", "strategy & operations",
     "business operations and strategy", "sales strategy", "revenue strategy",
+    # Partner / specialist / strategist families (from Sam's saved-roles signal, L13a):
+    # WWSO GenAI / Data & AI GTM Specialist, Partner Specialist, Partner Development
+    # Manager, GenAI Strategist, Deal Intelligence PMT. These are his real Amazon targets.
+    "partner specialist", "worldwide specialist", "ww specialist",
+    "partner development manager", "partner development",
+    "genai strategist", "ai strategist", "deal intelligence",
+    "frontier ai partner",
     # Chief of staff with likely product/AI/GTM altitude
     "chief of staff",
     # Senior leadership titles are allowed only when paired with relevant text.
@@ -344,7 +351,13 @@ AMAZON_TARGET_BUSINESS_CATEGORIES = [
 # One search pass per query phrase. Amazon's base_query is a relevance search,
 # so a "GTM Specialist" role won't surface under "Product Manager" — each
 # target role family needs its own pass.
-AMAZON_BASE_QUERIES = ["Product Manager", "GTM Specialist"]
+AMAZON_BASE_QUERIES = [
+    "Product Manager", "GTM Specialist",
+    # Added from Sam's saved-roles signal (L13a): his real Amazon targets cluster in
+    # the Partner/Specialist/Strategist families, which the first two passes miss.
+    "Partner Specialist", "Worldwide Specialist", "Partner Development Manager",
+    "GenAI Strategist", "Deal Intelligence",
+]
 AMAZON_TARGET_CITY = "seattle"
 # Per-query cap so each role family gets fair representation — otherwise the
 # first (high-volume) query exhausts the budget before the next one runs.
@@ -442,6 +455,108 @@ async def fetch_amazon_jobs(slug: str = "amazon") -> list[dict]:
         f"({AMAZON_RESULT_CAP_PER_QUERY}/query)"
     )
     return jobs
+
+
+# ---------------------------------------------------------------------------
+# Google Careers (server-rendered search — the individual job pages are SPAs,
+# but jobs/results/?q=... renders the result cards in HTML, with title +
+# location + a qualifications snippet). This is the reliable way to enumerate
+# Google roles (Brave's index is stale/partial; the careers backend API 404s).
+# ---------------------------------------------------------------------------
+
+GOOGLE_CAREERS_SEARCH_URL = "https://www.google.com/about/careers/applications/jobs/results/"
+GOOGLE_CAREERS_QUERIES = [
+    "AI strategy operations",
+    "strategy and operations",
+    "go-to-market strategy",
+    "AI product manager",
+    "product strategy growth",
+    "chief of staff",
+    "applied AI",
+]
+GOOGLE_CAREERS_PAGES = 2  # 20 results/page
+_GC_ACRONYMS = {"ai": "AI", "gtm": "GTM", "ml": "ML", "ai/ml": "AI/ML", "api": "API",
+                "ux": "UX", "ar": "AR", "vr": "VR", "llm": "LLM", "genai": "GenAI", "us": "US"}
+_GC_LOWER = {"and", "of", "the", "for", "to", "in", "on", "a", "an", "&"}
+
+
+def _gc_deslug(slug: str) -> str:
+    words = []
+    for i, w in enumerate(slug.split("-")):
+        if w in _GC_ACRONYMS:
+            words.append(_GC_ACRONYMS[w])
+        elif w in _GC_LOWER and i != 0:
+            words.append(w)
+        else:
+            words.append(w.capitalize())
+    return " ".join(words)
+
+
+def _parse_google_careers(html_text: str) -> list[dict]:
+    """Extract job cards (id, title, location, jd snippet, url) from a results page."""
+    out: dict[str, dict] = {}
+    matches = list(re.finditer(r"jobs/results/(\d+)-([a-z0-9-]+)", html_text))
+    for i, m in enumerate(matches):
+        job_id, slug = m.group(1), m.group(2)
+        if job_id in out:
+            continue
+        end = matches[i + 1].start() if i + 1 < len(matches) else m.end() + 2500
+        seg = re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", " ", html_text[m.end():end]))).strip()
+        # Location: prefer a clean "City, ST, USA"; else a city after the "place"
+        # icon-label; tack on "+N more" when the card lists multiple.
+        # The card renders "<Company> place <City>, <ST>, <Country>" (the
+        # "place" is a leaked Material-icon label). Grab the city onward.
+        loc_m = re.search(r"place\s+([A-Z][^|]+?)(?:\s*\+\s*\d+\s*more|\s*Minimum|\s*$|<)", seg)
+        if loc_m:
+            location = loc_m.group(1).strip().rstrip(",").strip()
+        else:
+            usa = re.search(r"([A-Z][a-zA-Z.\- ]+?,\s*[A-Z]{2},\s*USA)", seg)
+            location = usa.group(1) if usa else "United States"
+        location = re.sub(r"^[A-Za-z]+ place\s+", "", location).strip()  # drop "Google place " leak
+        more_m = re.search(r"\+\s*(\d+)\s*more", seg)
+        if more_m and "more" not in location:
+            location += f" (+{more_m.group(1)} more)"
+        out[job_id] = {
+            "title": _gc_deslug(slug),
+            "url": f"https://www.google.com/about/careers/applications/jobs/results/{job_id}-{slug}/",
+            "location": location,
+            "department": "",
+            "raw_jd": seg[:1500],
+        }
+    return list(out.values())
+
+
+async def fetch_google_careers_jobs(slug: str = "google") -> list[dict]:
+    """Enumerate Google Careers roles across Sam's target keyword queries."""
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+    }
+    jobs: dict[str, dict] = {}
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        for query in GOOGLE_CAREERS_QUERIES:
+            for page in range(1, GOOGLE_CAREERS_PAGES + 1):
+                try:
+                    resp = await client.get(
+                        GOOGLE_CAREERS_SEARCH_URL,
+                        params={"q": query, "page": page},
+                        headers=headers, timeout=ATS_TIMEOUT,
+                    )
+                    if resp.status_code != 200:
+                        break
+                except Exception as e:
+                    logger.warning(f"Google Careers search failed ('{query}' p{page}): {e}")
+                    break
+                page_jobs = _parse_google_careers(resp.text)
+                if not page_jobs:
+                    break
+                for j in page_jobs:
+                    jobs.setdefault(j["url"], j)
+                await asyncio.sleep(0.4)
+    logger.info(f"Google Careers: fetched {len(jobs)} unique jobs across {len(GOOGLE_CAREERS_QUERIES)} queries")
+    return list(jobs.values())
 
 
 # ---------------------------------------------------------------------------
@@ -593,6 +708,8 @@ async def fetch_jobs_from_ats(platform: str, slug: str) -> list[dict]:
         return await fetch_lever_jobs(slug)
     elif platform == "amazon":
         return await fetch_amazon_jobs(slug)
+    elif platform == "google_careers":
+        return await fetch_google_careers_jobs(slug)
     else:
         logger.warning(f"Unknown ATS platform: {platform}")
         return []

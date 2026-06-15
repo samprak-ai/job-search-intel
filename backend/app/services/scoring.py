@@ -59,6 +59,13 @@ Cap overall_score for pure-scaling roles at 82 (Strong Match ceiling), even if o
 Cap overall_score at 78 when the role is primarily relationship-only partnerships, account management, customer success, enablement, or executive reporting without explicit build scope.
 Cap overall_score at 84 for big-company AI roles unless the JD shows a specific fast-moving team such as DeepMind, Labs, Research/Product, Incubation, Growth, Applied AI, or an explicitly prototype-driven group, OR the role is an internal transfer at the candidate's current employer (see "Internal Transfer Context" if present). Internal moves clear a lower effective bar and carry no big-company onboarding friction for this candidate, so the 84 cap does NOT apply to them — score those on genuine fit.
 
+LOCATION FIT (use the role's Location field + any JD location):
+- The candidate is based in Seattle/Renton, WA, is OPEN to relocating to the SF Bay Area or NYC, needs H1B sponsorship, and welcomes US-remote roles.
+- IDEAL (no penalty): Seattle / Bellevue / Renton / Kirkland; SF Bay Area (San Francisco, Mountain View, Sunnyvale, Palo Alto, San Jose); New York City; or US-Remote.
+- MODERATE penalty (subtract ~8-15 from overall_score, add a location gap): US roles that require relocating to a city he did NOT list (e.g. Atlanta, Austin, Chicago, Los Angeles, Boston).
+- HARD penalty: roles that are non-US only (no US location and not US-remote) — cap overall_score at 45 (wrong market + visa path).
+- A multi-location role counts as IDEAL if ANY listed location is acceptable. If the location is unknown, do not penalize. Always state the location assessment in the rationale.
+
 Assign a match_tier based on overall score:
 - "Perfect Match" — 90-100 overall, exceptional alignment across all dimensions
 - "Strong Match" — 80-89 overall, strong alignment on key dimensions
@@ -139,6 +146,7 @@ def build_scoring_message(role: dict, profile: dict) -> str:
     return f"""{calibration_block}{internal_block}## Job Posting
 **Company:** {role['company']}
 **Title:** {role['title']}
+**Location:** {role.get('location') or 'see description'}
 **Source:** {role.get('source', 'unknown')}
 **URL:** {role['url']}
 

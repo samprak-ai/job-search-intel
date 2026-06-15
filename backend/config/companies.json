@@ -46,11 +46,10 @@
       "h1b_status": "confirmed",
       "priority": 5,
       "careers_url": "https://www.google.com/about/careers/applications/",
-      "ats_platform": null,
-      "ats_slug": null,
-      "notes": "Broader Google (Cloud AI, Labs, Workspace, YouTube) via the LinkedIn guest-search API (linkedin_only) \u2014 its careers site is a client-rendered SPA whose URLs Brave indexes stale and which can't be freshness-verified (we emailed a dead one). LinkedIn (f_C=1441) is verifiable via the guest jobPosting endpoint. Companion to the 'Google DeepMind' Greenhouse entry.",
-      "linkedin_company_id": "1441",
-      "linkedin_only": true
+      "ats_platform": "google_careers",
+      "ats_slug": "google",
+      "notes": "Broader Google (Cloud AI, Labs, Workspace, YouTube). PRIMARY source = structured scrape of the server-rendered Google Careers search (ats_platform 'google_careers' -> fetch_google_careers_jobs across Sam's keyword queries; the careers backend API 404s and Brave indexes it stale). LinkedIn guest API (f_C=1441) runs as a supplement. Careers freshness via the <title> signal (live = specific title, dead = 'Jobs search'). DeepMind has its own Greenhouse entry.",
+      "linkedin_company_id": "1441"
     }
   ]
 }
