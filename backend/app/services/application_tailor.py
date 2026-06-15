@@ -232,7 +232,7 @@ def _call_claude_for_tailoring(
     user_msg += "\n\nProduce the tailoring JSON now."
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=4096,
         system=TAILORING_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_msg}],

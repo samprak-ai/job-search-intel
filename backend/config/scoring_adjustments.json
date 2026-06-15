@@ -1,5 +1,12 @@
 {
-  "_comment": "Approved calibration notes from the /reflect loop. The reflection pass PROPOSES changes; nothing here is auto-written — Sam adds an entry after approving a proposal. global_notes apply to every role; company_notes[company] apply only to that company. These are appended to the scoring prompt as guidance.",
+  "_comment": "Approved calibration notes from the /reflect loop. The reflection pass PROPOSES changes; nothing here is auto-written \u2014 Sam adds an entry after approving a proposal. global_notes apply to every role; company_notes[company] apply only to that company. These are appended to the scoring prompt as guidance.",
   "global_notes": [],
-  "company_notes": {}
+  "company_notes": {
+    "Amazon": [
+      "Saved-roles signal (Amazon internal, June 2026): Sam's own shortlist shows his top Amazon targets are L6 WWSO GenAI / Data & AI GTM Specialist and Worldwide/Partner Specialist roles (e.g. GenAI-Bedrock, Agentic AI - Kiro & Frontier Agents, Foundation Models, Accelerate Compute), plus Partner Development Manager, GenAI Strategist (Startups), and Deal Intelligence/Automation PMT. Score these L6 GTM / Partner-Specialist / Strategist GenAI roles as STRONG role-type fit (they are his GTM Systems & Agents / Applied AI / AI Product Growth targets with a GTM flavor) rather than capping them at the 'GTM execution = Strong' band - they should reach Perfect when domain and seniority also fit. Internal transfer at L6 is a lateral move (no up-level friction). Do NOT blanket-inflate unrelated Amazon roles (engineering/SA, non-AI infrastructure, pure planning/quota ops)."
+    ],
+    "Google": [
+      "Target-role signal (Google, June 2026): Sam targets GTM Strategy & Operations, Product Strategy & Growth, Applied AI / AI-native product PM, and Chief-of-Staff-with-build-scope roles at Google (e.g. 'Strategy and Operations Lead/Principal, GTM', 'Product Strategy and Operations Principal, Cloud AI', 'Global Product Lead, GTM Intelligence/Optimization', 'PM, Applied AI' / 'AI-Native Product Development'). Score these GTM-Strategy / Applied-AI / Product-Growth roles as STRONG role-type fit - they are his GTM Systems & Agents / AI Product Strategy & Growth / Applied AI targets, not generic big-co coordination. When domain (AI / GTM / customer-and-product signal) and seniority (Lead / Principal / Head) also fit, let them reach Strong or Perfect rather than pinning them at the big-company 84 cap or a 'GTM execution = Good' band. Do NOT blanket-inflate unrelated Google roles (ads/sales quota ops, recruiting, finance, non-AI infrastructure, engineering / solutions-architect, pure program coordination)."
+    ]
+  }
 }

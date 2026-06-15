@@ -157,7 +157,7 @@ async def generate_session_config(role_id: str) -> dict | None:
     # Call Claude API
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=2048,
         system=FORGE_SYSTEM_PROMPT,
         messages=[

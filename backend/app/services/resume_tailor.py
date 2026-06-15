@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 TAILORING_SYSTEM_PROMPT = """You are a resume tailoring strategist. Given a job description and a candidate's profile (with match scoring data), you produce a structured prioritization guide — NOT a full resume rewrite, but specific advice on how to reorder, emphasize, and reword existing resume content for this specific role.
 
-You are advising a senior professional (11+ years) who has a strong, diverse background spanning GTM/Sales Operations at AWS and hands-on AI product building. The goal is to surface the RIGHT parts of their background for each role.
+You are advising a senior professional (12+ years) who has a strong, diverse background spanning GTM/Sales Operations at AWS and hands-on AI product building. The goal is to surface the RIGHT parts of their background for each role.
 
 Respond with ONLY valid JSON in this exact format, no other text:
 {
@@ -138,7 +138,7 @@ async def generate_resume_tailoring(role_id: str) -> dict:
     # Call Claude API
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=2048,
         system=TAILORING_SYSTEM_PROMPT,
         messages=[

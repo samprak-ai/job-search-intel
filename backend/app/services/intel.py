@@ -118,7 +118,7 @@ async def fetch_intel(company: str, role_type: str) -> dict:
     # Send to Claude for summarization
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=1024,
         system=INTEL_SYSTEM_PROMPT,
         messages=[

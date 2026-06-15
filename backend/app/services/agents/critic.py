@@ -303,7 +303,7 @@ async def critique(
 Find every issue. Cite exact quotes. Output JSON only."""
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=4096,
         system=CRITIC_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_msg}],

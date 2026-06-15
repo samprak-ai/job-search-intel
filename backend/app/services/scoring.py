@@ -213,7 +213,7 @@ async def score_role(role_id: str, force: bool = False) -> dict:
     # Call Claude API
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=1024,
         system=SCORING_SYSTEM_PROMPT,
         messages=[
@@ -243,6 +243,9 @@ async def score_role(role_id: str, force: bool = False) -> dict:
         "gaps": score_data.get("gaps", []),
         "cover_letter_angles": score_data.get("cover_letter_angles", []),
     }
+    # Idempotent write: drop any existing score first so re-scoring never
+    # creates duplicate rows (keeps the L7 invariant). No-op on first-time scoring.
+    supabase.table("role_scores").delete().eq("role_id", role_id).execute()
     supabase.table("role_scores").insert(score_record).execute()
     logger.info(
         f"Scored {role['title']} at {role['company']}: "
