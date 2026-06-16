@@ -124,7 +124,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 }
 ```
 
-### Full Company List (8)
+### Full Company List (9)
 
 **Scope:** The companies Sam is actively targeting (June 2026). Role-based discovery is gated by this whitelist; any ATS posting outside it is filtered out before scoring. (Prior 27-company list is in git history if a company needs to be re-added.)
 
@@ -136,6 +136,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 6. **Databricks** — Data + AI platform; Greenhouse (`databricks`), fully wired into ATS pipeline + daily cron — confirmed H1B (added 2026-06-15)
 7. **NVIDIA** — AI infra/compute; **Workday CXS** board (`fetch_workday_jobs()`, `WORKDAY_BOARDS['nvidia']`), wired into ATS pipeline + daily cron — confirmed H1B (added 2026-06-15)
 8. **Snowflake** — Data + AI platform (Cortex AI); moved off Greenhouse onto **Ashby** (`snowflake`); confirmed + wired into the ATS pipeline + daily cron 2026-06-15 — confirmed H1B
+9. **CoreWeave** — AI/GPU cloud infra (public 2025); Greenhouse (`coreweave`), wired into ATS pipeline + daily cron — confirmed H1B (added 2026-06-15)
 
 ### Application strategy (set 2026-06-15)
 - **Volume target: ≥15 applications/week.** Drives discovery breadth and the quick-apply digest; the bottleneck is qualifying-role supply, hence the company-list expansion.
@@ -153,10 +154,10 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 The Vercel cron (14:00 UTC daily) calls `/discover/cron` on the Railway backend, which scans the companies named in the `CRON_COMPANIES` env var. Current value (set on Railway and mirrored in local `.env`):
 
 ```
-CRON_COMPANIES=Anthropic,OpenAI,Amazon,Google DeepMind,Google,Databricks,NVIDIA,Snowflake
+CRON_COMPANIES=Anthropic,OpenAI,Amazon,Google DeepMind,Google,Databricks,NVIDIA,Snowflake,CoreWeave
 ```
 
-These 8 are the daily-scanned set. Databricks (Greenhouse), NVIDIA (Workday CXS client), and Snowflake (Ashby, slug `snowflake` — moved off Greenhouse) were added 2026-06-15. Other companies in `companies.json` remain discoverable via the manual `/discover/{company}` endpoint and role-based discovery — just not scanned daily.
+These 9 are the daily-scanned set. Databricks (Greenhouse), NVIDIA (Workday CXS client), Snowflake (Ashby, slug `snowflake` — moved off Greenhouse), and CoreWeave (Greenhouse, slug `coreweave`) were added 2026-06-15. Other companies in `companies.json` remain discoverable via the manual `/discover/{company}` endpoint and role-based discovery — just not scanned daily.
 
 If you change this list:
 1. Update Railway env var via dashboard

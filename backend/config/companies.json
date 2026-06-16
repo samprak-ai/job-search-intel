@@ -80,6 +80,16 @@
       "ats_platform": "ashby",
       "ats_slug": "snowflake",
       "notes": "Data + AI platform (Cortex AI). Moved off Greenhouse (404 as of May 2026) onto Ashby — confirmed 2026-06-15: structured Ashby board (slug 'snowflake', jobs.ashbyhq.com/snowflake/* URLs route to _check_ashby for freshness). Wired into the standard ATS pipeline + daily cron. Confirmed H1B sponsor. Step-out target: only level-up roles (Head/Director/Principal/Lead with real scope) reach Strong/Perfect per the scoring_adjustments level rule."
+    },
+    {
+      "name": "CoreWeave",
+      "tier": "ai_infra_compute",
+      "h1b_status": "confirmed",
+      "priority": 9,
+      "careers_url": "https://www.coreweave.com/careers",
+      "ats_platform": "greenhouse",
+      "ats_slug": "coreweave",
+      "notes": "AI/GPU cloud infrastructure (public 2025). Structured Greenhouse board (slug 'coreweave', job-boards.greenhouse.io/coreweave/jobs/{id} — id in path, no gh_jid issue). Wired into the standard ATS pipeline + daily cron 2026-06-15. Confirmed H1B sponsor. Roles cluster in Livingston NJ / New York / Bellevue WA / Sunnyvale / Remote-US. Step-out target: only level-up roles (Head/Director/Principal/Lead with real scope) reach Strong/Perfect per the scoring_adjustments level rule."
     }
   ]
 }
