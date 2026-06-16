@@ -206,6 +206,7 @@ Phase 1 is complete when the above loop works for at least one company end-to-en
 - Scheduled daily role discovery (Railway cron)
 - Email/notification when Strong match found
 - Company notes and application status tracking in dashboard
+- **Application-update extractor (BUILT) — inbox->outcome->Forge bridge.** `services/application_updates.py` + `POST /application-updates/ingest` (Bearer `CRON_SECRET`). A daily Cowork scheduled task reads ATS reply emails (Gmail connector) and POSTs them; the backend classifies status (confirmation/rejection/interview_invite/online_assessment/offer), matches to a role, and updates `application_status` through `services/outcomes.record_outcome()` (single write path). Positive movement (interview/OA/offer) auto-fires the Forge prep session via `generate_session_config()`. Idempotent via `email_application_updates.message_id`. Guarded by selfcheck `L19`. See CLAUDE.md for the full spec.
 
 ---
 

@@ -143,6 +143,37 @@ These are harder to assert statically. Follow the procedure; promote to a
   Guidance in locked_facts; reviewer lints both (framing advisory; Amazon
   non-engineer must-fix). Guarded by `L16-ai-products-framing`.
 
+- **L19 — Email application-update bridge must not fork outcome state.** The
+  inbox->outcome->Forge bridge (`services/application_updates.py`, POST
+  `/application-updates/ingest`) ingests ATS reply emails from a daily Cowork
+  scheduled task (Gmail connector), classifies each (confirmation / rejection /
+  interview_invite / online_assessment / offer), matches it to a single role Sam
+  engaged with, and updates `application_status`. The write MUST go through
+  `services.outcomes.record_outcome()` — identical to PATCH `/roles/{id}` — and
+  must never INSERT `application_outcomes` directly (that would fork the return
+  path; see M5). Status only progresses (never downgrades); a rejection is
+  terminal at any stage. Positive movement (interview/OA/offer) fires
+  `generate_session_config()` (Forge), idempotently. Ingestion is bounded by
+  `MAX_EMAILS_PER_RUN`, idempotent via `email_application_updates.message_id`
+  (UNIQUE), and ignores this app's own `onboarding@resend.dev` digests. Guarded
+  by `L19-application-updates-bridge-single-write-path`.
+
+- **L21 — Workday ATS client must stay wired for `workday` companies.** NVIDIA
+  (added 2026-06-15) is on Workday, which the original pipeline didn't support —
+  `fetch_jobs_from_ats` returned `[]` for it, so discovery silently found nothing.
+  Fixed with a generic Workday CXS client: `fetch_workday_jobs(slug)` in
+  `ats_clients.py`, routed via `elif platform == "workday"`, with per-company
+  coordinates in `WORKDAY_BOARDS` (keyed by `ats_slug`; `nvidia` -> host
+  `nvidia.wd5`, tenant `nvidia`, site `NVIDIAExternalCareerSite`). The CXS list
+  endpoint is `POST /wday/cxs/{tenant}/{site}/jobs`; JD detail is a second GET per
+  posting, so titles + US location are pre-filtered before paying for detail
+  (bounded by `WORKDAY_DETAIL_CAP`). Invariant: every `companies.json` company with
+  `ats_platform="workday"` must have a complete `WORKDAY_BOARDS` entry, and the
+  dispatcher must route `workday`. Guarded by `L21-workday-client-wired`.
+  NOTE: live fetch can't run in the offline sandbox (no network); the guard is
+  static + the parser is unit-tested with a mocked CXS response. First real cron
+  run on Railway is the live verification.
+
 ---
 
 ## Adding a new learning

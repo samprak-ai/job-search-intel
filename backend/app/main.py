@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import (
     application_outcomes,
     application_packages,
+    application_updates,
     detected_gaps,
     discover,
     forge,
@@ -52,6 +53,7 @@ app.include_router(quick_apply.router, prefix="/quick-apply", tags=["quick-apply
 app.include_router(freshness.router, prefix="/freshness", tags=["freshness"])
 app.include_router(application_packages.router, prefix="/application-packages", tags=["application-packages"])
 app.include_router(application_outcomes.router, prefix="/application-outcomes", tags=["application-outcomes"])
+app.include_router(application_updates.router, prefix="/application-updates", tags=["application-updates"])
 app.include_router(detected_gaps.router, prefix="/detected-gaps", tags=["detected-gaps"])
 app.include_router(reflect.router, prefix="/reflect", tags=["reflect"])
 app.include_router(scoring_adjustments.router, prefix="/scoring-adjustments", tags=["scoring-adjustments"])
