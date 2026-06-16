@@ -417,6 +417,61 @@ def _l20_db():
     return [f"{len(offenders)} Amazon Principal+ role(s) still tracked, e.g. {offenders[0]['title']!r}"]
 
 
+@check("L21-workday-client-wired")
+def _l21():
+    """NVIDIA's Workday ATS client must exist, be routed, and be configured.
+
+    Regression guard: companies.json marks NVIDIA ats_platform='workday'. If the
+    client / dispatcher branch / board config drifts, NVIDIA discovery silently
+    returns [] (the pre-client failure mode). Keep all three in lockstep.
+    """
+    problems = []
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    if "async def fetch_workday_jobs" not in ats:
+        problems.append("ats_clients.py: missing fetch_workday_jobs()")
+    if 'elif platform == "workday":' not in ats:
+        problems.append("ats_clients.py: fetch_jobs_from_ats does not route 'workday'")
+    if "WORKDAY_BOARDS" not in ats:
+        problems.append("ats_clients.py: missing WORKDAY_BOARDS config map")
+    # Every companies.json workday company must have a WORKDAY_BOARDS entry.
+    try:
+        from app.services.ats_clients import WORKDAY_BOARDS
+        companies = json.loads(_read(BACKEND / "config/companies.json"))["target_companies"]
+        for c in companies:
+            if c.get("ats_platform") == "workday":
+                board = WORKDAY_BOARDS.get(c.get("ats_slug"))
+                if not board:
+                    problems.append(
+                        f"WORKDAY_BOARDS missing entry for '{c.get('ats_slug')}' ({c['name']})"
+                    )
+                elif not all(k in board for k in ("host", "tenant", "site")):
+                    problems.append(f"WORKDAY_BOARDS['{c.get('ats_slug')}'] missing host/tenant/site")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L21 behavioral check errored: {e}")
+    return problems
+
+
+# ── L22: Greenhouse own-domain boards put the job id in the query string ──────
+# Databricks embeds Greenhouse on its own domain with ?gh_jid=<id>; the discovery
+# URL-normalizer strips the query, collapsing every posting to one path (only 1
+# of 27 inserts; the rest look like URL-dupes and the link is a dead careers
+# page). fetch_greenhouse_jobs must fall back to the canonical Greenhouse-hosted
+# URL (id in the path) so each posting stays unique and the link works.
+@check("L22-greenhouse-gh-jid-url")
+def _l22():
+    problems = []
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    if "job-boards.greenhouse.io/{slug}/jobs/{job_id}" not in ats:
+        problems.append(
+            "ats_clients.py: fetch_greenhouse_jobs missing canonical id-in-path URL fallback"
+        )
+    if 'f"/jobs/{job_id}" not in posting_url' not in ats:
+        problems.append(
+            "ats_clients.py: greenhouse URL fallback must trigger only when id absent from path"
+        )
+    return problems
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})

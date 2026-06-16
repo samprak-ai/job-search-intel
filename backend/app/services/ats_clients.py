@@ -198,8 +198,17 @@ async def fetch_greenhouse_jobs(slug: str) -> list[dict]:
         content = job.get("content", "")
         raw_jd = _strip_html_tags(content) if content else ""
 
-        # Build the posting URL
-        posting_url = job.get("absolute_url", "")
+        # Build the posting URL. Some boards embed Greenhouse on their own domain
+        # and carry the job id in the QUERY string (e.g. Databricks:
+        # databricks.com/.../job?gh_jid=123). Our discovery URL-normalizer strips
+        # the query, which would collapse every such posting to one identical path
+        # — only one survives dedup and the stored "View Original" link is a dead
+        # generic careers page. Fall back to the canonical Greenhouse-hosted URL
+        # (id in the path) whenever the absolute_url doesn't already carry it. (L22)
+        posting_url = job.get("absolute_url", "") or ""
+        job_id = job.get("id")
+        if job_id and f"/jobs/{job_id}" not in posting_url:
+            posting_url = f"https://job-boards.greenhouse.io/{slug}/jobs/{job_id}"
 
         jobs.append({
             "title": job.get("title", ""),
@@ -712,6 +721,148 @@ async def fetch_linkedin_jobs(company_id: str, company_name: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Workday API (CXS — Candidate Experience Service, public, no auth)
+# ---------------------------------------------------------------------------
+#
+# Workday boards expose a stable JSON API at:
+#   POST https://{host}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs
+#   body: {"appliedFacets":{}, "limit":20, "offset":0, "searchText": "<q>"}
+#   -> {"total": int, "jobPostings": [{title, externalPath, locationsText, postedOn, ...}]}
+# Per-job description:
+#   GET  https://{host}.myworkdayjobs.com/wday/cxs/{tenant}/{site}{externalPath}
+#   -> {"jobPostingInfo": {"jobDescription": "<html>", ...}}
+# Public apply URL:
+#   https://{host}.myworkdayjobs.com/{site}{externalPath}
+#
+# Coordinates per company are kept in WORKDAY_BOARDS keyed by ats_slug so the
+# unified (platform, slug) dispatcher signature stays unchanged. Add a company
+# by appending one entry here and setting ats_platform="workday" + ats_slug.
+
+# host is the subdomain before ".myworkdayjobs.com" (includes the wdN cell).
+WORKDAY_BOARDS = {
+    "nvidia": {
+        "host": "nvidia.wd5",
+        "tenant": "nvidia",
+        "site": "NVIDIAExternalCareerSite",
+    },
+}
+
+# Keyword queries run through Workday's searchText (one pass each, deduped by
+# externalPath). Mirrors the per-family approach used for Amazon/Google.
+WORKDAY_QUERIES = [
+    "product manager", "product strategy", "ai product",
+    "go to market", "gtm", "strategy and operations", "chief of staff",
+]
+
+WORKDAY_LIMIT = 20          # page size per CXS request
+WORKDAY_MAX_PAGES = 5       # cap pages per query (<=100 postings/query)
+WORKDAY_DETAIL_CAP = 60     # cap per-job JD detail fetches per company/run
+_WORKDAY_HEADERS = {
+    # Workday returns 403 to non-browser-ish clients on some tenants.
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    ),
+}
+
+
+async def _fetch_workday_jd(
+    client: httpx.AsyncClient, host: str, tenant: str, site: str, external_path: str
+) -> str:
+    """Fetch and strip a single Workday job description. Best-effort."""
+    url = f"https://{host}.myworkdayjobs.com/wday/cxs/{tenant}/{site}{external_path}"
+    try:
+        resp = await client.get(url, headers=_WORKDAY_HEADERS, timeout=ATS_TIMEOUT)
+        resp.raise_for_status()
+        info = resp.json().get("jobPostingInfo", {})
+        return _strip_html_tags(info.get("jobDescription", "") or "")
+    except Exception as e:
+        logger.warning(f"Workday JD fetch failed ({tenant}{external_path}): {e}")
+        return ""
+
+
+async def fetch_workday_jobs(slug: str) -> list[dict]:
+    """Fetch jobs from a Workday CXS board, normalized to the common format.
+
+    JD detail requires a second request per posting, so we pre-filter by title
+    and US location BEFORE fetching descriptions to keep the request count
+    bounded (WORKDAY_DETAIL_CAP).
+    """
+    board = WORKDAY_BOARDS.get(slug)
+    if not board:
+        logger.error(f"Workday: no board config for slug '{slug}' (add to WORKDAY_BOARDS)")
+        return []
+    host, tenant, site = board["host"], board["tenant"], board["site"]
+    jobs_base = f"https://{host}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs"
+
+    seen_paths: set[str] = set()
+    candidates: list[dict] = []  # postings that pass title+location pre-filter
+
+    async with httpx.AsyncClient() as client:
+        for query in WORKDAY_QUERIES:
+            for page in range(WORKDAY_MAX_PAGES):
+                body = {
+                    "appliedFacets": {},
+                    "limit": WORKDAY_LIMIT,
+                    "offset": page * WORKDAY_LIMIT,
+                    "searchText": query,
+                }
+                try:
+                    resp = await client.post(
+                        jobs_base, json=body, headers=_WORKDAY_HEADERS, timeout=ATS_TIMEOUT
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                except Exception as e:
+                    logger.warning(f"Workday [{tenant}] '{query}' p{page} error: {e}")
+                    break
+
+                postings = data.get("jobPostings", [])
+                if not postings:
+                    break
+
+                for p in postings:
+                    path = p.get("externalPath", "")
+                    if not path or path in seen_paths:
+                        continue
+                    seen_paths.add(path)
+                    title = p.get("title", "")
+                    location = p.get("locationsText", "")
+                    # Pre-filter before paying for the JD detail request.
+                    if not _is_us_location(location):
+                        continue
+                    if not _matches_role_keywords(title):
+                        continue
+                    candidates.append(
+                        {"title": title, "location": location, "externalPath": path}
+                    )
+
+                total = data.get("total", 0)
+                if (page + 1) * WORKDAY_LIMIT >= total:
+                    break
+
+        # Fetch JD detail for the bounded candidate set.
+        jobs: list[dict] = []
+        for c in candidates[:WORKDAY_DETAIL_CAP]:
+            raw_jd = await _fetch_workday_jd(client, host, tenant, site, c["externalPath"])
+            jobs.append({
+                "title": c["title"],
+                "url": f"https://{host}.myworkdayjobs.com/{site}{c['externalPath']}",
+                "location": c["location"],
+                "department": "",
+                "raw_jd": raw_jd,
+            })
+
+    logger.info(
+        f"Workday [{tenant}]: {len(seen_paths)} unique postings scanned, "
+        f"{len(jobs)} matched + detailed"
+    )
+    return jobs
+
+
+# ---------------------------------------------------------------------------
 # Unified fetcher
 # ---------------------------------------------------------------------------
 
@@ -719,6 +870,8 @@ async def fetch_jobs_from_ats(platform: str, slug: str) -> list[dict]:
     """Fetch jobs from the appropriate ATS API based on platform."""
     if platform == "greenhouse":
         return await fetch_greenhouse_jobs(slug)
+    elif platform == "workday":
+        return await fetch_workday_jobs(slug)
     elif platform == "ashby":
         return await fetch_ashby_jobs(slug)
     elif platform == "lever":

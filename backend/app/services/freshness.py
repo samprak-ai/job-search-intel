@@ -339,6 +339,51 @@ async def _check_google_careers(url: str) -> bool | None:
         return None
 
 
+# Public Workday job pages are client-rendered SPAs (200 whether live or dead),
+# so we verify via the CXS detail endpoint instead, which hard-404s a pulled job.
+_WORKDAY_URL_RE = re.compile(
+    r"https?://([^/]+)\.myworkdayjobs\.com/(?:[a-z]{2}-[A-Z]{2}/)?([^/]+)(/job/.+)$"
+)
+
+
+async def _check_workday(url: str) -> bool | None:
+    """Check a Workday posting via its CXS detail endpoint (404/410 = pulled).
+
+    The tenant isn't in the public URL; for Workday it's conventionally the first
+    label of the host (nvidia.wd5 -> 'nvidia'). 403/429/5xx stay inconclusive.
+    """
+    m = _WORKDAY_URL_RE.match(url)
+    if not m:
+        return None
+    host, site, ext_path = m.group(1), m.group(2), m.group(3)
+    tenant = host.split(".")[0]
+    cxs_url = f"https://{host}.myworkdayjobs.com/wday/cxs/{tenant}/{site}{ext_path}"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        ),
+    }
+    try:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            resp = await client.get(cxs_url, headers=headers, timeout=CHECK_TIMEOUT)
+            if resp.status_code in (404, 410):
+                return False
+            if resp.status_code == 200:
+                try:
+                    return bool(resp.json().get("jobPostingInfo"))
+                except Exception:
+                    return None
+            return None  # 403/429/5xx — inconclusive
+    except (httpx.TimeoutException, httpx.ConnectError):
+        return None
+    except Exception as e:
+        logger.debug(f"Workday freshness check failed for {url}: {e}")
+        return None
+
+
 async def check_role_freshness(role: dict) -> dict | None:
     """Check if a single role's URL is still live.
 
@@ -351,6 +396,8 @@ async def check_role_freshness(role: dict) -> dict | None:
     result = None
     if "google.com/about/careers" in url:
         result = await _check_google_careers(url)
+    elif "myworkdayjobs.com" in url:
+        result = await _check_workday(url)
     elif "linkedin.com" in url:
         result = await _check_linkedin(url)
     elif source == "greenhouse" or "greenhouse.io" in url:
@@ -365,7 +412,8 @@ async def check_role_freshness(role: dict) -> dict | None:
     # Fall back to generic HTTP check (not for amazon.jobs / linkedin / google careers,
     # which have dedicated checks above — the generic check would misread their SPAs).
     if result is None and not any(
-        s in url for s in ("amazon.jobs", "linkedin.com", "google.com/about/careers")
+        s in url
+        for s in ("amazon.jobs", "linkedin.com", "google.com/about/careers", "myworkdayjobs.com")
     ):
         result = await _check_http(url)
 

@@ -182,12 +182,17 @@ def build_scoring_message(role: dict, profile: dict) -> str:
 Please score this job match."""
 
 
-async def score_role(role_id: str, force: bool = False) -> dict:
+async def score_role(role_id: str, force: bool = False, notify: bool = True) -> dict:
     """Score a role against the candidate profile using Claude API.
 
     Skips scoring if the role is known to be stale (is_live=False), unless
     `force=True`. Stale roles that gain a score would surface as false
     Perfect Matches; we'd rather have no score than a misleading one.
+
+    `notify=False` scores silently — no match email, no Anthropic application
+    pipeline. Used for bulk backfills so newly-tracked companies don't blast a
+    burst of emails for their existing back-catalog; the daily cron keeps the
+    default (notify=True) so genuinely new roles still notify.
     """
     settings = get_settings()
     supabase = get_supabase_client()
@@ -267,7 +272,7 @@ async def score_role(role_id: str, force: bool = False) -> dict:
     # suppress the duplicate Strong Match notification for Anthropic only.
     from app.services.notifications import notification_threshold
 
-    if score_data.get("overall_score", 0) >= notification_threshold(role.get("company")):
+    if notify and score_data.get("overall_score", 0) >= notification_threshold(role.get("company")):
         # Verify the posting is still live BEFORE emailing — don't push a match
         # for a job that has already closed (e.g. an expired LinkedIn posting).
         # Only skip on a CONFIRMED-dead result; inconclusive (None) still sends.

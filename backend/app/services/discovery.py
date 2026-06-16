@@ -158,8 +158,12 @@ def clean_search_title(title: str) -> str:
 # ATS-based discovery (primary path)
 # ---------------------------------------------------------------------------
 
-async def discover_via_ats(company: dict) -> dict:
-    """Discover roles via direct ATS API. Returns a summary dict."""
+async def discover_via_ats(company: dict, notify: bool = True) -> dict:
+    """Discover roles via direct ATS API. Returns a summary dict.
+
+    `notify=False` scores discovered roles silently (no match emails) — used for
+    backfilling a newly-tracked company's existing postings.
+    """
     supabase = get_supabase_client()
     company_name = company["name"]
     platform = company["ats_platform"]
@@ -258,7 +262,7 @@ async def discover_via_ats(company: dict) -> dict:
             # Auto-score against profile
             role_id = result.data[0]["id"]
             try:
-                await score_role(role_id)
+                await score_role(role_id, notify=notify)
                 scored += 1
                 logger.info(f"Auto-scored {role['title']}")
             except Exception as e:
@@ -387,7 +391,7 @@ def _looks_like_landing_title(title: str) -> bool:
     return any(p.search(title or "") for p in _LANDING_TITLE_PATTERNS)
 
 
-async def discover_via_web_search(company: dict) -> dict:
+async def discover_via_web_search(company: dict, notify: bool = True) -> dict:
     """Discover roles via web search fallback. Returns a summary dict."""
     settings = get_settings()
     supabase = get_supabase_client()
@@ -479,7 +483,7 @@ async def discover_via_web_search(company: dict) -> dict:
 
             role_id = result_row.data[0]["id"]
             try:
-                await score_role(role_id)
+                await score_role(role_id, notify=notify)
                 scored += 1
             except Exception as e:
                 logger.warning(f"Auto-scoring failed for {role['title']}: {e}")
@@ -501,7 +505,7 @@ async def discover_via_web_search(company: dict) -> dict:
 # Orchestration
 # ---------------------------------------------------------------------------
 
-async def discover_via_linkedin(company: dict) -> dict:
+async def discover_via_linkedin(company: dict, notify: bool = True) -> dict:
     """Supplementary discovery via LinkedIn's public guest search API.
 
     For companies carrying a `linkedin_company_id`. Catches roles that Brave
@@ -557,7 +561,7 @@ async def discover_via_linkedin(company: dict) -> dict:
             res = supabase.table("roles").insert(role).execute()
             inserted += 1
             try:
-                await score_role(res.data[0]["id"]); scored += 1
+                await score_role(res.data[0]["id"], notify=notify); scored += 1
             except Exception as e:
                 logger.warning(f"[linkedin] score failed {role['title']}: {e}")
             await asyncio.sleep(0.3)
@@ -568,21 +572,24 @@ async def discover_via_linkedin(company: dict) -> dict:
     return {"company": company_name, "source": "linkedin", "total_on_board": len(all_jobs), "matched_filters": len(matched), "new_roles": inserted, "scored": scored}
 
 
-async def discover_for_company(company: dict) -> dict:
+async def discover_for_company(company: dict, notify: bool = True) -> dict:
     """Discover roles for a single company via the best available method,
-    plus LinkedIn guest-search as a supplementary source when configured."""
+    plus LinkedIn guest-search as a supplementary source when configured.
+
+    `notify=False` runs discovery silently (no match emails) — for backfilling a
+    newly-tracked company without blasting its existing back-catalog by email."""
     if company.get("ats_platform") and company.get("ats_slug"):
-        result = await discover_via_ats(company)
+        result = await discover_via_ats(company, notify=notify)
     elif company.get("linkedin_company_id") and company.get("linkedin_only"):
         # LinkedIn is the primary (and verifiable) source — used for Google,
         # whose careers web-search produced unverifiable, mostly-dead URLs.
-        return await discover_via_linkedin(company)
+        return await discover_via_linkedin(company, notify=notify)
     else:
-        result = await discover_via_web_search(company)
+        result = await discover_via_web_search(company, notify=notify)
 
     if company.get("linkedin_company_id"):
         try:
-            li = await discover_via_linkedin(company)
+            li = await discover_via_linkedin(company, notify=notify)
             result["linkedin_new_roles"] = li.get("new_roles", 0)
             result["new_roles"] = result.get("new_roles", 0) + li.get("new_roles", 0)
             result["scored"] = result.get("scored", 0) + li.get("scored", 0)

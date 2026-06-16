@@ -124,15 +124,23 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 }
 ```
 
-### Full Company List (5)
+### Full Company List (8)
 
-**Scope:** Deliberately narrowed to the 5 companies Sam is actively targeting (June 2026). Everything else was removed from `companies.json` AND purged from the database — these are the only companies tracked. Role-based discovery is gated by this whitelist; any ATS posting outside it is filtered out before scoring. (Prior 27-company list is in git history if a company needs to be re-added.)
+**Scope:** The companies Sam is actively targeting (June 2026). Role-based discovery is gated by this whitelist; any ATS posting outside it is filtered out before scoring. (Prior 27-company list is in git history if a company needs to be re-added.)
 
 1. **Anthropic** — Greenhouse (`anthropic`) — confirmed H1B
 2. **OpenAI** — Ashby (`openai`) — confirmed H1B
 3. **Amazon** — Sam's current employer; scoped to **Seattle + AWS/AGI orgs + Product Manager & GTM Specialist roles** via the amazon.jobs `search.json` API (`fetch_amazon_jobs()`); internal-transfer scoring — confirmed H1B
 4. **Google DeepMind** — Google's frontier AI lab; structured Greenhouse board (`deepmind`) — confirmed H1B
 5. **Google** (broader: Cloud AI, Labs, Workspace, YouTube) — web-search entry, Google-specific query in `_build_brave_query` scoped to careers + LinkedIn. Companion to Google DeepMind so discovery covers both — confirmed H1B
+6. **Databricks** — Data + AI platform; Greenhouse (`databricks`), fully wired into ATS pipeline + daily cron — confirmed H1B (added 2026-06-15)
+7. **NVIDIA** — AI infra/compute; **Workday CXS** board (`fetch_workday_jobs()`, `WORKDAY_BOARDS['nvidia']`), wired into ATS pipeline + daily cron — confirmed H1B (added 2026-06-15)
+8. **Snowflake** — Data + AI platform (Cortex AI); moved off Greenhouse onto **Ashby** (`snowflake`); confirmed + wired into the ATS pipeline + daily cron 2026-06-15 — confirmed H1B
+
+### Application strategy (set 2026-06-15)
+- **Volume target: ≥15 applications/week.** Drives discovery breadth and the quick-apply digest; the bottleneck is qualifying-role supply, hence the company-list expansion.
+- **Level-up rule (the hard filter for step-outs):** Sam will only leave Amazon for a non-Amazon company if the move is (a) to **OpenAI or Anthropic** (join at-level is acceptable — these he wants on their own terms), or (b) a genuine **level-up** over his current ~L6 AWS Sr Manager role. For **every other external company** (Google, Google DeepMind, Databricks, NVIDIA, Snowflake, future targets), only up-level roles (Head / Director / Principal / Lead / GM with real scope) should reach Strong/Perfect; lateral or lower roles cap at Good Match even with excellent domain fit. **Amazon internal** moves stay lateral-OK. This is enforced via the `global_notes` level rule in `config/scoring_adjustments.json` (plus per-company role-targeting notes), so it shapes scoring — and therefore notifications/digests — without code changes. Net effect: laterals at step-out companies score below the 80 notify bar and stay out of the digest automatically.
+- **Per-company application pacing caps** (Google 3/30-days + self-imposed 1/week; OpenAI 5/180-days) live in `samresume/CLAUDE.md`. The 15/week volume target is gross across all companies and must respect those per-company caps.
 
 ### Notifications policy
 - **Per-role emails:** fire when a role meets its company notification bar. Default bar is Strong Match (overall_score ≥ 80); **Amazon's bar is 70** (Good Match+), because big-company JD-realism score caps push genuinely strong-fit Amazon roles into the 70–79 band. Bar is set in `notification_threshold()` / `COMPANY_NOTIFICATION_THRESHOLDS` in `notifications.py`. Email subject + header adapt to the role's actual match_tier.
@@ -145,10 +153,10 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 The Vercel cron (14:00 UTC daily) calls `/discover/cron` on the Railway backend, which scans the companies named in the `CRON_COMPANIES` env var. Current value (set on Railway and mirrored in local `.env`):
 
 ```
-CRON_COMPANIES=Anthropic,OpenAI,Amazon,Google DeepMind,Google
+CRON_COMPANIES=Anthropic,OpenAI,Amazon,Google DeepMind,Google,Databricks,NVIDIA,Snowflake
 ```
 
-These 10 are a deliberately bounded subset of the 26-company whitelist to keep cron runtime under ~15 minutes. The other 16 companies in `companies.json` are still discoverable via the manual `/discover/{company}` endpoint and via role-based discovery — they're just not scanned daily.
+These 8 are the daily-scanned set. Databricks (Greenhouse), NVIDIA (Workday CXS client), and Snowflake (Ashby, slug `snowflake` — moved off Greenhouse) were added 2026-06-15. Other companies in `companies.json` remain discoverable via the manual `/discover/{company}` endpoint and role-based discovery — just not scanned daily.
 
 If you change this list:
 1. Update Railway env var via dashboard
@@ -207,7 +215,7 @@ Phase 1 is complete when the above loop works for at least one company end-to-en
 - Scheduled daily role discovery (Railway cron)
 - Email/notification when Strong match found
 - Company notes and application status tracking in dashboard
-- **Application-update extractor (planned):** a scheduled mechanism that scans Gmail for application status updates from companies/ATS (Greenhouse `greenhouse-mail.io`, Ashby, amazon.jobs, Gem `appreview.gem.com`, etc.), parses role + status (confirmation / rejection / interview invite / online assessment / offer), matches to `roles`, and auto-updates `application_status` + logs through `services/outcomes.record_outcome()` so the calibration/return-path loop closes without manual entry. Could run as a Cowork scheduled task (Gmail connector) or a backend cron with a Gmail API token. Distinguish real ATS mail from this app's own `onboarding@resend.dev` digests.
+- **Application-update extractor (BUILT, 2026-06-15) — the inbox->outcome->Forge bridge.** `services/application_updates.py` + `POST /application-updates/ingest` (Bearer `CRON_SECRET`; `POST /application-updates/preview` for a no-write dry-run). A **daily Cowork scheduled task** ("application-response-tracker") uses the Gmail connector to scan for ATS replies (Greenhouse `greenhouse-mail.io`, Ashby, Lever, amazon.jobs, Gem `appreview.gem.com`, Workday, etc.) and POSTs the raw batch to the backend. The backend classifies each email (confirmation / rejection / interview_invite / online_assessment / offer) with Claude (Haiku, bounded by `MAX_EMAILS_PER_RUN`), matches it to a single role Sam engaged with (applied/interviewing/offer first, then any role at that company; title-similarity disambiguates), and updates `application_status` **through `services/outcomes.record_outcome()`** — the same single write path as PATCH `/roles/{id}`, so the calibration/return-path loop closes without manual entry. Status only progresses (never downgrades); a rejection is terminal at any stage. **Positive movement (interview invite, online assessment, or offer) auto-fires `generate_session_config()`** so a Forge interview-prep session is generated + pushed for that role. Idempotent + auditable via the `email_application_updates` table (`message_id` UNIQUE); ignores this app's own `onboarding@resend.dev` digests. Guarded by `L19`. The Cowork task needs `BACKEND_URL` + `CRON_SECRET` in `backend/.env` (CRON_SECRET already set; add `BACKEND_URL` = the Railway URL, already in Vercel env).
 
 ---
 

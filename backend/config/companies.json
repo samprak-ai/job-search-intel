@@ -50,6 +50,36 @@
       "ats_slug": "google",
       "notes": "Broader Google (Cloud AI, Labs, Workspace, YouTube). PRIMARY source = structured scrape of the server-rendered Google Careers search (ats_platform 'google_careers' -> fetch_google_careers_jobs across Sam's keyword queries; the careers backend API 404s and Brave indexes it stale). LinkedIn guest API (f_C=1441) runs as a supplement. Careers freshness via the <title> signal (live = specific title, dead = 'Jobs search'). DeepMind has its own Greenhouse entry.",
       "linkedin_company_id": "1441"
+    },
+    {
+      "name": "Databricks",
+      "tier": "data_ai_platform",
+      "h1b_status": "confirmed",
+      "priority": 6,
+      "careers_url": "https://www.databricks.com/company/careers/open-positions",
+      "ats_platform": "greenhouse",
+      "ats_slug": "databricks",
+      "notes": "Data + AI platform. Greenhouse board (slug 'databricks') — wired into the standard ATS pipeline, discoverable via /discover and daily cron. Confirmed H1B sponsor (180 LCAs filed FY26). Step-out target: only level-up roles (Head/Director/Principal/Lead with real scope) should reach Strong/Perfect — see scoring_adjustments global level note."
+    },
+    {
+      "name": "NVIDIA",
+      "tier": "ai_infra_compute",
+      "h1b_status": "confirmed",
+      "priority": 7,
+      "careers_url": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite",
+      "ats_platform": "workday",
+      "ats_slug": "nvidia",
+      "notes": "AI compute / infra. Workday CXS board (host nvidia.wd5, tenant nvidia, site NVIDIAExternalCareerSite) - wired via fetch_workday_jobs() / WORKDAY_BOARDS['nvidia'] in ats_clients.py and in daily cron (client added 2026-06-15). Confirmed H1B sponsor. Step-out target: only level-up roles (Head/Director/Principal/Lead with real scope) reach Strong/Perfect per the scoring_adjustments level rule."
+    },
+    {
+      "name": "Snowflake",
+      "tier": "data_ai_platform",
+      "h1b_status": "confirmed",
+      "priority": 8,
+      "careers_url": "https://careers.snowflake.com/us/en",
+      "ats_platform": "ashby",
+      "ats_slug": "snowflake",
+      "notes": "Data + AI platform (Cortex AI). Moved off Greenhouse (404 as of May 2026) onto Ashby — confirmed 2026-06-15: structured Ashby board (slug 'snowflake', jobs.ashbyhq.com/snowflake/* URLs route to _check_ashby for freshness). Wired into the standard ATS pipeline + daily cron. Confirmed H1B sponsor. Step-out target: only level-up roles (Head/Director/Principal/Lead with real scope) reach Strong/Perfect per the scoring_adjustments level rule."
     }
   ]
 }
