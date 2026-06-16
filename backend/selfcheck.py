@@ -340,6 +340,83 @@ def _l17():
     return problems
 
 
+# ── L19: email application-update bridge uses the single outcome write path ──
+# The inbox->outcome->Forge bridge must NOT fork outcome state: it writes through
+# services.outcomes.record_outcome() (same as PATCH /roles), never INSERTs
+# application_outcomes directly. It must also stay bounded, idempotent, fire
+# Forge on positive movement, and ignore this app's own digests.
+@check("L19-application-updates-bridge-single-write-path")
+def _l19():
+    problems = []
+    svc_path = BACKEND / "app/services/application_updates.py"
+    if not svc_path.exists():
+        return ["app/services/application_updates.py is missing"]
+    svc = _read(svc_path)
+    if "def ingest_updates" not in svc:
+        problems.append("application_updates.py: missing ingest_updates entry point")
+    if "record_outcome(" not in svc:
+        problems.append("application_updates.py: must write through record_outcome() (single return path)")
+    if 'table("application_outcomes")' in svc or "table('application_outcomes')" in svc:
+        problems.append("application_updates.py: must NOT write application_outcomes directly (forks outcome state — see M5)")
+    if "MAX_EMAILS_PER_RUN" not in svc:
+        problems.append("application_updates.py: ingestion must be bounded by MAX_EMAILS_PER_RUN")
+    if "generate_session_config" not in svc:
+        problems.append("application_updates.py: positive movement must fire Forge (generate_session_config)")
+    if "email_application_updates" not in svc or "message_id" not in svc:
+        problems.append("application_updates.py: missing message_id idempotency via email_application_updates")
+    if "onboarding@resend.dev" not in svc:
+        problems.append("application_updates.py: must ignore this app's own digest sender")
+    main_py = _read(BACKEND / "app/main.py")
+    if "application_updates.router" not in main_py:
+        problems.append("main.py: /application-updates router not registered")
+    return problems
+
+
+# ── L20: Amazon Principal+ roles are filtered out (level-up, not realistic) ──
+# Internal transfers rarely clear a level jump, so Principal/Director/VP Amazon
+# roles must be excluded at the source before they reach scoring — otherwise the
+# internal-transfer scoring lift inflates them to Perfect/Strong matches.
+@check("L20-amazon-level-up-filter")
+def _l20():
+    problems = []
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    if "AMAZON_LEVEL_UP_RE" not in ats:
+        problems.append("ats_clients.py: missing AMAZON_LEVEL_UP_RE level-up filter")
+    if "if AMAZON_LEVEL_UP_RE.search(title):" not in ats:
+        problems.append("ats_clients.py: fetch_amazon_jobs must skip level-up titles")
+    # behavioral: the regex must catch Principal and pass Senior/PMT
+    try:
+        from app.services.ats_clients import AMAZON_LEVEL_UP_RE
+        for blocked in ("Principal Product Manager Technical, AgentCore",
+                        "Principal Worldwide GTM Specialist - GenAI",
+                        "Director, Product Management"):
+            if not AMAZON_LEVEL_UP_RE.search(blocked):
+                problems.append(f"L20 regex failed to block level-up title: {blocked!r}")
+        for allowed in ("Senior Product Manager, AWS", "PMT-ES, Bedrock",
+                        "Worldwide Specialist, GenAI"):
+            if AMAZON_LEVEL_UP_RE.search(allowed):
+                problems.append(f"L20 regex wrongly blocked in-band title: {allowed!r}")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L20 behavioral check errored: {e}")
+    return problems
+
+
+@check("L20-no-amazon-principal-matches", kind="db")
+def _l20_db():
+    """No Amazon Principal+ role should be sitting in the live match list."""
+    from app.config import get_supabase_client
+    sb = get_supabase_client()
+    roles = (
+        sb.table("roles").select("id,title").eq("company", "Amazon").execute().data
+    )
+    import re as _re
+    lvl = _re.compile(r"\b(principal|director|vice president|\bvp\b)\b", _re.IGNORECASE)
+    offenders = [r for r in roles if lvl.search(r.get("title") or "")]
+    if not offenders:
+        return []
+    return [f"{len(offenders)} Amazon Principal+ role(s) still tracked, e.g. {offenders[0]['title']!r}"]
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})

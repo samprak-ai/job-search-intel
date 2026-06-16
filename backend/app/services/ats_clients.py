@@ -363,6 +363,14 @@ AMAZON_TARGET_CITY = "seattle"
 # first (high-volume) query exhausts the budget before the next one runs.
 AMAZON_RESULT_CAP_PER_QUERY = 20
 
+# Principal (L7) and above is a level up from Sam's band. Internal transfers
+# rarely clear a level jump, so Principal/Sr Principal/Director roles aren't
+# realistic targets — exclude them at the source so they never reach scoring or
+# the match list (internal-transfer scoring would otherwise inflate them to
+# Perfect/Strong). Word-boundary match; "Principal" is never abbreviated in
+# Amazon titles. (L20 guard.)
+AMAZON_LEVEL_UP_RE = re.compile(r"\b(principal|director|vice president|\bvp\b)\b", re.IGNORECASE)
+
 
 def _amazon_job_in_target_city(job: dict) -> bool:
     """True if the target city is the primary OR any listed location.
@@ -432,6 +440,9 @@ async def fetch_amazon_jobs(slug: str = "amazon") -> list[dict]:
                     # breaks the spelled-out "product manager" keyword match.
                     # Normalize for both matching and clean display.
                     title = re.sub(r"\bMgr\b", "Manager", j.get("title", ""))
+                    # Skip level-up roles (Principal+) — not realistic internal moves.
+                    if AMAZON_LEVEL_UP_RE.search(title):
+                        continue
                     jobs.append({
                         "title": title,
                         "url": posting_url,
