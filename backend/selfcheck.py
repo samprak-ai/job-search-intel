@@ -488,18 +488,21 @@ def _l23():
         problems.append("discovery.py: still uses title-only dedup (existing_title_set/seen_titles)")
     if disc.count("_dedup_key(") < 4:  # 2 paths × (DB build + per-role) calls
         problems.append("discovery.py: _dedup_key not applied across both dedup paths")
-    # behavioral: same title + different location → distinct; same title + reordered
-    # cities → identical
+    # behavioral: collapse only provably-identical postings (title+location+JD).
     try:
         from app.services.discovery import _dedup_key
-        a = _dedup_key("Strategy and Operations Lead", "Sunnyvale, CA, USA")
-        b = _dedup_key("Strategy and Operations Lead", "Mountain View, CA, USA")
-        if a == b:
+        jd = "Lead GTM strategy and operations for the org."
+        # same title, different location (Seattle vs SFO) → keep both
+        if _dedup_key("PM, X", "Seattle, WA, USA", jd) == _dedup_key("PM, X", "San Francisco, CA, USA", jd):
             problems.append("L23: same title + different location must NOT collapse")
-        c = _dedup_key("S&O Lead", "Sunnyvale, CA; Seattle, WA")
-        d = _dedup_key("S&O Lead", "Seattle, WA; Sunnyvale, CA")
-        if c != d:
-            problems.append("L23: same title + same cities (reordered) must collapse")
+        # same title + same location, DIFFERENT role/JD → keep both
+        if _dedup_key("Product Manager", "Mountain View, CA", "Own ads ranking.") == \
+           _dedup_key("Product Manager", "Mountain View, CA", "Own search infra."):
+            problems.append("L23: same title+location but different JD must NOT collapse")
+        # same title + same cities (reordered) + same JD → collapse (true repost)
+        if _dedup_key("S&O Lead", "Sunnyvale, CA; Seattle, WA", jd) != \
+           _dedup_key("S&O Lead", "Seattle, WA; Sunnyvale, CA", jd):
+            problems.append("L23: identical repost (reordered cities) must collapse")
     except Exception as e:  # pragma: no cover
         problems.append(f"L23 behavioral check errored: {e}")
     return problems

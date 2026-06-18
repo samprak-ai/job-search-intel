@@ -21,21 +21,33 @@ from app.services.scoring import score_role
 logger = logging.getLogger(__name__)
 
 
-def _dedup_key(title: str, location: str | None) -> tuple[str, str]:
-    """Identity key for role dedup: same TITLE *and* same LOCATION = same posting.
+def _jd_fingerprint(raw_jd: str | None) -> str:
+    """Stable short fingerprint of a JD for dedup — normalized prefix of the text.
 
-    Title alone over-collapses: generic titles (e.g. Google's several distinct
-    'Strategy and Operations Lead' roles across orgs/levels/locations) are reused
-    for genuinely different roles, so a title-only key silently dropped all but
-    the first — a real coverage miss. Adding a normalized location distinguishes
-    'same role, multiple requisition IDs' (same title + same location → collapse)
-    from 'different roles, same generic title' (different location → keep both).
-    Multi-city locations are tokenized + sorted so ordering differences still
-    collapse. (L23)
+    Identical reposts share the same opening JD; genuinely different roles do not.
+    A prefix (not a full hash) tolerates trailing boilerplate/equity-blurb drift.
+    """
+    return re.sub(r"\s+", " ", (raw_jd or "").lower()).strip()[:300]
+
+
+def _dedup_key(title: str, location: str | None, raw_jd: str | None = None) -> tuple:
+    """Identity key for role dedup: collapse only PROVABLY-IDENTICAL postings.
+
+    Keyed on title + normalized location + JD fingerprint, so a link is dropped as
+    a duplicate only when title, location AND description all match — i.e. the same
+    posting under multiple requisition IDs. Everything else is kept as a separate,
+    applyable link:
+      • same title, different location (Seattle vs SFO) → kept (apply to both)
+      • same title + location, different role/JD (two MountainView PMs) → kept
+      • same title + same location + same JD (true repost) → collapsed
+    Title alone over-collapsed and silently dropped distinct roles (the original
+    miss); this is the conservative fix. URL dedup (step 1) still prevents exact
+    re-insertion on re-runs. Multi-city locations are sorted so ordering doesn't
+    matter. (L23)
     """
     t = (title or "").lower().strip()
     parts = sorted(p.strip().lower() for p in (location or "").split(";") if p.strip())
-    return (t, "|".join(parts))
+    return (t, "|".join(parts), _jd_fingerprint(raw_jd))
 
 
 # ---------------------------------------------------------------------------
@@ -252,18 +264,21 @@ async def discover_via_ats(company: dict, notify: bool = True) -> dict:
     if candidate_titles:
         title_result = (
             supabase.table("roles")
-            .select("title, location")
+            .select("title, location, raw_jd")
             .eq("company", company_name)
             .in_("title", candidate_titles)
             .execute()
         )
-        existing_keys = {_dedup_key(r["title"], r.get("location")) for r in title_result.data}
+        existing_keys = {
+            _dedup_key(r["title"], r.get("location"), r.get("raw_jd"))
+            for r in title_result.data
+        }
 
-    # ── Dedup Step 3: within-batch (title, location) dedup (first URL wins) ──
+    # ── Dedup Step 3: within-batch (title, location, JD) dedup (first URL wins) ──
     seen_keys: set[tuple] = set()
     new_roles = []
     for r in url_filtered:
-        key = _dedup_key(r["title"], r.get("location"))
+        key = _dedup_key(r["title"], r.get("location"), r.get("raw_jd"))
         if key in existing_keys or key in seen_keys:
             continue
         seen_keys.add(key)
@@ -564,11 +579,11 @@ async def discover_via_linkedin(company: dict, notify: bool = True) -> dict:
     titles = list({r["title"] for r in url_filtered})
     existing_keys = set()
     if titles:
-        tr = supabase.table("roles").select("title, location").eq("company", company_name).in_("title", titles).execute()
-        existing_keys = {_dedup_key(r["title"], r.get("location")) for r in tr.data}
+        tr = supabase.table("roles").select("title, location, raw_jd").eq("company", company_name).in_("title", titles).execute()
+        existing_keys = {_dedup_key(r["title"], r.get("location"), r.get("raw_jd")) for r in tr.data}
     seen_keys, new_roles = set(), []
     for r in url_filtered:
-        key = _dedup_key(r["title"], r.get("location"))
+        key = _dedup_key(r["title"], r.get("location"), r.get("raw_jd"))
         if key in existing_keys or key in seen_keys:
             continue
         seen_keys.add(key)
