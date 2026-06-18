@@ -415,6 +415,11 @@ async def fetch_amazon_jobs(slug: str = "amazon") -> list[dict]:
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
         "Accept": "application/json",
+        # Request uncompressed responses. amazon.jobs gzips, and reusing one
+        # AsyncClient across the query loop triggers httpx's "cannot use a
+        # decompressobj multiple times" error — every query fails and Amazon
+        # discovery silently collapses to ~0 roles. identity sidesteps it. (L25)
+        "Accept-Encoding": "identity",
     }
     category_params = [("business_category[]", c) for c in AMAZON_TARGET_BUSINESS_CATEGORIES]
 

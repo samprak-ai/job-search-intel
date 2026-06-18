@@ -508,6 +508,23 @@ def _l23():
     return problems
 
 
+# ── L25: Amazon fetch must request uncompressed responses (gzip decompressor bug) ──
+# Reusing one httpx client across the Amazon query loop + gzip responses raised
+# "cannot use a decompressobj multiple times" on every query → Amazon discovery
+# silently collapsed to ~0. Accept-Encoding: identity sidesteps it.
+@check("L25-amazon-accept-encoding-identity")
+def _l25():
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    # must appear within fetch_amazon_jobs' header block
+    seg = ats.split("async def fetch_amazon_jobs", 1)
+    if len(seg) < 2:
+        return ["ats_clients.py: fetch_amazon_jobs not found"]
+    body = seg[1][:1200]
+    if '"Accept-Encoding": "identity"' not in body:
+        return ["ats_clients.py: fetch_amazon_jobs must send Accept-Encoding: identity (gzip decompressor bug)"]
+    return []
+
+
 # ── L24: discovery role-keyword filter covers the target families (not too narrow) ──
 # The filter gates every board role before scoring; missing keyword families silently
 # drop genuine targets (business strategy / business operations / AI-GTM-startup
