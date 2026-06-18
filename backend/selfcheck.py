@@ -472,6 +472,39 @@ def _l22():
     return problems
 
 
+# ── L23: role dedup keys on (title, location), not title alone ───────────────
+# Title-only dedup collapsed genuinely-different roles that share a generic title
+# (e.g. Google's several distinct "Strategy and Operations Lead" roles), silently
+# dropping distinct targets. Dedup must key on title + normalized location in
+# BOTH discover_via_ats and discover_via_linkedin.
+@check("L23-dedup-title-location")
+def _l23():
+    problems = []
+    disc = _read(BACKEND / "app/services/discovery.py")
+    if "def _dedup_key(" not in disc:
+        problems.append("discovery.py: missing _dedup_key(title, location) helper")
+    # the old title-only dedup sets must be gone from both paths
+    if "existing_title_set" in disc or "seen_titles" in disc:
+        problems.append("discovery.py: still uses title-only dedup (existing_title_set/seen_titles)")
+    if disc.count("_dedup_key(") < 4:  # 2 paths × (DB build + per-role) calls
+        problems.append("discovery.py: _dedup_key not applied across both dedup paths")
+    # behavioral: same title + different location → distinct; same title + reordered
+    # cities → identical
+    try:
+        from app.services.discovery import _dedup_key
+        a = _dedup_key("Strategy and Operations Lead", "Sunnyvale, CA, USA")
+        b = _dedup_key("Strategy and Operations Lead", "Mountain View, CA, USA")
+        if a == b:
+            problems.append("L23: same title + different location must NOT collapse")
+        c = _dedup_key("S&O Lead", "Sunnyvale, CA; Seattle, WA")
+        d = _dedup_key("S&O Lead", "Seattle, WA; Sunnyvale, CA")
+        if c != d:
+            problems.append("L23: same title + same cities (reordered) must collapse")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L23 behavioral check errored: {e}")
+    return problems
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})

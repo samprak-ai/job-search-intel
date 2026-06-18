@@ -21,6 +21,23 @@ from app.services.scoring import score_role
 logger = logging.getLogger(__name__)
 
 
+def _dedup_key(title: str, location: str | None) -> tuple[str, str]:
+    """Identity key for role dedup: same TITLE *and* same LOCATION = same posting.
+
+    Title alone over-collapses: generic titles (e.g. Google's several distinct
+    'Strategy and Operations Lead' roles across orgs/levels/locations) are reused
+    for genuinely different roles, so a title-only key silently dropped all but
+    the first — a real coverage miss. Adding a normalized location distinguishes
+    'same role, multiple requisition IDs' (same title + same location → collapse)
+    from 'different roles, same generic title' (different location → keep both).
+    Multi-city locations are tokenized + sorted so ordering differences still
+    collapse. (L23)
+    """
+    t = (title or "").lower().strip()
+    parts = sorted(p.strip().lower() for p in (location or "").split(";") if p.strip())
+    return (t, "|".join(parts))
+
+
 # ---------------------------------------------------------------------------
 # Quality filters — shared by discovery + cleanup
 # ---------------------------------------------------------------------------
@@ -224,31 +241,32 @@ async def discover_via_ats(company: dict, notify: bool = True) -> dict:
     existing_url_result = supabase.table("roles").select("url").in_("url", urls).execute()
     existing_urls = {r["url"] for r in existing_url_result.data}
 
-    # ── Dedup Step 2: (company, title) check against DB ──────────────
-    # Catches the same role posted under multiple ATS requisition IDs
-    # (e.g., multiple headcount for "PM, Growth") and http/https variants
-    # that slipped through URL normalization.
+    # ── Dedup Step 2: (company, title, location) check against DB ─────
+    # Collapses the same role posted under multiple ATS requisition IDs
+    # (identical title AND location) and http/https variants that slipped past
+    # URL normalization — without collapsing genuinely different roles that share
+    # a generic title in different locations. See _dedup_key. (L23)
     url_filtered = [r for r in roles if r["url"] not in existing_urls]
     candidate_titles = list({r["title"] for r in url_filtered})
-    existing_title_set: set[str] = set()
+    existing_keys: set[tuple] = set()
     if candidate_titles:
         title_result = (
             supabase.table("roles")
-            .select("title")
+            .select("title, location")
             .eq("company", company_name)
             .in_("title", candidate_titles)
             .execute()
         )
-        existing_title_set = {r["title"].lower().strip() for r in title_result.data}
+        existing_keys = {_dedup_key(r["title"], r.get("location")) for r in title_result.data}
 
-    # ── Dedup Step 3: within-batch title dedup (first URL wins) ──────
-    seen_titles: set[str] = set()
+    # ── Dedup Step 3: within-batch (title, location) dedup (first URL wins) ──
+    seen_keys: set[tuple] = set()
     new_roles = []
     for r in url_filtered:
-        t = r["title"].lower().strip()
-        if t in existing_title_set or t in seen_titles:
+        key = _dedup_key(r["title"], r.get("location"))
+        if key in existing_keys or key in seen_keys:
             continue
-        seen_titles.add(t)
+        seen_keys.add(key)
         new_roles.append(r)
 
     # Insert and auto-score
@@ -535,7 +553,8 @@ async def discover_via_linkedin(company: dict, notify: bool = True) -> dict:
             "date_found": datetime.now(timezone.utc).isoformat(),
         })
 
-    # 3-step dedup (URL → (company,title) DB → within-batch), mirroring ATS.
+    # 3-step dedup (URL → (company,title,location) DB → within-batch), mirroring
+    # ATS. Keyed on title+location so distinct same-generic-title roles survive. (L23)
     urls = [r["url"] for r in roles]
     existing_urls = set()
     if urls:
@@ -543,16 +562,16 @@ async def discover_via_linkedin(company: dict, notify: bool = True) -> dict:
         existing_urls = {r["url"] for r in existing.data}
     url_filtered = [r for r in roles if r["url"] not in existing_urls]
     titles = list({r["title"] for r in url_filtered})
-    existing_titles = set()
+    existing_keys = set()
     if titles:
-        tr = supabase.table("roles").select("title").eq("company", company_name).in_("title", titles).execute()
-        existing_titles = {r["title"].lower().strip() for r in tr.data}
-    seen_titles, new_roles = set(), []
+        tr = supabase.table("roles").select("title, location").eq("company", company_name).in_("title", titles).execute()
+        existing_keys = {_dedup_key(r["title"], r.get("location")) for r in tr.data}
+    seen_keys, new_roles = set(), []
     for r in url_filtered:
-        t = r["title"].lower().strip()
-        if t in existing_titles or t in seen_titles:
+        key = _dedup_key(r["title"], r.get("location"))
+        if key in existing_keys or key in seen_keys:
             continue
-        seen_titles.add(t)
+        seen_keys.add(key)
         new_roles.append(r)
 
     inserted = scored = 0
