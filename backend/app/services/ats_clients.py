@@ -80,6 +80,17 @@ ROLE_KEYWORDS = [
     "go-to-market lead", "gtm strategy", "go-to-market strategy",
     "strategy and operations", "strategy & operations",
     "business operations and strategy", "sales strategy", "revenue strategy",
+    # Business strategy / business operations (Sam's S&O / business-strategy targets;
+    # caught real misses like Google "Business Strategy and GTM Partner Operations
+    # Lead" and OpenAI "GTM Business Operations & Strategy Lead"). & is normalized
+    # to "and" in _matches_role_keywords so "Ops & Strategy" == "Ops and Strategy".
+    "business strategy", "business operations", "gtm operations",
+    # AI / GTM / startup / strategic partnerships — "AI Partnerships" is an explicit
+    # target_role_type. Kept specific (not bare "partnership") to avoid pulling in
+    # channel/SI/event/federal sales-partnership roles. Caught real misses like
+    # Anthropic "Amazon GTM Partnership, Startups" and "Startup Partnerships Lead".
+    "ai partnership", "gtm partnership", "strategic partnership",
+    "startup partnership", "frontier partnership", "platform partnership",
     # Partner / specialist / strategist families (from Sam's saved-roles signal, L13a):
     # WWSO GenAI / Data & AI GTM Specialist, Partner Specialist, Partner Development
     # Manager, GenAI Strategist, Deal Intelligence PMT. These are his real Amazon targets.
@@ -146,13 +157,15 @@ def _matches_role_keywords(title: str, raw_jd: str = "", department: str = "") -
 
     Must match at least one ROLE_KEYWORD and not match any ROLE_EXCLUDE_KEYWORDS.
     """
-    lower = title.lower()
+    # Normalize "&" → "and" so "Business Operations & Strategy" matches the
+    # "...and strategy" / "business operations" keywords (real Google/OpenAI misses).
+    lower = title.lower().replace(" & ", " and ")
     if any(ex in lower for ex in ROLE_EXCLUDE_KEYWORDS):
         return False
     if not any(kw in lower for kw in ROLE_KEYWORDS):
         return False
 
-    context = f"{title} {department} {raw_jd[:3000]}".lower()
+    context = f"{title} {department} {raw_jd[:3000]}".lower().replace(" & ", " and ")
     if "chief of staff" in lower or lower.startswith("head of"):
         return any(kw in context for kw in ROLE_CONTEXT_KEYWORDS)
     return True

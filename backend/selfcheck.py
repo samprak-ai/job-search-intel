@@ -508,6 +508,37 @@ def _l23():
     return problems
 
 
+# ── L24: discovery role-keyword filter covers the target families (not too narrow) ──
+# The filter gates every board role before scoring; missing keyword families silently
+# drop genuine targets (business strategy / business operations / AI-GTM-startup
+# partnerships) — capping throughput. Keep the families + the &→and normalization.
+@check("L24-discovery-filter-coverage")
+def _l24():
+    problems = []
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    for kw in ('"business strategy"', '"business operations"', '"ai partnership"',
+               '"gtm partnership"', '"strategic partnership"', '"startup partnership"'):
+        if kw not in ats:
+            problems.append(f"ats_clients.py: ROLE_KEYWORDS missing {kw}")
+    if '.replace(" & ", " and ")' not in ats:
+        problems.append("ats_clients.py: _matches_role_keywords must normalize '&' to 'and'")
+    # behavioral: real targets match, sales/finance/sourcing noise does not
+    try:
+        from app.services.ats_clients import _matches_role_keywords as m
+        for good in ("Business Strategy and Go-To-Market Partner Operations Lead",
+                     "GTM Business Operations & Strategy Lead, Platform",
+                     "Amazon GTM Partnership, Startups", "Startup Partnerships Lead"):
+            if not m(good):
+                problems.append(f"L24: target title wrongly dropped: {good!r}")
+        for bad in ("Strategic Finance, Compute", "Strategic Sourcing Manager",
+                    "Business Development Representative", "Account Director, Federal Partnerships"):
+            if m(bad):
+                problems.append(f"L24: noise title wrongly matched: {bad!r}")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L24 behavioral check errored: {e}")
+    return problems
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})
