@@ -508,6 +508,22 @@ def _l23():
     return problems
 
 
+# ── L26: scoring must run deterministically (temperature=0) ──────────────────
+# Default temperature (1.0) gave scoring ±several points of run-to-run noise —
+# enough to flip a role across the Good/Strong boundary. Grading must be reproducible.
+@check("L26-scoring-temperature-zero")
+def _l26():
+    sc = _read(BACKEND / "app/services/scoring.py")
+    seg = sc.split("messages.create", 1)
+    if len(seg) < 2:
+        return ["scoring.py: no messages.create call found"]
+    # temperature=0 must appear within the score_role create call args
+    call = seg[1][:400]
+    if "temperature=0" not in call:
+        return ["scoring.py: score_role's messages.create must pass temperature=0 (deterministic grading)"]
+    return []
+
+
 # ── L25: Amazon fetch must request uncompressed responses (gzip decompressor bug) ──
 # Reusing one httpx client across the Amazon query loop + gzip responses raised
 # "cannot use a decompressobj multiple times" on every query → Amazon discovery

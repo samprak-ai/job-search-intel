@@ -228,6 +228,11 @@ async def score_role(role_id: str, force: bool = False, notify: bool = True) -> 
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1024,
+        # Scoring is a grading task — it must be reproducible. Default temperature
+        # (1.0) injects ±several points of run-to-run noise, enough to flip a role
+        # across the Good/Strong boundary (two identical GTM roles scored 74 vs 82).
+        # temperature=0 makes the same JD score the same number every time. (L26)
+        temperature=0,
         system=SCORING_SYSTEM_PROMPT,
         messages=[
             {"role": "user", "content": build_scoring_message(role, profile)}
