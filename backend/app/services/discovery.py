@@ -266,6 +266,10 @@ async def discover_via_ats(company: dict, notify: bool = True) -> dict:
             supabase.table("roles")
             .select("title, location, raw_jd")
             .eq("company", company_name)
+            # Dedup only against LIVE roles: a stale (expired) posting must not
+            # block re-inserting a fresh re-post of the same role under a new
+            # requisition id — otherwise the dashboard keeps only the dead one. (L27)
+            .eq("is_live", True)
             .in_("title", candidate_titles)
             .execute()
         )
@@ -579,7 +583,7 @@ async def discover_via_linkedin(company: dict, notify: bool = True) -> dict:
     titles = list({r["title"] for r in url_filtered})
     existing_keys = set()
     if titles:
-        tr = supabase.table("roles").select("title, location, raw_jd").eq("company", company_name).in_("title", titles).execute()
+        tr = supabase.table("roles").select("title, location, raw_jd").eq("company", company_name).eq("is_live", True).in_("title", titles).execute()
         existing_keys = {_dedup_key(r["title"], r.get("location"), r.get("raw_jd")) for r in tr.data}
     seen_keys, new_roles = set(), []
     for r in url_filtered:

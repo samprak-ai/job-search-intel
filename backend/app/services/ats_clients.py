@@ -543,6 +543,12 @@ def _parse_google_careers(html_text: str) -> list[dict]:
     out: dict[str, dict] = {}
     cards = re.split(r"<li[^>]*\blLd3Je\b", html_text)[1:]
     for card in cards:
+        # The split consumes "<li ... lLd3Je" but leaves the REST of the opening
+        # tag (e.g. " ssk='17:<jobid>'>") at the card head with no leading "<", so
+        # the tag-strip below can't remove it — it leaked the job id into raw_jd,
+        # polluting the JD the scorer reads AND every repost's dedup fingerprint
+        # (same role under a new requisition id looked unique). Drop that remnant. (L27)
+        card = re.sub(r"^[^>]*>", "", card, count=1)
         m = re.search(r"jobs/results/(\d+)-([a-z0-9-]+)", card)
         if not m:
             continue

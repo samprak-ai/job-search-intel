@@ -572,6 +572,36 @@ def _l24():
     return problems
 
 
+# ── L27: Google careers parser strips the leaked <li>-tag remnant from raw_jd ──
+# The card split left the rest of the <li> tag (" ssk='id'>") at the card head;
+# the job id leaked into raw_jd, polluting the scorer input AND the dedup
+# fingerprint (reposts looked unique). Strip it + dedup against live roles only.
+@check("L27-google-careers-jd-clean")
+def _l27():
+    problems = []
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    if 're.sub(r"^[^>]*>", "", card' not in ats:
+        problems.append("ats_clients.py: _parse_google_careers must strip the leftover <li> tag remnant")
+    disc = _read(BACKEND / "app/services/discovery.py")
+    if disc.count('.eq("is_live", True)') < 2:
+        problems.append("discovery.py: (title,location,JD) dedup must query is_live=True existing roles (both paths)")
+    # behavioral: a card carrying ssk='..id..' yields a raw_jd with no leaked id
+    try:
+        from app.services.ats_clients import _parse_google_careers
+        html = ("<li class='lLd3Je' ssk='17:95872150514082502'>"
+                "<a aria-label=\"Learn more about Test Role, GTM\" "
+                "href=\"jobs/results/95872150514082502-test-role/\">x</a>"
+                "<span>place Seattle, WA, USA share</span> About the job.</li>")
+        rows = _parse_google_careers(html)
+        if not rows:
+            problems.append("L27: parser returned no rows for a valid card")
+        elif "ssk=" in rows[0]["raw_jd"] or "95872150514082502" in rows[0]["raw_jd"]:
+            problems.append("L27: job-id artifact still present in parsed raw_jd")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L27 behavioral check errored: {e}")
+    return problems
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})
