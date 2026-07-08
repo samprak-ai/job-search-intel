@@ -126,10 +126,10 @@
     },
     {
       "title": "PCP Reference App",
-      "subtitle": "Web Application",
-      "description": "A leadership-facing web application that returns the inferred Primary Cloud Provider and Primary AI Provider (PCP/PAIP) for any startup on demand. It synthesizes signals across external sources and AWS internal data to infer both, surface competitive context (including neocloud and GPU-provider usage), and feed directly into startup strategy. Built for the leadership team first, with rollout to the wider Sales org underway.",
+      "subtitle": "Leadership Product - AI-inferred market metric",
+      "description": "A leadership-facing product that turned Primary Cloud Provider, a critical but previously unmeasurable metric, into something reliable and on-demand. Prior approaches (third-party usage data, wallet-share proxies) failed; about 2.5 years ago I pioneered a qualitative-plus-quantitative triangulation framework combining external signals (trust pages, job postings) with internal signals (Salesforce notes, revenue, growth, pipeline) to infer a startup's PCP and PAIP. Originally a manual process capped at ~20 startups a month; with AI it scaled and the decision heuristic itself improved. Validated through 1,000+ seller conversations over two years plus feedback from leadership up to the AWS and Amazon CEO offices. It surfaces competitive context (including neocloud and GPU-provider usage) and feeds directly into startup strategy.",
       "stack": "Amazon Kiro (Opus 4.7 backend), Amazon Quick (frontend), AWS MCPs",
-      "outcome": "Live leadership tool for on-demand PCP lookup; expanding to the wider AWS Startups Sales org within a month."
+      "outcome": "Used by AWS Startups leadership in live reviews; Andy Jassy's office uses its PCP-share reporting to direct where AWS acts, win back non-primary startups, trigger net-new account creation, and inform credit disbursement. Rolling out to sellers and investment managers; exploring Salesforce integration as the single source of truth. Evolving into the Startup 360 view within the Startup Intelligence Hub, answerable by natural-language query over a knowledge graph."
     },
     {
       "title": "Startup 360 Knowledge Graph",
