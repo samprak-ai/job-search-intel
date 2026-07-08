@@ -7,7 +7,7 @@
     "linkedin": "www.linkedin.com/in/prakashsam",
     "github": "github.com/samprak-ai"
   },
-  "headline": "Velocity-Optimizing AI Builder-Operator | AI Product PMF Assessment | Agentic Systems Builder",
+  "headline": "Strategy that ships | AI systems + market intelligence | Builder-Operator | Leads AWS Startups' Proactive Intelligence Pillar",
   "target_role_types": [
     "Head of AI Product (hands-on, builder-first)",
     "AI Product Strategy & Growth Lead",
@@ -17,7 +17,7 @@
     "GTM Systems & Agents Lead (xAI-style builder-operator)",
     "Senior / Lead AI Product Manager"
   ],
-  "positioning": "Velocity-optimizing builder-operator targeting senior IC or first-level leader roles at mature AI-native companies. Best fit is work where the job-to-be-done is assessing AI product-market fit, reading customer/adoption signal, deciding the next hypothesis test, and rapidly prototyping or operationalizing it.",
+  "positioning": "Strategy-that-ships operator: I turn strategic questions into the AI systems that answer them. I read where the market is heading, define what leadership should act on, and build and ship the systems that deliver it. Best fit is senior IC or first-level-leader roles at AI-native companies where the job is strategy and hands-on building together, not one without the other.",
   "work_preferences": [
     "Strategic influence and proximity to senior product, AI, or GTM leadership",
     "Creative autonomy to build prototypes and use working software as the strategy artifact",
@@ -46,7 +46,7 @@
     "career_horizon": "Optimize for 18-24 months of maximum learning and strategic outcome density"
   },
   "differentiators": [
-    "Built production AI systems end-to-end (GenAI-Intel, Forge, Job Search Intel, AWS internal agents)",
+    "Built production AI systems end-to-end (Cloud-Intel, Forge, Job Search Intel, AWS internal agents)",
     "Lead a 7-person cross-functional AI pillar (Proactive Intelligence) across the AWS Startups org",
     "Builds the ideal state on the frontier (Claude) and replicates within Amazon's tooling constraints, deliberately mapping what the jagged frontier enables",
     "Pioneered Primary AI Provider (PAIP) as a forward-looking companion to PCP, surfacing the neocloud/GPU shift before it shows up as a startup's primary cloud",
@@ -54,8 +54,8 @@
     "Rare fluency across business strategy, AI infrastructure, and hands-on product building",
     "Live deployed products as proof, not just claims"
   ],
-  "experience_summary": "12+ years of total experience, including 6.5+ years at AWS Startups driving revenue performance and executive decision systems at scale, with a rare combination of GTM strategy, AI product-market-fit sensemaking, and hands-on AI systems building. Built multiple production AI systems including GenAI-Intel, Forge, Job Search Intel, and internal AWS agentic tooling; strongest when using prototypes and data products to help senior leaders decide what to build next. Currently leads the Proactive Intelligence Pillar, one of six AI pillars driven across the AWS Startups segment.",
-  "summary": "Velocity-optimizing AI builder-operator with 12+ years of total experience, including 6.5+ years at AWS Startups driving revenue performance and executive decision systems at scale. Strongest at the intersection of AI product strategy, GTM signal, and rapid prototyping: turning ambiguous customer/adoption signals into working systems that help leaders assess product-market fit and choose the next build. Architected agentic intelligence systems that moved executive workflows from manual analysis and reporting into autonomous, insight-driven cadences. Currently leads the Proactive Intelligence Pillar, one of six AI pillars driven across the AWS Startups segment.",
+  "experience_summary": "12+ years of total experience, including 6.5+ years at AWS Startups driving revenue performance and executive decision systems at scale, with a rare combination of GTM strategy, AI product-market-fit sensemaking, and hands-on AI systems building. Built multiple production AI systems including Cloud-Intel, Forge, Job Search Intel, and internal AWS agentic tooling; strongest when using prototypes and data products to help senior leaders decide what to build next. Currently leads the Proactive Intelligence Pillar, one of six AI pillars driven across the AWS Startups segment.",
+  "summary": "Strategy-that-ships builder-operator with 12+ years of total experience, including 6.5+ years at AWS Startups. I turn strategic questions into the AI systems that answer them: I read where the market is heading, define what leadership should act on, and build and ship the systems that deliver it. I own a CEO-office strategy review, pioneered the Primary AI Provider metric to read the market, and architected the multi-agent decision systems behind our operating reviews, with analysis cited on Amazon's Q1 2026 earnings call. Currently leads the Proactive Intelligence Pillar, one of six AI pillars across the AWS Startups segment.",
   "skills": [
     "FastAPI",
     "Next.js",
@@ -98,7 +98,7 @@
   ],
   "professional_ai_projects": [
     {
-      "title": "AI Executive Reporting Toolkit - Startup Pulse",
+      "title": "Executive Decision & Intelligence System - Startup Pulse",
       "description": "Architected the multi-agent AI system behind Startup Pulse, a CEO-facing reporting program. A coordinated agent pipeline handles data gathering, consolidation, review, and formatting, assembling a 360-degree view across internal metrics, CRM engagement, external funding signals, customer snapshots, and cloud/AI provider inference. It tracks 2000+ strategic startups and powers three CEO-facing reporting cadences: a monthly top-50 funded list, a quarterly top-1000, and a top-500 report for the Bi-Weekly Business Review (BWBR) reviewed by Andy Jassy and his direct reports.",
       "stack": "Amazon Kiro (Opus 4.7 backend), Amazon Quick (frontend), PizzaBot, Salesforce MCP integration",
       "outcome": "Reduced end-to-end report production from 6 weeks to under a week, a 70% reduction in report generation time, recovering 600 hours per cycle across three individuals and enabling consistent, scalable executive delivery without analyst bottlenecks. Cited by Andy Jassy in Amazon's Q1 2026 earnings call."
@@ -146,9 +146,16 @@
       "outcome": "A working frontier prototype that maps what the evolving model frontier enables, then transfers those patterns into Amazon's constrained tooling to maximize value for leadership stakeholders."
     },
     {
+      "title": "Startup Intelligence Hub (Proactive Intel v2 - prototyping)",
+      "subtitle": "Agentic System - In Design",
+      "description": "The evolution of the Proactive Intelligence engine from per-run briefs into a real-time-updated repository of startup profiles. Each living profile fuses three signal layers - first-party AWS data, web-based signals, and derived signals - and a knowledge graph runs over every profile to support open-ended, AI-driven natural-language queries across the portfolio. All derived signals are computed by an agentic framework orchestrated through Hermes, the self-improving skill loop, so the hub continuously recomputes and refreshes its own intelligence instead of regenerating static briefs.",
+      "stack": "Claude, knowledge graph, Hermes (agentic orchestration + self-improving loop), first-party AWS data, web signals, Supabase",
+      "outcome": "In design / prototyping: a continuously-updated startup intelligence layer queryable in natural language, replacing static briefs with a living, self-refreshing profile repository."
+    },
+    {
       "title": "PCP-Intel: Attribution Accuracy Auto-Optimization Loop",
       "subtitle": "Agentic System - In Design",
-      "description": "Designed to eliminate manual signal weight tuning in the GenAI-Intel cloud attribution pipeline - replacing ad-hoc threshold adjustments with an autonomous overnight optimization loop modeled on Karpathy's AutoResearch pattern. A validation agent runs the attribution pipeline against a curated, human-verified ground truth eval set of 30-50 startups stratified across confidence tiers, PCP categories, and known edge cases (multi-cloud, conflicting signals, false positive-prone patterns). An optimization agent reads the current signal weight config and a natural-language research brief, forms a hypothesis, proposes a targeted weight adjustment across five attribution signals (partnership pages, subprocessor lists, DNS records, marketplace listings, job postings), and re-scores against a composite accuracy metric that penalizes false positives more heavily than misses. A logging agent persists each experiment - hypothesis, config delta, score delta, keep/revert decision - to Supabase, building an auditable history of what the pipeline learned. Runs ~12 experiments per hour unattended, surfacing the best-performing config each morning.",
+      "description": "Designed to eliminate manual signal weight tuning in the Cloud-Intel cloud attribution pipeline - replacing ad-hoc threshold adjustments with an autonomous overnight optimization loop modeled on Karpathy's AutoResearch pattern. A validation agent runs the attribution pipeline against a curated, human-verified ground truth eval set of 30-50 startups stratified across confidence tiers, PCP categories, and known edge cases (multi-cloud, conflicting signals, false positive-prone patterns). An optimization agent reads the current signal weight config and a natural-language research brief, forms a hypothesis, proposes a targeted weight adjustment across five attribution signals (partnership pages, subprocessor lists, DNS records, marketplace listings, job postings), and re-scores against a composite accuracy metric that penalizes false positives more heavily than misses. A logging agent persists each experiment - hypothesis, config delta, score delta, keep/revert decision - to Supabase, building an auditable history of what the pipeline learned. Runs ~12 experiments per hour unattended, surfacing the best-performing config each morning.",
       "stack": "Claude (multi-agent orchestration), MCP (Supabase, Filesystem), Brave Search",
       "outcome": "Designed to replace manual attribution tuning with a closed-loop, evidence-driven optimization system - continuously improving PCP signal accuracy overnight and surfacing a validated, experiment-backed config ready for production promotion each morning."
     },
@@ -179,11 +186,13 @@
         "Pioneered Primary AI Provider (PAIP) as a companion metric to PCP: PCP data showed little evidence of startups choosing neoclouds, so I expanded the lens to capture who startups use for AI workloads, which surfaced neoclouds and GPU providers. PAIP is forward-looking - as cloud spend shifts to GPUs, it flags rising GPU workloads on a neocloud before it becomes a startup's primary cloud. This seeded dedicated competitive-intelligence reporting that synthesizes external public signals with internal CRM data for a holistic read on the evolving competitive landscape and our response.",
         "Enabled the Startup Operations team on AI tools.",
         "Designed and operationalized performance measurement framework for market share tracking; elevated to key organizational metric monitored at executive level, directly influencing senior leadership goal-setting and strategic planning cycles.",
-        "Architected agentic AI-powered automation & augmentation solutions for executive reporting workflows, streamlining complex analytical processes and improving data quality across leadership reporting cadences.",
+        "Own the AWS Penetration and Plan Review, a strategy assessment written for Andy Jassy's office on AWS's position with startups across revenue, primary cloud provider, and pipeline, covering competitive insights, what is working, risks, and where the business needs help.",
+        "Define and enrich the set of strategic startups that forms the foundation of that review and the org's startup insights, deciding which accounts matter and getting the underlying data right.",
+        "Architected agentic AI decision and intelligence systems that turn strategy into leadership action, streamlining complex analytical processes and improving data quality across operating cadences.",
         "Led product definition and cross-functional development of Startup Pulse - AWS\u2019s first AI-powered PCP and primary AI provider identification system, now in productionization with Data and Software Engineering. Achieved 10x scale improvement in analysis capacity through GenAI automation; saves 70% of report generation time.",
         "Applied the Startup Pulse prototype to generate the top startups list for AWS re:Invent, used directly by AWS CEO Matt Garman.",
         "Launched and owned the Monthly Top Startups Report for Matt Garman\u2019s office (FY\u201924) - developed ranking logic across 7 cohorts covering 175 high-potential startups.",
-        "Delivered the Top 100 AI Startups report for Andy Jassy\u2019s office - developed and refined the ranking, coordinated with 130+ account teams.",
+        "Serve as the go-to analytical partner for Andy Jassy's office on startup questions internal tagging can't answer, delivering ongoing cadenced and ad-hoc analyses (strategic startups, embodied AI, AI-native SaaS disruptors, competitor performance) since building the Top 100 AI Startups report and its ranking methodology in 2024.",
         "Led strategic planning workstream for executive business review cycles - developed performance dashboards for leadership visibility and conducted comprehensive performance analysis across organizational priorities.",
         "Originated and socialized the strategic framework that vertical classification - not funding size alone - should be the primary filter for identifying high-potential startups.",
         "Led cross-functional data integration initiatives to unlock new internal use cases, evangelizing GenAI adoption beyond dashboards to the full leadership org.",
@@ -236,7 +245,7 @@
     "AI Building": ["Claude Code", "Claude API", "LangGraph", "AWS Bedrock", "OpenAI", "Perplexity", "Gemini", "Supabase", "Railway", "Vercel"],
     "Data & Analytics": ["Python", "SQL (Redshift, PostgreSQL)", "API integrations", "Tableau"],
     "Product": ["0\u21921 Product development", "multi-agent orchestration", "agentic system design", "GTM tooling"],
-    "GTM & Strategy": ["Sales operations", "competitive intelligence", "executive reporting", "performance measurement", "market segmentation", "Salesforce"]
+    "GTM & Strategy": ["Sales operations", "competitive and market intelligence", "decision and intelligence systems", "performance measurement", "market segmentation", "Salesforce"]
   },
   "education_details": [
     {

@@ -95,3 +95,24 @@ BANNED_PHRASES = [
 ]
 
 BANNED_CHARS = ["—", "–"]  # em dash, en dash
+
+# Startup Intelligence Hub (Proactive Intel v2) - PROTOTYPING (never describe as shipped)
+# - Where the Proactive Intelligence engine is heading: a real-time-updated repository of startup
+#   profiles fusing three signal layers (first-party AWS data, web-based signals, derived signals)
+#   into one living profile per startup. A knowledge graph runs over every profile for open-ended,
+#   AI-driven natural-language queries. All derived signals are executed by an agentic framework
+#   orchestrated through Hermes (the self-improving skill loop). Status: in design / prototyping.
+#   Frame as "currently architecting / prototyping", never as a shipped/production system.
+
+# AWS Penetration and Plan Review (strategy document) - Sam OWNS this for Andy Jassy's office
+# - A strategy assessment on AWS's position with startups across revenue, primary cloud provider,
+#   and pipeline, plus competitive insights, what's working, risks, and where the business needs help.
+#   Use as evidence of strategic ownership at the CEO-office level. Internal: describe scope/ownership
+#   only, never internal numbers or data.
+
+# Trusted analytical partner for Andy Jassy's office (ongoing since June 2024)
+# - The Top 100 AI Startups report (June 2024) was the ENTRY POINT, not the whole story. Sam has since
+#   become the go-to analytical partner for Jassy's office on any startup question internal tagging
+#   can't answer (strategic startups, embodied AI, AI-native SaaS disruptors, competitor performance
+#   e.g. OCI), via cadenced and ad-hoc reports. Reaches the office through the Director of Startup Ops.
+#   Describe as an ongoing trusted-partner relationship; scope only, never internal numbers.
