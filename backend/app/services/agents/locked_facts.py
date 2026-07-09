@@ -167,3 +167,37 @@ BANNED_CHARS = ["—", "–"]  # em dash, en dash
 #   prototype". Vendor specificity is a detail about internal AWS architecture choices.
 # - Era 3 is CURRENT. Never describe the bespoke Era-2 stack as what runs today.
 # - Approved internal AI tool names: Quick, PizzaBot. Never "Amazon Q Spaces & Flows".
+
+# GBrain / Hermes - ATTRIBUTION GUARD (added 2026-07-08, verified against proactive-intel source)
+# These belong to PROACTIVE INTEL (the AWS Startups internal Claude-side prototype).
+# They are NOT part of Cloud-Intel. Never attach them to Cloud-Intel, which is Sam's public
+# attribution proof-of-concept built only on public/external signals.
+#
+# - GBrain is THIRD-PARTY, open source: github:garrytan/gbrain (Bun/TypeScript CLI, PGLite store).
+#   Sam did NOT build GBrain. NEVER write "built GBrain" or imply authorship.
+#   Sam BUILT: agents/gbrain_adapter.py (the Python bridge), the semantic net-new dedup, the typed
+#   `about` edges to company pages, and the backend-agnostic memory seam (settings.MEMORY_BACKEND
+#   switches between real GBrain and Sam's own agents/brain.py Supabase fallback).
+#   Correct phrasing: "integrated GBrain, an open-source knowledge-graph store, via a Python adapter I wrote".
+# - Hermes IS Sam's (agents/hermes.py). Propose-only: writes skills/_proposed/*.proposed.md and never
+#   edits live skill files. Scores each brief + structured critique; calibrated against human AM
+#   ratings collected via scripts/rate.py (am_feedback table).
+# - STORAGE: GBrain uses PGLite. Do NOT say "Postgres/pgvector" for GBrain. pgvector appears only in
+#   Sam's fallback agents/brain.py, where dense embeddings are seams-ready, NOT live.
+# - RETRIEVAL: memory_context() is a hybrid VECTOR + KEYWORD query. Graph edges are WRITTEN, not used
+#   as a retrieval path. Do NOT claim "graph-edge retrieval".
+# - CORRECTION (verified live 2026-07-08): a knowledge-graph Q&A IS SHIPPED. cloud-intel.vercel.app/ask
+#   ("Ask the Knowledge Graph") calls a Railway backend /api/ask and answers from the same graph
+#   Proactive Intel writes into. Answers cite the graph pages used, e.g. [signals/tensormesh-79f929963429].
+#   This is grounded generation WITH PROVENANCE and is safe to claim. What is NOT shipped: the
+#   Startup Intelligence Hub's NL query over AWS first-party data (that remains v2, prototyping).
+#   Keep those two claims distinct.
+# - DEPLOYMENT SPLIT (verified): the graph store + /api/ask + the Next.js read UI are DEPLOYED.
+#   The pipeline that populates them (scripts/run.py: watcher, classifier, writer) runs LOCALLY.
+#   So: "a deployed knowledge-graph Q&A over a locally-run intelligence pipeline." Do not say the
+#   pipeline is deployed, and do not say the Q&A is only a prototype.
+# - Under-told but TRUE and strong (use these): zero net-new signals -> pipeline returns `no_change` and
+#   skips the brief entirely (no writer spend, no filler); classifier confidence below MIN_CONFIDENCE
+#   routes to `review_queue` instead of the writer; frozen-fixture eval replays at temperature 0 and
+#   judges pairwise with BIDIRECTIONAL consistency (must win both orderings, else tie) to cancel position bias.
+# - Proactive Intel is an INTERNAL AWS project: describe architecture/approach only, never internal data.
