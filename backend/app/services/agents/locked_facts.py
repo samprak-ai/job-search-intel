@@ -34,15 +34,19 @@ LOCKED_IN_FACTS_MARKDOWN = """## Startup Pulse
 - PAIP seeded dedicated competitive-intelligence reporting that synthesizes external public signals with internal CRM data for a holistic read on the evolving competitive landscape and AWS's response (this is the Competitor Pulse line of work).
 
 ## AWS Internal AI Platforms
-- Use: "Amazon Kiro (Opus 4.7 backend)" and "Amazon Quick (frontend)" and "PizzaBot"
+- Approved names: "Amazon Kiro", "Amazon Quick", "PizzaBot"
 - DO NOT use: "Amazon Q Spaces & Flows", "Amazon Q Flows", or "Amazon Q Spaces"
+- Do NOT describe Quick generically as "the frontend" or Kiro as "the backend". Which tool runs what:
+    * PCP app/product: Quick ONLY (own search engine for external signals; MCP servers for Salesforce, 1P revenue, 3P data)
+    * Startup Intelligence Hub: Quick + Kiro
+    * Automated report generator agent (Startup Pulse): Quick
 
 ## Project Names (canonical)
 - Investor Pulse (formerly Portfolio Intelligence Engine; do NOT use old name) - VC-intelligence briefing for Andy Jassy's office
 - Competitor Pulse (formerly FlankWatch / Competitive Threat Monitor; do NOT use old names) - competitive-intelligence briefing for Andy Jassy's office; covers neoclouds, sovereign clouds, emerging developer tools
 - Loss Signal Validator
 - Startup Pulse
-- PCP Reference App (LEADERSHIP PRODUCT): turned Primary Cloud Provider, a critical but previously unmeasurable metric, into a reliable on-demand product. Failed prior approaches (third-party usage data / wallet-share proxies); Sam pioneered a qual+quant triangulation framework (~2.5 yrs ago) combining external signals (trust pages, job postings) + internal signals (Salesforce notes, revenue, growth, pipeline). Manual ~20 startups/month -> AI-scaled with an improving decision heuristic. Discovery: 1,000+ seller conversations over 2 yrs + feedback up to the AWS/Amazon CEO offices. Leadership uses it in live reviews; Andy Jassy's office uses PCP-share reporting to direct action, win-back on non-primary startups, net-new account creation, and credit disbursement. Also shifted the org toward a competitive-position lens (top-down mandate). Roadmap: Startup 360 view in the Startup Intelligence Hub, NL query over knowledge graph + GBrain. Built on Kiro + Quick. Internal: scope/behavior only, never internal numbers.
+- PCP Reference App (LEADERSHIP PRODUCT): turned Primary Cloud Provider, a critical but previously unmeasurable metric, into a reliable on-demand product. Failed prior approaches (third-party usage data / wallet-share proxies); Sam pioneered a qual+quant triangulation framework (~2.5 yrs ago) combining external signals (trust pages, job postings) + internal signals (Salesforce notes, revenue, growth, pipeline). Manual ~20 startups/month -> AI-scaled with an improving decision heuristic. Discovery: 1,000+ seller conversations over 2 yrs + feedback up to the AWS/Amazon CEO offices. Leadership uses it in live reviews; Andy Jassy's office uses PCP-share reporting to direct action, win-back on non-primary startups, net-new account creation, and credit disbursement. Also shifted the org toward a competitive-position lens (top-down mandate). Roadmap: Startup 360 view in the Startup Intelligence Hub, NL query over knowledge graph + GBrain. Built on Quick ONLY (Kiro belongs to the Startup Intelligence Hub, not PCP). Internal: scope/behavior only, never internal numbers.
 - Startup 360 Knowledge Graph (knowledge-graph semantic profiles enabling natural-language search over top startups, e.g. "which a16z-funded startups in the last 6 months are primarily on AWS?"; distinct from the 2021 Startup 360 seller mechanism)
 - Proactive Intelligence Engine (Claude-side) - the frontier reference build of the pillar: watcher, classifier, account-manager writer; knowledge-graph memory; self-improving (propose-only) skill loop; frozen-fixture eval harness with bidirectional pairwise judging. Built on Claude Code, designed for Bedrock AgentCore. DUAL-BUILD intent: build the ideal state on the frontier (Claude), replicate within Amazon internal tooling, map what the jagged frontier enables to maximize internal value. Describe architecture/approach only (internal project); never internal data.
 - Proactive Intelligence Pillar (Sam leads this, directing a cross-functional team of 7; one of six AI pillars across the AWS Startups segment. Mandate: move beyond prompts to agentic architecture - automate existing workflows and build new ones for Sales, Investment Managers, and Leadership)
@@ -116,3 +120,50 @@ BANNED_CHARS = ["—", "–"]  # em dash, en dash
 #   can't answer (strategic startups, embodied AI, AI-native SaaS disruptors, competitor performance
 #   e.g. OCI), via cadenced and ad-hoc reports. Reaches the office through the Director of Startup Ops.
 #   Describe as an ongoing trusted-partner relationship; scope only, never internal numbers.
+
+# NAMING GUARD - the CEO-office strategy review
+# - The internal document is named "AWS Penetration and Plan Review". Do NOT use that name in any
+#   EXTERNAL artifact (resume, LinkedIn, portfolio, cover letters). Describe it generically as
+#   "a recurring strategy review for Andy Jassy's office" on AWS's position with startups. Ownership
+#   and scope carry the impact; the internal name adds nothing externally and should stay internal.
+
+# Cloud-Intel status + framing (as of this update)
+# - Cloud-Intel is a LIVE, reachable app (cloud-intel.vercel.app); the UI and collected data are browsable.
+# - Its daily pipeline is PAUSED but restartable anytime. Do NOT claim it "runs ~2,500 analyses a day"
+#   as a today-fact; frame as a pipeline that runs ~2,500 automated analyses PER CYCLE (capability).
+# - Framing: Cloud-Intel is the personal PROOF-OF-CONCEPT Sam built to test the cloud/AI attribution
+#   approach BEFORE building it for real inside AWS (the PCP/attribution work). Uses only public/external
+#   signals. Label it "live proof-of-concept", not "production product".
+
+# CORRECTION - Job Search Intel + Forge handoff is BUILT (not Phase 2)
+# - services/forge.py generates a role-specific prep session (company interview philosophy, 5-7 likely
+#   question themes with resume-leverage + directional angle, gap mitigation, opening pitch).
+# - Forge's /interview-prep/import endpoint accepts that config (server-to-server, keyed).
+# - Forge has a real AI mock interviewer: prompt library by company/role (~499 prompts), multi-turn
+#   conversational interviewer (interview-conversation/assess), follow-ups, and delivery scoring.
+# - The email application tracker auto-fires generate_session_config() on positive movement.
+# So the full loop (match -> score -> role-specific prep -> push to Forge -> AI mock interview + scoring)
+# is real and can be described as built. Earlier "Phase 2 / handoff TBD" note was stale.
+
+# PCP PRODUCT JOURNEY - canonical narrative framing (added 2026-07-08)
+# Full doc: samresume/_career_hub/05_pcp_product_journey.md (that file wins on conflict).
+# Plot: a metric nobody could measure became a signal leadership acts on, and the hard part
+# was never the model.
+# - Andy Jassy's office is the DESIGN PARTNER, not "the first user". They set the accuracy bar
+#   and reached for it repeatedly in live reviews. Adoption spread past the original requester.
+#   Never claim classic "PMF" without that pull evidence; internal tools have captive users.
+# - THREE ERAS (ordered by the product question each answered, not by stack):
+#     1. "Is this even inferable?"  external-search-only prototype; no internal data to check
+#        against, so it hallucinated confidently. The ceiling was the finding.
+#     2. "Can anyone trust this?"   external + internal first-party data, model synthesizes the
+#        PCP call. Fit happened here. The VALIDATION LAYER did it, not the model.
+#     3. "Can this survive without me?"  rebuilt on Amazon Quick (own search engine for external;
+#        MCP servers for Salesforce, 1P revenue, 3P data). Build-vs-adopt judgment.
+# - TWO ARCS that carry the story: hallucinations -> decision-grade trust; ~75% manual -> <30% manual.
+#   These describe SAM'S OWN WORKFLOW, not AWS business results. That is why they are safe to state.
+# - GROUND-TRUTH LOOP (lead with this): 1,000+ seller conversations over 2 yrs. Every seller
+#   disagreement was a labeled example of where the inference was wrong; that built the eval.
+# - Era-1 external-search VENDOR NAME: keep OUT of external materials. Say "an external-search-only
+#   prototype". Vendor specificity is a detail about internal AWS architecture choices.
+# - Era 3 is CURRENT. Never describe the bespoke Era-2 stack as what runs today.
+# - Approved internal AI tool names: Quick, PizzaBot. Never "Amazon Q Spaces & Flows".
