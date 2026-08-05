@@ -3,6 +3,8 @@ import logging
 
 import anthropic
 
+from app.services.jd_quality import apply_jd_quality_cap
+
 from app.config import (
     get_settings,
     get_supabase_client,
@@ -57,7 +59,10 @@ IMPORTANT: Apply this filter ON TOP of other dimensions. A scaling-ops role at a
 
 Cap overall_score for pure-scaling roles at 82 (Strong Match ceiling), even if other dimensions are perfect — these should not qualify as Perfect Match.
 Cap overall_score at 78 when the role is primarily relationship-only partnerships, account management, customer success, enablement, or executive reporting without explicit build scope.
-Cap overall_score at 84 for big-company AI roles unless the JD shows a specific fast-moving team such as DeepMind, Labs, Research/Product, Incubation, Growth, Applied AI, or an explicitly prototype-driven group, OR the role is an internal transfer at the candidate's current employer (see "Internal Transfer Context" if present). Internal moves clear a lower effective bar and carry no big-company onboarding friction for this candidate, so the 84 cap does NOT apply to them — score those on genuine fit.
+Cap overall_score at 84 for big-company AI roles unless BOTH of the following hold, OR the role is an internal transfer at the candidate's current employer (see "Internal Transfer Context" if present):
+  (a) the JD shows a specific fast-moving team such as DeepMind, Labs, Research/Product, Incubation, Growth, Applied AI, or an explicitly prototype-driven group, AND
+  (b) the RESPONSIBILITIES themselves show build/prototype/launch/0-to-1 ownership — e.g. "build", "prototype", "incubate", "launch new", "0-to-1", "greenfield", "define the playbook".
+A team NAME is not evidence about the ROLE. Google Labs, for instance, is an incubation group that also staffs field-enablement and commercialization-operations roles; a role inside Labs whose responsibilities are operating cadences, enablement assets, and customer advisory councils is NOT prototype-driven and the 84 cap still applies to it (and the 78 enablement cap likely applies instead). Only waive the cap when condition (b) is visible in the responsibilities. Internal moves clear a lower effective bar and carry no big-company onboarding friction for this candidate, so the 84 cap does NOT apply to them — score those on genuine fit.
 
 LOCATION FIT (use the role's Location field + any JD location):
 - The candidate is based in Seattle/Renton, WA, is OPEN to relocating to the SF Bay Area or NYC, needs H1B sponsorship, and welcomes US-remote roles.
@@ -250,6 +255,11 @@ async def score_role(role_id: str, force: bool = False, notify: bool = True) -> 
     except json.JSONDecodeError:
         logger.error(f"Failed to parse Claude response as JSON: {response_text[:200]}")
         raise ValueError("Claude returned invalid JSON for scoring")
+
+    # JD-quality gate (L28). If the JD we scored against has no job-content body,
+    # the model reconstructed the role from its title. Cap the score so an
+    # unverified role can never notify, enter the digest, or top a weekly pick.
+    score_data = apply_jd_quality_cap(score_data, role.get("raw_jd"))
 
     # Store in role_scores table
     score_record = {

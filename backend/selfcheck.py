@@ -41,7 +41,7 @@ def _read(rel: Path) -> str:
     return rel.read_text(encoding="utf-8")
 
 
-# ── L1: match-tier strings must match between scoring.py and CLAUDE.md ──────
+# ── L1: match-tier strings must match between scoring.py and AGENTS.md ─────
 @check("L1-tier-strings-consistent")
 def _l1():
     problems = []
@@ -50,12 +50,12 @@ def _l1():
     if not m:
         return ["could not find the match_tier enum line in scoring.py"]
     tiers = [t.strip() for t in m.group(1).split("|")]
-    claude = _read(REPO / "CLAUDE.md")
+    claude = _read(REPO / "AGENTS.md")
     for t in tiers:
         if t not in claude:
-            problems.append(f'CLAUDE.md is missing tier string "{t}"')
+            problems.append(f'AGENTS.md is missing tier string "{t}"')
     if "Worth Applying" in claude:
-        problems.append('CLAUDE.md still references the stale tier "Worth Applying"')
+        problems.append('AGENTS.md still references the stale tier "Worth Applying"')
     return problems
 
 
@@ -106,10 +106,10 @@ def _l4():
 @check("L5-cron-companies-valid")
 def _l5():
     problems = []
-    claude = _read(REPO / "CLAUDE.md")
+    claude = _read(REPO / "AGENTS.md")
     m = re.search(r"CRON_COMPANIES=([^\n`]+)", claude)
     if not m:
-        return ["CLAUDE.md does not document a CRON_COMPANIES value"]
+        return ["AGENTS.md does not document a CRON_COMPANIES value"]
     names = [n.strip() for n in m.group(1).split(",") if n.strip()]
     companies = json.loads(_read(BACKEND / "config/companies.json"))
     valid = {c["name"] for c in companies.get("target_companies", [])}
@@ -124,7 +124,7 @@ def _l5():
         defaults = [s.strip().strip("\"'") for s in dm.group(1).split(",") if s.strip()]
         if set(defaults) != set(names):
             problems.append(
-                f"DEFAULT_CRON_COMPANIES {defaults} != CLAUDE.md CRON_COMPANIES {names}"
+                f"DEFAULT_CRON_COMPANIES {defaults} != AGENTS.md CRON_COMPANIES {names}"
             )
     return problems
 

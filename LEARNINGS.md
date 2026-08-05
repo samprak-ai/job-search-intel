@@ -174,6 +174,49 @@ These are harder to assert statically. Follow the procedure; promote to a
   static + the parser is unit-tested with a mocked CXS response. First real cron
   run on Railway is the live verification.
 
+- **L28 — a score must never rest on a JD with no job-content body.**
+  The Google Labs "Product GTM Strategy and Operations" role scored **95 / Perfect
+  Match against an EMPTY `raw_jd`**, became the top-ranked Google role, and was
+  nearly the Friday recommendation. With the real JD supplied it scores **78 /
+  Good Match** — a 17-point error. The model had reconstructed the role from its
+  title and invented an incubation charter the actual JD contradicts (the role is
+  field-enablement and commercialization ops).
+  Root cause: `_parse_google_careers` parses the search-**results card**, not the
+  job detail page, and `_needs_jd_update` gated on **length only**
+  (`MIN_JD_LENGTH = 80`). Cards run 565–1200 chars, so they cleared the length bar
+  and were never re-enriched. **122 of 125 `google_careers` roles had no
+  responsibilities body; 49 of them carried a Strong or Perfect score.**
+  Invariant: `score_role` calls `apply_jd_quality_cap()` before writing
+  `role_scores`, capping unverified-JD roles at **79 / Good Match** — one point
+  under the 80 notification bar, so they stay on the dashboard but can never
+  email, enter the digest, or top a weekly pick. `_needs_jd_update` delegates to
+  `is_substantive_jd()`. Guarded by `L28-jd-quality-gate-wired`.
+
+  Two wrong guards were drafted before the right one, both preserved as
+  behavioral cases in the check:
+  1. **Length is not substance.** The first draft was `len(raw_jd) < 300 → cap`.
+     It would have passed the single worst row in the table: a 6,293-char
+     LinkedIn scrape of benefits, Fair Chance ordinance text and application-window
+     notices, containing zero job content, scored 93. Test for the *presence of
+     job content*, never the absence of shortness.
+  2. **Require the body, not the headings.** The second draft required
+     responsibilities **AND** qualifications. That false-flags every Ashby posting
+     (says "About the Role", never "qualifications") and every Amazon posting —
+     while Google's bodyless cards *do* carry "Minimum qualifications". The
+     discriminator is whether the text says what the person would **do**.
+
+- **L29 — a team NAME must not waive the big-company 84 cap.**
+  The 84 ceiling for big-company AI roles was waived whenever the JD mentioned
+  "DeepMind / Labs / Incubation / Applied AI". That fired on the **team name**.
+  Google Labs is an incubation *group* that also staffs field-enablement and
+  commercialization-operations *roles*; the Labs GTM role's responsibilities are
+  operating cadences, enablement assets and customer advisory councils, and the
+  78 enablement cap should have applied instead. Waiving on the group name is how
+  a 78 became a 95.
+  Invariant: the waiver requires **both** a fast-moving team **and** build /
+  prototype / 0-to-1 / launch language in the **responsibilities**. Guarded by
+  `L29-cap-waiver-requires-build-language`.
+
 ---
 
 ## Adding a new learning

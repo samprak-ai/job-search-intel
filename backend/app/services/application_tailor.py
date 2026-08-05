@@ -62,7 +62,7 @@ LOCKED-IN FACTS (use these exact numbers, names, and phrasings. DO NOT paraphras
 - Scale improvement: EXACTLY "10x scale improvement" (when cited)
 - Time reduction: EXACTLY "70% reduction in report generation time" (not 65%, not "more than half")
 - System scope: EXACTLY "2000+ strategic startups"
-- Citation: "cited by Andy Jassy in Amazon's Q1 2026 earnings call"
+- Citation: "cited by Andy Jassy in Amazon's Q4 2025 earnings call"
 - Board review: "served as a primary metric in Amazon's end-of-year board review for AWS startup competitive positioning" (use "primary metric", not "featured" or "included")
 - Customer-facing users: "AWS's first AI-powered PCP and AI provider identification system"
 
@@ -89,8 +89,10 @@ LOCKED-IN FACTS (use these exact numbers, names, and phrasings. DO NOT paraphras
 
 ## Sam's Title / Experience
 - NO formal Product Manager title. Positions as "founder portfolio, measured by what runs in production."
-- EXACTLY "12+ years total experience" AND "6.5+ years at AWS Startups". NEVER "12+ years at AWS Startups" (that conflates the two).
-- Current role: Sr. GTM Sales Operations Manager, Startups, at Amazon Web Services (2022-Present).
+- EXACTLY "12+ years total experience" AND "6.5+ years at AWS" (~5.5 of those at AWS Startups; the
+  2019-2020 BIE role was AWS Partner Org, NOT Startups). NEVER "6.5+ years at AWS Startups" - that
+  overstates Startups tenure by ~1 year and the resume date column disproves it. NEVER "12+ years at AWS Startups" (that conflates the two).
+- Current role: Sr. GTM Strategy & Operations Manager, Startups, at Amazon Web Services (2022-Present).
 
 ## Live AI Products (shipped independently on Claude Code)
 - Cloud-Intel (cloud-intel.vercel.app) - GTM intelligence platform; 4-tier attribution engine; 2,500 automated searches daily; 200+ VC-funded startups tracked
@@ -123,7 +125,7 @@ Given the JD, produce a JSON object with these fields:
 
   "cover_letter_para_1": "Opening paragraph anchoring on the specific role scope with one strongest proof point upfront. 80-120 words. Often leads with 'X is what I've been building' framing if the role is about a specific product area.",
 
-  "cover_letter_para_2": "Concrete evidence paragraph. Lead with Startup Pulse (most credible single proof point, with the Q1 2026 earnings call citation) and 1-2 other builds relevant to THIS specific role. 120-180 words.",
+  "cover_letter_para_2": "Concrete evidence paragraph. Lead with Startup Pulse (most credible single proof point, with the Q4 2025 earnings call citation) and 1-2 other builds relevant to THIS specific role. 120-180 words.",
 
   "cover_letter_para_3": "Why Anthropic specific to this role. Different angle from the free-form Why Anthropic field. Focus on why this ROLE at Anthropic is the highest-leverage version of what Sam's already doing. 80-120 words.",
 

@@ -12,6 +12,7 @@ from html import unescape
 import httpx
 
 from app.config import get_supabase_client
+from app.services.jd_quality import is_substantive_jd
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,21 @@ def _extract_jd_from_html(html: str, source: str) -> str | None:
         if match:
             return _strip_html(match.group(1))
 
+    # Google Careers: the detail page carries "About the job" + "Responsibilities".
+    # The search-RESULTS CARD does not — parsing a card is what produced 122
+    # bodyless JDs (L28). Anchor on the detail-page sections so a card can never
+    # masquerade as a JD.
+    if source == "google_careers":
+        match = re.search(
+            r"(About the job.*?)(?:</main>|Learn more share link|share link Copy link)",
+            html, re.DOTALL | re.IGNORECASE,
+        )
+        if match:
+            text = _strip_html(match.group(1))
+            if is_substantive_jd(text):
+                return text
+        return None  # never fall through to the generic path for Google
+
     # Generic: try to extract main content area
     # Look for common job description containers
     patterns = [
@@ -93,11 +109,21 @@ def _extract_jd_from_html(html: str, source: str) -> str | None:
 
 
 def _needs_jd_update(raw_jd: str | None) -> bool:
-    """Check if a role's JD is missing or is a placeholder."""
+    """Check if a role's JD is missing, a placeholder, or not substantive.
+
+    Length alone is NOT a sufficient test (L28). Google Careers cards run
+    565-1200 chars — comfortably over MIN_JD_LENGTH — yet contain only the
+    title, location and Minimum-qualifications snippet, with no responsibilities
+    body. Under the old length-only rule these roles were never re-enriched,
+    and 49 of them carried a Strong/Perfect score derived from a card.
+    Delegate the real decision to is_substantive_jd().
+    """
     if not raw_jd or len(raw_jd) < MIN_JD_LENGTH:
         return True
     lower = raw_jd.lower()
-    return any(p in lower for p in PLACEHOLDER_TEXTS)
+    if any(p in lower for p in PLACEHOLDER_TEXTS):
+        return True
+    return not is_substantive_jd(raw_jd)
 
 
 async def scrape_jd(url: str, source: str) -> str | None:
@@ -130,11 +156,14 @@ async def scrape_jd(url: str, source: str) -> str | None:
 
             jd_text = _extract_jd_from_html(html, source)
 
-            if jd_text and len(jd_text) > MIN_JD_LENGTH:
+            # Substance, not length (L28): a 6,293-char LinkedIn scrape of
+            # benefits + Fair Chance ordinance text passes a length test and
+            # contains no job content. Never persist text we can't verify.
+            if jd_text and is_substantive_jd(jd_text):
                 logger.info(f"Scraped JD ({len(jd_text)} chars) from {url}")
                 return jd_text
             else:
-                logger.debug(f"Could not extract meaningful JD from {url}")
+                logger.debug(f"Could not extract a substantive JD from {url}")
                 return None
 
     except httpx.HTTPStatusError as e:
