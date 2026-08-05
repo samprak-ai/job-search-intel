@@ -15,9 +15,18 @@ type Role = {
   date_found: string;
   match_tier: string | null;
   overall_score: number | null;
+  conversion: string | null;
   application_status: string | null;
   is_live: boolean | null;
   last_checked_at: string | null;
+};
+
+// Conversion axis (callback-likelihood given Sam's non-PM background) — a signal
+// SEPARATE from fit score. Surfaced as a small badge so a high-fit/low-conversion
+// role (e.g. a formal PM-title role) is visible at a glance, not just in the digest.
+const CONVERSION_BADGE: Record<string, { label: string; cls: string }> = {
+  high: { label: "✓ Your background fits", cls: "bg-green-100 text-green-800 border border-green-300" },
+  low: { label: "△ Pedigree screen", cls: "bg-amber-100 text-amber-800 border border-amber-300" },
 };
 
 // ---------------------------------------------------------------------------
@@ -771,6 +780,18 @@ export default function Dashboard() {
                                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                                                     </svg>
+                                                  </span>
+                                                )}
+                                                {role.conversion && CONVERSION_BADGE[role.conversion] && (
+                                                  <span
+                                                    title={
+                                                      role.conversion === "high"
+                                                        ? "Callback-likely: your GTM/AI-builder background is the differentiated fit"
+                                                        : "Callback risk: a formal-PM / pedigree screen your background doesn't directly clear (fit can still be high)"
+                                                    }
+                                                    className={`flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap ${CONVERSION_BADGE[role.conversion].cls}`}
+                                                  >
+                                                    {CONVERSION_BADGE[role.conversion].label}
                                                   </span>
                                                 )}
                                               </div>
