@@ -24,13 +24,13 @@ type Role = {
 // Constants
 // ---------------------------------------------------------------------------
 
-// "Unlikely Match" is intentionally omitted — the dashboard groups only by the
-// tiers in this list, so those roles are hidden from view (still in the DB).
+// "Possible Match" and "Unlikely Match" are intentionally omitted — the dashboard
+// groups only by the tiers in this list, so those roles are hidden from view (to
+// cut noise; they're still in the DB and scored, just not surfaced).
 const TIER_ORDER = [
   "Perfect Match",
   "Strong Match",
   "Good Match",
-  "Possible Match",
 ];
 
 // Map old tier names (from pre-rename scoring) to new tier names
@@ -651,7 +651,6 @@ export default function Dashboard() {
           <option value="Perfect Match">Perfect Match</option>
           <option value="Strong Match">Strong Match</option>
           <option value="Good Match">Good Match</option>
-          <option value="Possible Match">Possible Match</option>
           <option value="unscored">Unscored</option>
         </select>
         <select
