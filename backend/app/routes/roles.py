@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.config import get_supabase_client
+from app.services.conversion import conversion_tier
 from app.services.outcomes import map_role_status_to_outcome, record_outcome
 
 logger = logging.getLogger(__name__)
@@ -46,12 +47,14 @@ async def list_roles(company: str | None = None, limit: int = 100):
                 if rid not in scores_map or (s["scored_at"] or "") > (scores_map[rid]["scored_at"] or ""):
                     scores_map[rid] = s
 
-    # Merge scores into roles
+    # Merge scores into roles + the conversion axis (callback-likelihood given
+    # Sam's non-PM background — separate from fit; see services/conversion.py).
     roles = []
     for row in result.data:
         score = scores_map.get(row["id"])
         row["match_tier"] = score["match_tier"] if score else None
         row["overall_score"] = score["overall_score"] if score else None
+        row["conversion"] = conversion_tier(row.get("title", ""))
         roles.append(row)
 
     return {"roles": roles, "count": len(roles)}

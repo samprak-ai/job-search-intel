@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import resend
 
 from app.config import get_settings, get_supabase_client
+from app.services.conversion import TIER_RANK, conversion_tier
 
 logger = logging.getLogger(__name__)
 
@@ -233,9 +234,15 @@ async def send_daily_digest_email(
         return score >= notification_threshold(role.get("company"))
 
     def _sorted_qualifying(tier: str) -> list[dict]:
+        # Within a fit tier, order by CONVERSION first (where Sam's non-PM
+        # background actually gets a callback), then by fit score — so his
+        # convertible archetypes surface above generic PM at equal fit.
+        subset = [r for r in grouped[tier] if _qualifies(r)]
+        for r in subset:
+            r["conversion"] = conversion_tier(r.get("title", ""))
         return sorted(
-            (r for r in grouped[tier] if _qualifies(r)),
-            key=lambda r: r["score"].get("overall_score", 0),
+            subset,
+            key=lambda r: (TIER_RANK.get(r.get("conversion"), 1), r["score"].get("overall_score", 0)),
             reverse=True,
         )
 
@@ -262,6 +269,14 @@ async def send_daily_digest_email(
             tier = s["match_tier"]
             rationale = s.get("rationale", "")
             _, bg, _ = TIER_COLORS.get(tier, ("#374151", "#f9fafb", "#6b7280"))
+            conv = role.get("conversion") or conversion_tier(role.get("title", ""))
+            _conv_badge = {
+                "high": ('<span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:600;'
+                         'padding:2px 8px;border-radius:10px;">✓ Your background fits</span>'),
+                "low": ('<span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;'
+                        'padding:2px 8px;border-radius:10px;">△ Generic PM — pedigree screen</span>'),
+                "medium": "",
+            }.get(conv, "")
             out.append(f"""
             <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;background:{bg};">
               <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -271,6 +286,7 @@ async def send_daily_digest_email(
                 </div>
                 <span style="font-size:20px;font-weight:700;color:#4f46e5;">{s['overall_score']}</span>
               </div>
+              <div style="margin-top:6px;">{_conv_badge}</div>
               <p style="margin:8px 0 0;font-size:13px;color:#4b5563;">{rationale}</p>
               <a href="{role['url']}" style="display:inline-block;margin-top:10px;color:#4f46e5;font-size:13px;text-decoration:none;font-weight:500;">View Posting &rarr;</a>
             </div>""")

@@ -708,6 +708,36 @@ def _l29():
     return problems
 
 
+# ── L28: conversion (callback-likelihood) is a separate deterministic axis ────
+# Fit and "will Sam get a call given his non-PM background" are different
+# questions; conflating them in the LLM fit score was noisy. conversion_tier is
+# deterministic; the digest ranks by it and GET /roles exposes it.
+@check("L30-conversion-axis")
+def _l28():
+    problems = []
+    if not (BACKEND / "app/services/conversion.py").exists():
+        return ["app/services/conversion.py is missing"]
+    notif = _read(BACKEND / "app/services/notifications.py")
+    if "conversion_tier" not in notif or "TIER_RANK" not in notif:
+        problems.append("notifications.py: daily digest must rank by conversion_tier/TIER_RANK")
+    roles = _read(BACKEND / "app/routes/roles.py")
+    if 'row["conversion"] = conversion_tier' not in roles:
+        problems.append("roles.py: GET /roles must expose a conversion field")
+    # behavioral: convertible archetypes + builder -> high; generic PM -> low
+    try:
+        from app.services.conversion import conversion_tier as ct
+        for t in ("Head of Competitive Intelligence", "Strategy and Operations Lead",
+                  "Sr. Worldwide GTM Specialist, Agentic AI", "Group Product Manager, 0-1 AI Products"):
+            if ct(t) != "high":
+                problems.append(f"L28: expected 'high' conversion for {t!r}, got {ct(t)!r}")
+        for t in ("Product Manager, Google Images, Search", "Group Product Manager, Ads"):
+            if ct(t) != "low":
+                problems.append(f"L28: expected 'low' conversion for {t!r}, got {ct(t)!r}")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L28 behavioral check errored: {e}")
+    return problems
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})
