@@ -661,12 +661,25 @@ def _l28():
         if is_substantive_jd(card):
             problems.append("L28: a Google Careers results card (quals, no responsibilities) must not count as substantive")
 
-        # the cap must actually demote a Perfect Match built on a card
+        # Reason-aware cap (2026-08-05): a Google CARD carries title+location+
+        # level+min-quals — substantive enough for Strong, so its cap is the
+        # Strong ceiling (88), not Good. The catastrophic error (a false PERFECT)
+        # is still blocked; a genuine Strong survives; empty/boilerplate -> Good.
         capped = apply_jd_quality_cap(
             {"match_tier": "Perfect Match", "overall_score": 95, "rationale": "x", "gaps": []}, card
         )
-        if capped["overall_score"] > 79 or capped["match_tier"] == "Perfect Match":
-            problems.append("L28: apply_jd_quality_cap must cap an unverified-JD score to <=79 / Good Match")
+        if capped["overall_score"] > 88 or capped["match_tier"] == "Perfect Match":
+            problems.append("L28: Google-card Perfect must be capped out of Perfect (<=88 Strong)")
+        strong = apply_jd_quality_cap(
+            {"match_tier": "Strong Match", "overall_score": 84, "rationale": "x", "gaps": []}, card
+        )
+        if strong["overall_score"] < 80:
+            problems.append("L28: a genuine Strong Google-card score must NOT be capped below Strong")
+        empt = apply_jd_quality_cap(
+            {"match_tier": "Perfect Match", "overall_score": 95, "rationale": "x", "gaps": []}, ""
+        )
+        if empt["overall_score"] > 79 or empt["match_tier"] == "Perfect Match":
+            problems.append("L28: empty/boilerplate JD must cap to <=79 / Good Match")
         if not capped["gaps"]:
             problems.append("L28: apply_jd_quality_cap must add an 'unverified JD' gap")
 
