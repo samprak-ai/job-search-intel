@@ -640,6 +640,14 @@ LINKEDIN_QUERIES = [
     "AI product manager",
     "chief of staff",
     "product strategy growth",
+    # Sam's convertible archetypes — surface where his background gets a call
+    # (esp. for LinkedIn-primary companies like Meta where guest search is the
+    # only headless source and its ranking is fuzzy).
+    "competitive intelligence",
+    "market intelligence",
+    "applied AI",
+    "GTM specialist",
+    "business strategy",
 ]
 LINKEDIN_CAP_PER_QUERY = 6
 LINKEDIN_CAP_PER_COMPANY = 25
