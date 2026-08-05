@@ -76,6 +76,12 @@ ROLE_KEYWORDS = [
     "go to market systems", "sales intelligence",
     "business systems", "ai operations", "systems and ai",
     "partner business systems",
+    # Competitive / market intelligence — Sam's core differentiator (GenAI-Intel,
+    # PAIP signal systems). "Competitive Intelligence Lead" (OpenAI) was dropped
+    # because only "head of" caught the "Head of Competitive Intelligence" sibling.
+    # Kept specific (not bare "intelligence") to exclude eng/analyst/sales-to-
+    # intelligence-community roles.
+    "competitive intelligence", "market intelligence", "product intelligence",
     "gtm specialist", "go-to-market specialist", "gtm lead",
     "go-to-market lead", "gtm strategy", "go-to-market strategy",
     "strategy and operations", "strategy & operations",

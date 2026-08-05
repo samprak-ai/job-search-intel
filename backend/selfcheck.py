@@ -550,7 +550,8 @@ def _l24():
     problems = []
     ats = _read(BACKEND / "app/services/ats_clients.py")
     for kw in ('"business strategy"', '"business operations"', '"ai partnership"',
-               '"gtm partnership"', '"strategic partnership"', '"startup partnership"'):
+               '"gtm partnership"', '"strategic partnership"', '"startup partnership"',
+               '"competitive intelligence"', '"market intelligence"'):
         if kw not in ats:
             problems.append(f"ats_clients.py: ROLE_KEYWORDS missing {kw}")
     if '.replace(" & ", " and ")' not in ats:
@@ -599,6 +600,111 @@ def _l27():
             problems.append("L27: job-id artifact still present in parsed raw_jd")
     except Exception as e:  # pragma: no cover
         problems.append(f"L27 behavioral check errored: {e}")
+    return problems
+
+
+# ── L28: a score must never rest on a JD with no job-content body ────────────
+# The Google Labs "Product GTM Strategy and Operations" role scored 95/Perfect
+# against an EMPTY raw_jd — the model reconstructed the role from its title and
+# invented an incubation charter the real JD contradicts (it rescored to 78).
+# Root cause: _parse_google_careers reads the search-RESULTS CARD, and
+# _needs_jd_update gated on length only (MIN_JD_LENGTH=80), so 565-1200 char
+# cards were never re-enriched. 122/125 google_careers roles had no
+# responsibilities body; 49 carried a Strong/Perfect score.
+#
+# Two traps this check exists to prevent regressing into:
+#   (a) a LENGTH-based substitute for is_substantive_jd() — a 6,293-char
+#       LinkedIn benefits/Fair-Chance blurb passes any length test.
+#   (b) requiring BOTH responsibilities AND qualifications — that false-flags
+#       every Ashby ("About the Role") and Amazon posting, while Google's
+#       bodyless cards DO carry "Minimum qualifications".
+@check("L28-jd-quality-gate-wired")
+def _l28():
+    problems = []
+    sc = _read(BACKEND / "app/services/scoring.py")
+    if "apply_jd_quality_cap" not in sc:
+        problems.append("scoring.py: score_role must call apply_jd_quality_cap() before writing role_scores")
+    else:
+        pre, _, post = sc.partition("apply_jd_quality_cap(score_data")
+        if 'supabase.table("role_scores").insert' in pre:
+            problems.append("scoring.py: apply_jd_quality_cap must run BEFORE the role_scores insert")
+
+    scr = _read(BACKEND / "app/services/jd_scraper.py")
+    if "is_substantive_jd" not in scr:
+        problems.append("jd_scraper.py: _needs_jd_update must delegate to is_substantive_jd(), not length alone")
+
+    try:
+        from app.services.jd_quality import apply_jd_quality_cap, is_substantive_jd
+
+        # (a) length is not substance: long boilerplate must NOT be substantive
+        boilerplate = (
+            "The application window will be open until at least July 16, 2026. "
+            "Applicants in the County of Los Angeles: Qualified applications with "
+            "arrest or conviction records will be considered for employment in "
+            "accordance with the Los Angeles County Fair Chance Ordinance. "
+            "Benefits for this role include: health, dental, vision. " * 12
+        )
+        if is_substantive_jd(boilerplate):
+            problems.append("L28: long legal/benefits boilerplate must not count as a substantive JD")
+
+        # (b) Ashby / Amazon house styles must PASS (no false positives)
+        ashby = ("About the Team OpenAI's mission is to build safe AGI. About the Role "
+                 "You will own the roadmap for agentic systems and partner with GTM. " * 4)
+        if not is_substantive_jd(ashby):
+            problems.append("L28: an Ashby-style 'About the Role' JD must count as substantive")
+
+        # a Google results CARD (quals, no body) must FAIL
+        card = ("Product GTM Strategy and Operations, Google Labs corporate_fare Google "
+                "place San Francisco, CA bar_chart Advanced Minimum qualifications "
+                "Bachelor's degree or equivalent practical experience. 11 years of "
+                "experience in B2B enterprise software go-to-market. Learn more share link Copy link")
+        if is_substantive_jd(card):
+            problems.append("L28: a Google Careers results card (quals, no responsibilities) must not count as substantive")
+
+        # the cap must actually demote a Perfect Match built on a card
+        capped = apply_jd_quality_cap(
+            {"match_tier": "Perfect Match", "overall_score": 95, "rationale": "x", "gaps": []}, card
+        )
+        if capped["overall_score"] > 79 or capped["match_tier"] == "Perfect Match":
+            problems.append("L28: apply_jd_quality_cap must cap an unverified-JD score to <=79 / Good Match")
+        if not capped["gaps"]:
+            problems.append("L28: apply_jd_quality_cap must add an 'unverified JD' gap")
+
+        # and it must be a no-op on a real JD
+        real = ashby + " Responsibilities: build and launch 0-to-1 products."
+        untouched = apply_jd_quality_cap({"match_tier": "Perfect Match", "overall_score": 95, "gaps": []}, real)
+        if untouched["overall_score"] != 95:
+            problems.append("L28: apply_jd_quality_cap must not touch scores derived from a substantive JD")
+    except Exception as e:  # pragma: no cover
+        problems.append(f"L28 behavioral check errored: {e}")
+    return problems
+
+
+# ── L29: a team NAME must not waive the big-company 84 cap ───────────────────
+# Cap-60 waived the 84 ceiling whenever the JD mentioned "Labs"/"DeepMind"/etc.
+# That fired on the *team name*. Google Labs is an incubation GROUP that also
+# staffs field-enablement and commercialization-ops ROLES; the Labs GTM role's
+# responsibilities are operating cadences, enablement assets and customer
+# advisory councils. The waiver must additionally require build/0-to-1 language
+# in the responsibilities themselves.
+@check("L29-cap-waiver-requires-build-language")
+def _l29():
+    sc = _read(BACKEND / "app/services/scoring.py")
+    problems = []
+    if "A team NAME is not evidence about the ROLE" not in sc:
+        problems.append(
+            "scoring.py: the 84-cap waiver must state that a team name is not evidence about the role"
+        )
+    seg = sc.split("Cap overall_score at 84", 1)
+    if len(seg) < 2:
+        problems.append("scoring.py: the big-company 84 cap rule is missing")
+    else:
+        block = seg[1][:1400].lower()
+        if "responsibilities" not in block:
+            problems.append("scoring.py: the 84-cap waiver must require build language in the RESPONSIBILITIES")
+        for token in ("0-to-1", "prototype"):
+            if token not in block:
+                problems.append(f"scoring.py: 84-cap waiver must name '{token}' as required build evidence")
     return problems
 
 
