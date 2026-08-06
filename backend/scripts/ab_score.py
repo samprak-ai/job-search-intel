@@ -20,8 +20,6 @@ import os
 import sys
 from pathlib import Path
 
-import httpx
-
 from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -31,9 +29,9 @@ if str(BACKEND_DIR) not in sys.path:
 load_dotenv(BACKEND_DIR / ".env")
 
 from app.services.scoring import SCORING_SYSTEM_PROMPT, build_scoring_message  # noqa: E402
+from app.services.ai_client import complete as ai_complete  # noqa: E402
 from app.config import load_profile  # noqa: E402
 
-DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro")
 CLAUDE_MODEL = os.getenv("AB_CLAUDE_MODEL", "claude-sonnet-4-6")
 
@@ -53,22 +51,12 @@ def _call_anthropic(system: str, user: str) -> str:
 
 
 def _call_deepseek(system: str, user: str) -> str:
-    resp = httpx.post(
-        f"{DEEPSEEK_BASE_URL}/chat/completions",
-        headers={"Authorization": f"Bearer {os.environ['DEEPSEEK_API_KEY']}"},
-        json={
-            "model": DEEPSEEK_MODEL,
-            "temperature": 0,
-            "max_tokens": 1024,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-        },
-        timeout=120.0,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"].strip()
+    # Route through ai_client so the DeepSeek branch applies the same model
+    # mapping (claude-* -> deepseek-v4-pro) and thinking:disabled that prod uses.
+    # Calling the API directly here left content empty on v4-pro (thinking mode).
+    from app.services.ai_client import _deepseek_model
+
+    return ai_complete(_deepseek_model(DEEPSEEK_MODEL), system, user, max_tokens=1024)
 
 
 def _parse_score(text: str) -> dict:
