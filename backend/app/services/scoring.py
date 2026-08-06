@@ -1,8 +1,6 @@
 import json
 import logging
 
-import anthropic
-
 from app.services.jd_quality import apply_jd_quality_cap
 
 from app.config import (
@@ -204,7 +202,6 @@ async def score_role(role_id: str, force: bool = False, notify: bool = True) -> 
     burst of emails for their existing back-catalog; the daily cron keeps the
     default (notify=True) so genuinely new roles still notify.
     """
-    settings = get_settings()
     supabase = get_supabase_client()
     profile = load_profile()
 
@@ -233,24 +230,17 @@ async def score_role(role_id: str, force: bool = False, notify: bool = True) -> 
 
     logger.info(f"Scoring role: {role['title']} at {role['company']}")
 
-    # Call Claude API
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1024,
-        # Scoring is a grading task — it must be reproducible. Default temperature
-        # (1.0) injects ±several points of run-to-run noise, enough to flip a role
-        # across the Good/Strong boundary (two identical GTM roles scored 74 vs 82).
-        # temperature=0 makes the same JD score the same number every time. (L26)
-        temperature=0,
+    # Call the configured AI provider (Anthropic default; DeepSeek via AI_PROVIDER)
+    from app.services.ai_client import complete
+
+    response_text = complete(
+        model=None,
         system=SCORING_SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": build_scoring_message(role, profile)}
-        ],
+        user=build_scoring_message(role, profile),
+        max_tokens=1024,
     )
 
-    # Parse Claude's JSON response (strip markdown fences if present)
-    response_text = message.content[0].text.strip()
+    # Parse the model's JSON response (strip markdown fences if present)
     if response_text.startswith("```"):
         response_text = response_text.split("\n", 1)[1]  # remove ```json line
         response_text = response_text.rsplit("```", 1)[0]  # remove closing ```
@@ -258,8 +248,8 @@ async def score_role(role_id: str, force: bool = False, notify: bool = True) -> 
     try:
         score_data = json.loads(response_text)
     except json.JSONDecodeError:
-        logger.error(f"Failed to parse Claude response as JSON: {response_text[:200]}")
-        raise ValueError("Claude returned invalid JSON for scoring")
+        logger.error(f"Failed to parse AI response as JSON: {response_text[:200]}")
+        raise ValueError("AI returned invalid JSON for scoring")
 
     # JD-quality gate (L28). If the JD we scored against has no job-content body,
     # the model reconstructed the role from its title. Cap the score so an

@@ -217,6 +217,23 @@ These are harder to assert statically. Follow the procedure; promote to a
   prototype / 0-to-1 / launch language in the **responsibilities**. Guarded by
   `L29-cap-waiver-requires-build-language`.
 
+- **L31 — the runtime AI provider is a config decision, so scoring must route
+  through a client abstraction.**
+  Scoring called `anthropic.Anthropic(...).messages.create(...)` directly, so the
+  provider was unreachable at runtime. Introducing DeepSeek-as-a-option (via
+  `AI_PROVIDER`) meant either editing every call site or centralizing. Any call
+  that bypasses `ai_client.complete` silently ignores `AI_PROVIDER` and makes a
+  "we switched to DeepSeek" assumption false.
+  Invariant: scoring calls `ai_client.complete(model, system, user, max_tokens)`;
+  ai_client branches Anthropic vs DeepSeek and pins `temperature=0` in both
+  branches (determinism, ex-L26). Guarded by `L31-scoring-routes-through-ai-client`
+  + `L26-scoring-temperature-zero`.
+  Note: DeepSeek's `deepseek-chat` compresses overall scores into the 80-89 band
+  (Strong) by default, underusing the 90+ tail; its reasoning still flags fit
+  correctly. Watch the `application_outcomes` calibration before trusting the
+  band; a deterministic band-adjust layer is the fallback if compression shows up
+  in real outcomes.
+
 ---
 
 ## Adding a new learning

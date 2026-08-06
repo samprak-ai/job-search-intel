@@ -9,7 +9,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 - **Backend:** FastAPI (Python), deployed on Railway
 - **Frontend:** Next.js, deployed on Vercel
 - **Database:** Supabase (new project, separate from GenAI-Intel)
-- **AI:** Claude API (Anthropic)
+- **AI:** Claude API (Anthropic), with DeepSeek opt-in for scoring inference via `AI_PROVIDER` (see Module 3)
 - **Search:** Brave Search API
 - **Auth:** Supabase Auth (single user — Sam)
 
@@ -85,7 +85,8 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 
 ### Module 3 — Match Scoring
 - Input: JD text + full `profile.json`
-- Claude API prompt instructs:
+- Provider abstraction: `services/ai_client.py` dispatches the scoring completion to the provider named by `AI_PROVIDER` env (`anthropic` default → `claude-sonnet-4-6`; `deepseek` → OpenAI-compatible `DEEPSEEK_BASE_URL`/`DEEPSEEK_MODEL`, default `deepseek-chat`). The scoring system prompt is model-agnostic and sent verbatim to both. Guarded by selfcheck L31 (scoring must route through `ai_client.complete`, not a provider SDK) + L26 (temperature=0 in both branches). Other inference (intel, quick-apply, email classifier) stays on Claude regardless.
+- Claude/DeepSeek prompt instructs:
   - Score alignment across 5 dimensions: domain fit, technical fit, seniority fit, role type fit, H1B likelihood
   - Apply JD realism filter (posted requirements are often inflated — 65%+ alignment on the right dimensions = strong match)
   - Run deterministically (`temperature=0`) — run-to-run noise was flipping tier boundaries
@@ -211,7 +212,7 @@ Adding a learning: append to `LEARNINGS.md`, add a `@check` to `selfcheck.py` (c
 - **Same patterns as GenAI-Intel** — Brave Search → structured enrichment → LLM inference → dashboard
 - **Profile is static config** — not operational data, lives in repo, versioned with code
 - **Companies list is flexible** — JSON array, one-line add/remove, extendable fields
-- **Claude API for all inference** — match scoring, intel summarization, gap analysis
+- **Claude API for all inference** — match scoring, intel summarization, gap analysis (scoring is swappable to DeepSeek via `AI_PROVIDER`)
 
 ---
 

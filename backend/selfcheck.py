@@ -511,16 +511,17 @@ def _l23():
 # ── L26: scoring must run deterministically (temperature=0) ──────────────────
 # Default temperature (1.0) gave scoring ±several points of run-to-run noise —
 # enough to flip a role across the Good/Strong boundary. Grading must be reproducible.
+# The call lives in the AI client (scoring routes through it), so both provider
+# branches must pin temperature=0.
 @check("L26-scoring-temperature-zero")
 def _l26():
-    sc = _read(BACKEND / "app/services/scoring.py")
-    seg = sc.split("messages.create", 1)
-    if len(seg) < 2:
-        return ["scoring.py: no messages.create call found"]
-    # temperature=0 must appear within the score_role create call args
-    call = seg[1][:400]
-    if "temperature=0" not in call:
-        return ["scoring.py: score_role's messages.create must pass temperature=0 (deterministic grading)"]
+    client = _read(BACKEND / "app/services/ai_client.py")
+    for func in ("_call_anthropic", "complete_deepseek"):
+        if f"def {func}(" not in client:
+            return [f"ai_client.py: def {func}() not found"]
+    # temperature=0 must appear once per provider branch (Anthropic + DeepSeek)
+    if client.count("temperature=0") < 2:
+        return ["ai_client.py: both provider branches must pass temperature=0 (deterministic grading)"]
     return []
 
 
@@ -748,6 +749,26 @@ def _l28():
                 problems.append(f"L28: expected 'low' conversion for {t!r}, got {ct(t)!r}")
     except Exception as e:  # pragma: no cover
         problems.append(f"L28 behavioral check errored: {e}")
+    return problems
+
+
+# ── L31: scoring must route through the AI client abstraction ────────────────
+# The provider is a runtime config decision (AI_PROVIDER). If a service bypasses
+# ai_client and calls a provider SDK directly, the AI_PROVIDER switch is silently
+# ignored and a "we're on DeepSeek" assumption becomes false. Guard the wiring.
+@check("L31-scoring-routes-through-ai-client")
+def _l31():
+    problems = []
+    if not (BACKEND / "app/services/ai_client.py").exists():
+        return ["app/services/ai_client.py is missing"]
+    client = _read(BACKEND / "app/services/ai_client.py")
+    if "def complete(" not in client:
+        problems.append("ai_client.py: must expose a complete() dispatch function")
+    if "deepseek" not in client or "anthropic" not in client:
+        problems.append("ai_client.py: must branch between deepseek and anthropic providers")
+    sc = _read(BACKEND / "app/services/scoring.py")
+    if "from app.services.ai_client import complete" not in sc or "complete(" not in sc:
+        problems.append("scoring.py: score_role must call ai_client.complete (not a provider SDK directly)")
     return problems
 
 
