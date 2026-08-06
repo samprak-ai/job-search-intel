@@ -50,14 +50,19 @@ SIGNALS OF 0→1 / BUILDER-OPERATOR ROLES (boost role_type_fit by +10 to +20, ca
 - JD language: "build from scratch", "first hire in", "0-to-1", "define the playbook", "shape the roadmap", "new function", "greenfield", "prototype", "launch new", "incubate"
 - Role scope includes talking to stakeholders, shipping MVPs, iterating based on feedback, then handing off to infra/eng teams
 
-SIGNALS OF SCALING / OPERATIONS ROLES (downweight role_type_fit by -20 to -35):
+SIGNALS OF SCALING / OPERATIONS ROLES (downweight role_type_fit by -25 to -35):
 - Role title includes: Planning Operations, BDR Operations, Sales Operations (without build scope), Activations (scaling existing), Revenue Operations (pure ops), Territory Design, Quota Operations, Enterprise Business Partner, Customer Success Operations (pure ops), Onboarding Lead, Enablement Manager
 - JD language: "scale the existing", "maintain the operating model", "improve the current", "optimize the existing motion", "operate at larger scale", "manage the cadence", "run the process"
 - Role scope is primarily about operating, reporting on, or scaling a function that already exists and has PMF
 
-IMPORTANT: Apply this filter ON TOP of other dimensions. A scaling-ops role at an AI-native company may still have strong domain_fit and seniority_fit, but role_type_fit should reflect the mismatch with the candidate's 0→1 preference. In the rationale, explicitly note when a role is scaling-shaped (and therefore deprioritized) or builder-shaped (and therefore boosted).
+OPERATIONS-WITH-BUILD-SCOPE (do NOT apply the scaling-ops downweight; treat as builder-operator):
+- A role TITLE containing "Operations" or "GTM Ops" is NOT evidence of scaling-ops. Its title word is not a proxy for the work.
+- Judge by the RESPONSIBILITIES. If the role says the work is to BUILD the operating system / function / mechanisms / model (e.g. "build the operating system for", "foundational, hands-on", "build and maintain the [] model from scratch", "design the management system", "create the mechanisms / cadences / reporting from scratch", "build durable processes", "turn ambiguous questions into repeatable mechanisms", "define the playbook", "stand up a new function", "build the plan", "build the model, process, or dashboard yourself"), then it is a 0→1 builder-operator operations role — someone must create the machinery before anyone can scale it. BOOST role_type_fit (+10 to +20) instead.
+- Downweight only when the responsibilities describe operating/optimizing/maintaining an EXISTING mechanism with no build intent ("own the cadence", "run the existing process", "maintain the operating model", "optimize the current motion", "scale the existing function").
 
-Cap overall_score for pure-scaling roles at 82 (Strong Match ceiling), even if other dimensions are perfect — these should not qualify as Perfect Match.
+IMPORTANT: Apply this filter ON TOP of other dimensions. A scaling-ops role at an AI-native company may still have strong domain_fit and seniority_fit, but role_type_fit should reflect the mismatch with the candidate's 0→1 preference. In the rationale, explicitly state what the role is building (if anything) and note when a role is scaling-shaped (operating existing machinery — deprioritized) or builder-shaped (standing up new machinery — boosted). Do not call a role scaling-shaped just because "Operations" is in the title.
+
+Cap overall_score at 82 (Strong Match ceiling) only for roles that are PURE scaling/operations with NO build scope — where the responsibilities operate an existing function and nothing new is created. A builder-operator operations role with genuine build scope is not subject to this cap.
 Cap overall_score at 78 when the role is primarily relationship-only partnerships, account management, customer success, enablement, or executive reporting without explicit build scope.
 Cap overall_score at 84 for big-company AI roles unless BOTH of the following hold, OR the role is an internal transfer at the candidate's current employer (see "Internal Transfer Context" if present):
   (a) the JD shows a specific fast-moving team such as DeepMind, Labs, Research/Product, Incubation, Growth, Applied AI, or an explicitly prototype-driven group, AND
