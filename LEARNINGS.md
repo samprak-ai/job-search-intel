@@ -228,7 +228,8 @@ These are harder to assert statically. Follow the procedure; promote to a
   ai_client branches Anthropic vs DeepSeek and pins `temperature=0` in both
   branches (determinism, ex-L26). Guarded by `L31-scoring-routes-through-ai-client`
   + `L26-scoring-temperature-zero`.
-  Note: DeepSeek's `deepseek-chat` compresses overall scores into the 80-89 band
+  Note: DeepSeek's flash tier (`deepseek-chat` alias) compresses overall scores
+  into the 80-89 band
   (Strong) by default, underusing the 90+ tail; its reasoning still flags fit
   correctly. Watch the `application_outcomes` calibration before trusting the
   band; a deterministic band-adjust layer is the fallback if compression shows up

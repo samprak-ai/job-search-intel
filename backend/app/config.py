@@ -52,7 +52,7 @@ def get_settings():
         # "deepseek". DeepSeek uses an OpenAI-compatible endpoint.
         ai_provider: str = _env_get("AI_PROVIDER", "anthropic")
         deepseek_api_key: str = _env_get("DEEPSEEK_API_KEY")
-        deepseek_model: str = _env_get("DEEPSEEK_MODEL", "deepseek-chat")
+        deepseek_model: str = _env_get("DEEPSEEK_MODEL", "deepseek-v4-pro")
         deepseek_base_url: str = _env_get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
         serper_api_key: str = _env_get("SERPER_API_KEY")
         brave_api_key: str = _env_get("BRAVE_API_KEY")

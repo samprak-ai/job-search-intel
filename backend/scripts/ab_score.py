@@ -34,7 +34,7 @@ from app.services.scoring import SCORING_SYSTEM_PROMPT, build_scoring_message  #
 from app.config import load_profile  # noqa: E402
 
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro")
 CLAUDE_MODEL = os.getenv("AB_CLAUDE_MODEL", "claude-sonnet-4-6")
 
 

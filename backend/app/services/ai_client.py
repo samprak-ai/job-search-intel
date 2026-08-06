@@ -85,6 +85,12 @@ def complete_deepseek_with_usage(model: str | None, system: str, user: str, max_
             "model": _deepseek_model(model),
             "temperature": 0,
             "max_tokens": max_tokens,
+            # deepseek-v4-pro (and the flash/reasoner family) default to a
+            # thinking/reasoning mode whose output lands in reasoning_content and
+            # leaves content empty. Scoring + all structured gen must be a plain,
+            # deterministic, non-reasoning completion (matching temperature=0), so
+            # disable thinking explicitly. Harmless on non-thinking models.
+            "thinking": {"type": "disabled"},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
