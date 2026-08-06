@@ -24,7 +24,6 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-import anthropic
 
 from app.config import get_settings, get_supabase_client, load_profile
 
@@ -205,9 +204,7 @@ def _call_claude_for_tailoring(
             Used by the agentic pipeline to pass selected angles (first pass)
             or prior critic findings (self-heal pass).
     """
-    settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
+    from app.services.ai_client import complete
     profile_text = json.dumps(profile, indent=2)
     positioning = _load_positioning_summary()
 
@@ -233,15 +230,13 @@ def _call_claude_for_tailoring(
 
     user_msg += "\n\nProduce the tailoring JSON now."
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    response_text = complete(
+        "claude-sonnet-4-6",
+        TAILORING_SYSTEM_PROMPT,
+        user_msg,
         max_tokens=4096,
-        system=TAILORING_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}],
     )
-
-    response_text = message.content[0].text.strip()
-    # Strip markdown fences if Claude slipped one in
+    # Strip markdown fences if the provider slipped one in
     if response_text.startswith("```"):
         response_text = response_text.split("\n", 1)[1]
         response_text = response_text.rsplit("```", 1)[0]

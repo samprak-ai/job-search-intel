@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 
-import anthropic
 
 from app.config import get_settings, get_supabase_client
 from app.services.web_search import web_search
@@ -115,19 +114,16 @@ async def fetch_intel(company: str, role_type: str) -> dict:
 
     logger.info(f"Collected {len(all_results)} search results for {company} / {role_type}")
 
-    # Send to Claude for summarization
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    # Send to configured provider for summarization
+    from app.services.ai_client import complete
+    response_text = complete(
+        "claude-sonnet-4-6",
+        INTEL_SYSTEM_PROMPT,
+        build_intel_message(company, role_type, all_results),
         max_tokens=1024,
-        system=INTEL_SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": build_intel_message(company, role_type, all_results)}
-        ],
     )
 
     # Parse response (strip markdown fences if present)
-    response_text = message.content[0].text.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("\n", 1)[1]
         response_text = response_text.rsplit("```", 1)[0]

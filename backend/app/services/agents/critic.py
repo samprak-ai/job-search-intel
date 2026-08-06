@@ -15,7 +15,6 @@ import logging
 import re
 from pathlib import Path
 
-import anthropic
 from datetime import date
 from docx import Document
 
@@ -253,9 +252,8 @@ async def critique(
     # Cheap deterministic checks first — these are easier than asking the LLM
     deterministic = _deterministic_pre_checks(resume_text, cover_text, why_text, requirements)
 
-    # LLM critic call
-    settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    # LLM critic completion call
+    from app.services.ai_client import complete
 
     persona_block = json.dumps(
         {
@@ -302,14 +300,12 @@ async def critique(
 
 Find every issue. Cite exact quotes. Output JSON only."""
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    response_text = complete(
+        "claude-sonnet-4-6",
+        CRITIC_SYSTEM_PROMPT,
+        user_msg,
         max_tokens=4096,
-        system=CRITIC_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}],
     )
-
-    response_text = message.content[0].text.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 

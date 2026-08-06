@@ -752,11 +752,11 @@ def _l28():
     return problems
 
 
-# ── L31: scoring must route through the AI client abstraction ────────────────
+# ── L31: inference must route through the AI client abstraction ─────────────
 # The provider is a runtime config decision (AI_PROVIDER). If a service bypasses
 # ai_client and calls a provider SDK directly, the AI_PROVIDER switch is silently
 # ignored and a "we're on DeepSeek" assumption becomes false. Guard the wiring.
-@check("L31-scoring-routes-through-ai-client")
+@check("L31-inference-routes-through-ai-client")
 def _l31():
     problems = []
     if not (BACKEND / "app/services/ai_client.py").exists():
@@ -769,6 +769,33 @@ def _l31():
     sc = _read(BACKEND / "app/services/scoring.py")
     if "from app.services.ai_client import complete" not in sc or "complete(" not in sc:
         problems.append("scoring.py: score_role must call ai_client.complete (not a provider SDK directly)")
+    for module in (
+        "intel.py", "forge.py", "quick_apply.py", "reflection.py",
+        "resume_tailor.py", "application_tailor.py", "reviewer.py",
+    ):
+        src = _read(BACKEND / f"app/services/{module}")
+        if "anthropic.Anthropic(" in src or "client.messages.create(" in src:
+            problems.append(f"{module}: must route through ai_client.complete, not a provider SDK directly")
+    for module in ("agents/angle_selector.py", "agents/critic.py"):
+        src = _read(BACKEND / f"app/services/{module}")
+        if "anthropic.Anthropic(" in src or "client.messages.create(" in src:
+            problems.append(f"{module}: must route through ai_client.complete, not a provider SDK directly")
+    return problems
+
+
+# ── L32: email classifier stays pinned to Claude (haiku) ─────────────────────
+# The inbox->outcome classifier feeds the calibration/return-path loop, runs on
+# cheap haiku, and is a proven small-decision English task. It must NOT follow
+# AI_PROVIDER to DeepSeek. Guard the pin.
+@check("L32-email-classifier-stays-on-claude")
+def _l32():
+    problems = []
+    src = _read(BACKEND / "app/services/application_updates.py")
+    if "anthropic.Anthropic(" not in src or "messages.create(" not in src:
+        problems.append("application_updates.py: must call the Anthropic SDK directly (classifier is pinned to Claude)")
+    ai = _read(BACKEND / "app/services/ai_client.py")
+    if any(token in ai for token in ("application_updates", "classify_email", "CLASSIFY")):
+        problems.append("ai_client.py: must NOT special-case the email classifier (it stays pinned to Claude)")
     return problems
 
 

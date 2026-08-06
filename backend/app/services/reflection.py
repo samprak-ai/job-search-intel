@@ -17,7 +17,6 @@ import json
 import logging
 from datetime import datetime, timezone
 
-import anthropic
 
 from app.config import get_settings, get_supabase_client
 
@@ -115,7 +114,7 @@ async def run_reflection() -> dict:
             "inputs_summary": {"outcomes": 0, "open_gaps": 0},
         }
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    from app.services.ai_client import complete
     user_msg = (
         f"## application_outcomes ({outcome_n})\n{json.dumps(inputs['outcomes'], indent=2)}\n\n"
         f"## open detected_gaps ({gap_n})\n{json.dumps(inputs['open_gaps'], indent=2)}\n\n"
@@ -123,13 +122,7 @@ async def run_reflection() -> dict:
         "Produce the review report as strict JSON."
     )
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2048,
-        system=REFLECTION_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}],
-    )
-    text = message.content[0].text.strip()
+    text = complete("claude-sonnet-4-6", REFLECTION_SYSTEM_PROMPT, user_msg, max_tokens=2048)
     if text.startswith("```"):
         text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 

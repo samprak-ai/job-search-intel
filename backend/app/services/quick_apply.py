@@ -23,7 +23,6 @@ import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import anthropic
 import resend
 
 from app.config import get_settings, get_supabase_client, load_profile
@@ -124,15 +123,14 @@ def fetch_new_qualifying_roles(hours: int = 36, limit: int = 8) -> list[dict]:
 
 
 def _generate_fields(role: dict, profile: dict) -> tuple[list[dict], dict]:
-    """One grounded Claude call. Returns (fields, usage)."""
-    settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    """One grounded provider call. Returns (fields, usage)."""
+    from app.services.ai_client import complete_with_usage
     company = role.get("company") or ""
     spec = FIELD_SPEC.get(company, [("Cover letter", "3 short paragraphs")])
     spec_text = "\n".join(f"- {label} (target: {target})" for label, target in spec)
 
     system_blocks = [
-        # Cached static persona block (prompt caching → cheap repeat reads).
+        # Cached static persona block (prompt caching → cheap repeat reads on Claude).
         {
             "type": "text",
             "text": SYSTEM.format(locked=LOCKED_IN_FACTS_MARKDOWN)
@@ -145,11 +143,7 @@ def _generate_fields(role: dict, profile: dict) -> tuple[list[dict], dict]:
         f"JD (truncated):\n{(role.get('raw_jd') or '')[:4000]}\n\n"
         f"FIELDS TO PRODUCE:\n{spec_text}\n\nReturn JSON only."
     )
-    resp = client.messages.create(
-        model=MODEL, max_tokens=1800, system=system_blocks,
-        messages=[{"role": "user", "content": user}],
-    )
-    raw = resp.content[0].text.strip()
+    raw, usage = complete_with_usage(MODEL, system_blocks, user, max_tokens=1800)
     raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.MULTILINE).strip()
     try:
         data = json.loads(raw)
@@ -159,10 +153,6 @@ def _generate_fields(role: dict, profile: dict) -> tuple[list[dict], dict]:
     fields = data.get("fields", [])
     for f in fields:
         f["text"] = _scrub_dashes(f.get("text", ""))
-    usage = {
-        "input_tokens": getattr(resp.usage, "input_tokens", 0),
-        "output_tokens": getattr(resp.usage, "output_tokens", 0),
-    }
     return fields, usage
 
 

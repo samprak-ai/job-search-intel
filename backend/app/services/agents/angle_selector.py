@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 import logging
 
-import anthropic
 
 from app.config import get_settings
 
@@ -51,11 +50,7 @@ Output JSON ONLY, no preamble:
 
 
 async def select_angles(persona: dict, role: dict) -> dict:
-    """Run the angle-selection Claude call. Returns {angles: [...], disqualifiers: [...]}."""
-    settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
-    # Compact persona for the prompt — narrative is large, profile is structured.
+    """Run the angle-selection completion call. Returns {angles: [...], disqualifiers: [...]}."""
     profile_text = json.dumps(persona["profile_json"], indent=2)
     narrative = persona["interview_narrative"][:8000]
     locked_facts = persona["locked_in_facts"]
@@ -78,16 +73,13 @@ async def select_angles(persona: dict, role: dict) -> dict:
 
 Select 2-3 angles now. Output JSON only."""
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    from app.services.ai_client import complete
+    response_text = complete(
+        "claude-sonnet-4-6",
+        ANGLE_SELECTOR_SYSTEM_PROMPT,
+        user_msg,
         max_tokens=2048,
-        system=ANGLE_SELECTOR_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}],
     )
-
-    response_text = message.content[0].text.strip()
-    if response_text.startswith("```"):
-        response_text = response_text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
     try:
         parsed = json.JSONDecoder(strict=False).decode(response_text)

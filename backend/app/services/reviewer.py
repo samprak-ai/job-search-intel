@@ -255,19 +255,9 @@ def load_voice_samples(max_samples: int = 8) -> list[str]:
 # ---------------------------------------------------------------------------
 # LLM graders
 # ---------------------------------------------------------------------------
-def _client():
-    import anthropic  # lazy
-    from app.config import get_settings
-    return anthropic.Anthropic(api_key=get_settings().anthropic_api_key)
-
-
 def _call_json(system: str, user: str, max_tokens: int = 1500) -> dict:
-    client = _client()
-    resp = client.messages.create(
-        model=MODEL, max_tokens=max_tokens, system=system,
-        messages=[{"role": "user", "content": user}],
-    )
-    raw = resp.content[0].text.strip()
+    from app.services.ai_client import complete
+    raw = complete(MODEL, system, user, max_tokens=max_tokens)
     raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.MULTILINE).strip()
     try:
         return json.loads(raw)

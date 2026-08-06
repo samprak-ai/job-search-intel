@@ -9,7 +9,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 - **Backend:** FastAPI (Python), deployed on Railway
 - **Frontend:** Next.js, deployed on Vercel
 - **Database:** Supabase (new project, separate from GenAI-Intel)
-- **AI:** Claude API (Anthropic), with DeepSeek opt-in for scoring inference via `AI_PROVIDER` (see Module 3)
+- **AI:** Claude API (Anthropic), with DeepSeek opt-in for gen inference via `AI_PROVIDER` (see Module 3; the email classifier stays pinned to Claude)
 - **Search:** Brave Search API
 - **Auth:** Supabase Auth (single user — Sam)
 
@@ -85,7 +85,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 
 ### Module 3 — Match Scoring
 - Input: JD text + full `profile.json`
-- Provider abstraction: `services/ai_client.py` dispatches the scoring completion to the provider named by `AI_PROVIDER` env (`anthropic` default → `claude-sonnet-4-6`; `deepseek` → OpenAI-compatible `DEEPSEEK_BASE_URL`/`DEEPSEEK_MODEL`, default `deepseek-chat`). The scoring system prompt is model-agnostic and sent verbatim to both. Guarded by selfcheck L31 (scoring must route through `ai_client.complete`, not a provider SDK) + L26 (temperature=0 in both branches). Other inference (intel, quick-apply, email classifier) stays on Claude regardless.
+- Provider abstraction: `services/ai_client.py` dispatches every LLM completion to the provider named by `AI_PROVIDER` env (`anthropic` default → `claude-sonnet-4-6`; `deepseek` → OpenAI-compatible `DEEPSEEK_BASE_URL`/`DEEPSEEK_MODEL`, default `deepseek-chat`). System prompts are model-agnostic and sent verbatim to both. All gen inference routes through `ai_client.complete` (or `complete_with_usage`): match scoring, interview intel, forge session, quick-apply, resume/application tailoring, reviewer, angle_selector + critic agents. quick_apply passes an Anthropic `system` blocks list with `cache_control` — ai_client keeps blocks verbatim for Claude (prompt caching preserved) and flattens them to a string for DeepSeek. Guarded by selfcheck L31 (inference must route through `ai_client`, not a provider SDK) + L26 (temperature=0 in both branches). **One exception stays pinned to Claude:** the email classifier in `application_updates.py` calls the Anthropic SDK directly (never ai_client) because it feeds the calibration/return-path loop, runs on cheap haiku, and must not follow `AI_PROVIDER` to DeepSeek. Guarded by L32.
 - Claude/DeepSeek prompt instructs:
   - Score alignment across 5 dimensions: domain fit, technical fit, seniority fit, role type fit, H1B likelihood
   - Apply JD realism filter (posted requirements are often inflated — 65%+ alignment on the right dimensions = strong match)
@@ -212,7 +212,7 @@ Adding a learning: append to `LEARNINGS.md`, add a `@check` to `selfcheck.py` (c
 - **Same patterns as GenAI-Intel** — Brave Search → structured enrichment → LLM inference → dashboard
 - **Profile is static config** — not operational data, lives in repo, versioned with code
 - **Companies list is flexible** — JSON array, one-line add/remove, extendable fields
-- **Claude API for all inference** — match scoring, intel summarization, gap analysis (scoring is swappable to DeepSeek via `AI_PROVIDER`)
+- **Claude API for all inference** — match scoring, intel summarization, gap analysis (gen inference is swappable to DeepSeek via `AI_PROVIDER`; the email classifier stays pinned to Claude)
 
 ---
 

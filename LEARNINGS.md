@@ -234,6 +234,25 @@ These are harder to assert statically. Follow the procedure; promote to a
   band; a deterministic band-adjust layer is the fallback if compression shows up
   in real outcomes.
 
+- **L31b — swapping more than scoring means the routing guard must cover every
+  gen call site, and one classifier stays pinned to Claude.**
+  The same bypass-arm 'wiring-only' lesson applies to intel, forge, quick-apply,
+  resume/application tailoring, reviewer, and the angle_selector/critic agents —
+  all now route through `ai_client.complete`, so `AI_PROVIDER` is honored app-wide.
+  quick_apply passes an Anthropic `system` blocks list (with `cache_control`);
+  ai_client passes blocks verbatim to Claude (prompt caching preserved) but
+  flattens them to a single string for DeepSeek. `complete_with_usage` returns
+  token usage for the quick-apply cost report on either provider.
+  The one exception is the email classifier (`application_updates.py`): it feeds
+  the `application_outcomes` calibration loop, runs on cheap `claude-haiku`, and is
+  a proven small-decision English task — swapping it to DeepSeek saves near-zero
+  cost while risking the referee we rely on to tune scoring. It must stay pinned
+  to the Anthropic SDK directly, NOT routed through ai_client.
+  Invariant: all gen inference above calls `ai_client.complete` (or
+  `complete_with_usage`); `application_updates` keeps a direct Anthropic
+  `messages.create`. Guarded by `L31-inference-routes-through-ai-client` +
+  `L32-email-classifier-stays-on-claude`.
+
 ---
 
 ## Adding a new learning

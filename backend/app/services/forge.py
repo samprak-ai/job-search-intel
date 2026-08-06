@@ -8,7 +8,6 @@ questions to specific resume experiences.
 import json
 import logging
 
-import anthropic
 import httpx
 
 from app.config import get_settings, get_supabase_client, load_profile
@@ -154,19 +153,16 @@ async def generate_session_config(role_id: str) -> dict | None:
 
     logger.info(f"Generating Forge session for {role['title']} at {role['company']}")
 
-    # Call Claude API
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    # Call configured provider
+    from app.services.ai_client import complete
+    response_text = complete(
+        "claude-sonnet-4-6",
+        FORGE_SYSTEM_PROMPT,
+        _build_forge_message(role, profile, score, intel),
         max_tokens=2048,
-        system=FORGE_SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": _build_forge_message(role, profile, score, intel)}
-        ],
     )
 
     # Parse response
-    response_text = message.content[0].text.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("\n", 1)[1]
         response_text = response_text.rsplit("```", 1)[0]

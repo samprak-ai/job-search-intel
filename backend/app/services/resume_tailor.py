@@ -1,7 +1,6 @@
 import json
 import logging
 
-import anthropic
 
 from app.config import get_settings, get_supabase_client, load_profile
 
@@ -135,19 +134,16 @@ async def generate_resume_tailoring(role_id: str) -> dict:
     )
     score = score_result.data[0] if score_result.data else None
 
-    # Call Claude API
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    # Call configured provider
+    from app.services.ai_client import complete
+    response_text = complete(
+        "claude-sonnet-4-6",
+        TAILORING_SYSTEM_PROMPT,
+        build_tailoring_message(role, profile, score),
         max_tokens=2048,
-        system=TAILORING_SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": build_tailoring_message(role, profile, score)}
-        ],
     )
 
     # Parse response
-    response_text = message.content[0].text.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("\n", 1)[1]
         response_text = response_text.rsplit("```", 1)[0]
