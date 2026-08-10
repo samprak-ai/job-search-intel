@@ -1,0 +1,85 @@
+{
+  "_comment": "Per-company compensation structure facts for the scorer (Module 3). The purpose is COMPENSATION NORMALIZATION: postings from Google, Meta, and similar companies list BASE SALARY only, then '+ bonus + equity'. Reading a posted base range as total comp UNDERSTATES a role and wrongly dings seniority/level fit. These facts let the scorer normalize a posted base range to an APPROXIMATE total-comp figure before grading Sam's seniority/level-up bar (~L6 AWS Sr Manager TOTAL comp, not base). Numbers here are considered grounded (locked) — do not edit casually; SAM's bar is in profile.json / locked_facts. Non-listed companies fall back to the 'default' entry.",
+  "sam_bar": {
+    "label": "Sam's level bar is TOTAL compensation, not base",
+    "level": "~L6 AWS Sr Manager (current role)",
+    "bar_is": "total comp including equity, not base salary",
+    "note": "Grade seniority_fit and the level-up rule against LEVEL + NORMALIZED TOTAL COMP, never the raw posted base number."
+  },
+  "structures": {
+    "Google": {
+      "posted_range_is": "base",
+      "base_share_of_tc": "~60%",
+      "bonus": "15-25% target bonus",
+      "equity": "RSUs front-loaded (~33/33/22/12 vesting)",
+      "normalize_hint": "A Google base range ≈ 60% of total comp → approximate TC ≈ base / 0.60. A posted level chip ('Mid' vs 'Advanced') is authoritative for level."
+    },
+    "Google DeepMind": {
+      "posted_range_is": "base",
+      "base_share_of_tc": "~60%",
+      "bonus": "15-25% target bonus",
+      "equity": "RSUs front-loaded (~33/33/22/12 vesting)",
+      "normalize_hint": "Same Google comp structure (DeepMind roles post on Google's comp schedule)."
+    },
+    "Meta": {
+      "posted_range_is": "base",
+      "base_share_of_tc": "~60%",
+      "bonus": "15%+ target bonus",
+      "equity": "RSUs back-loaded (e.g. 25/25/25/25 or 20/20/30/30)",
+      "normalize_hint": "Base is a minority of total comp; approximate TC ≈ base / 0.55-0.60."
+    },
+    "Amazon": {
+      "posted_range_is": "base",
+      "base_share_of_tc": "minority (base historically capped ~$350K)",
+      "bonus": "negligible; sign-on bonuses (cash+RSU) in years 1-2",
+      "equity": "RSUs back-loaded 5/15/40/40",
+      "normalize_hint": "Amazon TC is dominated by back-loaded RSUs + sign-on; a posted base vastly understates TC, and base caps do NOT indicate a level cap. Internal-transfer roles skew to total-target (see internal-transfer context)."
+    },
+    "OpenAI": {
+      "posted_range_is": "base unless labeled OTE/TC",
+      "base_share_of_tc": "~50-65%",
+      "bonus": "performance bonus",
+      "equity": "RSUs/profit-share units (openai.com comp is total-heavy)",
+      "normalize_hint": "OpenAI posts salary ranges that are usually base; add bonus + equity context."
+    },
+    "Anthropic": {
+      "posted_range_is": "base unless labeled OTE/TC",
+      "base_share_of_tc": "~50-60%",
+      "bonus": "performance bonus",
+      "equity": "RSUs",
+      "normalize_hint": "Anthropic ranges are base; total comp is meaningfully higher."
+    },
+    "NVIDIA": {
+      "posted_range_is": "base unless labeled OTE/TC",
+      "base_share_of_tc": "~50-60%",
+      "bonus": "cash + RSU bonus components",
+      "equity": "heavy RSU component",
+      "normalize_hint": "NVIDIA's total comp is well above base."
+    },
+    "Snowflake": {
+      "posted_range_is": "base unless labeled OTE/TC",
+      "base_share_of_tc": "~50-60%",
+      "bonus": "cash bonus",
+      "equity": "RSUs",
+      "normalize_hint": "Base is only part of Snowflake TC."
+    },
+    "Databricks": {
+      "posted_range_is": "base unless labeled OTE/TC",
+      "base_share_of_tc": "~50-60%",
+      "bonus": "cash bonus",
+      "equity": "RSUs",
+      "normalize_hint": "Databricks TC is base + bonus + equity."
+    },
+    "CoreWeave": {
+      "posted_range_is": "base unless labeled OTE/TC",
+      "base_share_of_tc": "~50-60%",
+      "bonus": "cash/stock bonus",
+      "equity": "RSUs",
+      "normalize_hint": "Treat posted base as base, not total."
+    }
+  },
+  "default": {
+    "posted_range_is": "base unless explicitly labeled 'total compensation', 'OTE', or 'total comp'",
+    "normalize_hint": "When a posting lists only ONE range plus '+ bonus + equity' or similar, assume it is BASE salary and do NOT read it as total comp. Do not penalize a role just because bonus/equity are not included in the posted base range. If the range is explicitly labeled total/OTE, treat it as total."
+  }
+}

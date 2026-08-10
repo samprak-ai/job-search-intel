@@ -799,6 +799,37 @@ def _l32():
     return problems
 
 
+# ── L33: compensation normalization + posted level must feed scoring ────────
+# Scoring must not read a posted base range as total comp, and must trust an
+# explicit posted level chip over title wording. Enforce both are wired in.
+@check("L33-compensation-level-aware-scoring")
+def _l33():
+    problems = []
+    scoring = _read(BACKEND / "app/services/scoring.py")
+    if "COMPENSATION NORMALIZATION" not in scoring:
+        problems.append("scoring.py: SCORING_SYSTEM_PROMPT must contain COMPENSATION NORMALIZATION base≠total rule")
+    if "POSTED LEVEL" not in scoring:
+        problems.append("scoring.py: SCORING_SYSTEM_PROMPT must contain the POSTED LEVEL (authoritative over title) rule")
+    if "_comp_normalization_block" not in scoring:
+        problems.append("scoring.py: missing _comp_normalization_block (injects per-company comp structure)")
+    cmp_file = BACKEND / "config/comp_structures.json"
+    if not cmp_file.exists():
+        problems.append("config/comp_structures.json missing (per-company base→total-comp normalization facts)")
+    else:
+        data = json.loads(cmp_file.read_text())
+        if "Google" not in data.get("structures", {}):
+            problems.append("comp_structures.json: must include Google (base ≈ 60% of total comp)")
+        if "default" not in data:
+            problems.append("comp_structures.json: must include a 'default' fallback entry")
+    ats = _read(BACKEND / "app/services/ats_clients.py")
+    if "posted_level" not in ats or 'class="wVSTAb"' not in ats:
+        problems.append("ats_clients.py: _parse_google_careers must extract the posted level chip (class=wVSTAb) into posted_level")
+    discovery = _read(BACKEND / "app/services/discovery.py")
+    if 'job.get("posted_level", "")' not in discovery or '"posted_level":' not in discovery:
+        problems.append("discovery.py: role records must persist posted_level")
+    return problems
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})

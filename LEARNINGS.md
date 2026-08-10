@@ -254,6 +254,25 @@ These are harder to assert statically. Follow the procedure; promote to a
   `messages.create`. Guarded by `L31-inference-routes-through-ai-client` +
   `L32-email-classifier-stays-on-claude`.
 
+- **L33 — base-range postings must not be read as total comp, and a posted
+  level chip outranks title wording.**
+  Google and other boards post base-only ranges ("$156k–$222k + bonus + equity —
+  determined by role, level, and location"), so the raw base number
+  understates the role by ~40%; a scorer that reads posted base as total comp
+  wrongly dings seniority_fit/level, and can push an at-level role below the
+  80 notify bar. Titles also lie about level: Google's "Product Strategy and
+  Operations Lead" is tagged **Mid** (below Sam's L6) while "Product Strategy
+  and Operations Principal, Cloud AI" is tagged **Advanced** (at/above L6) —
+  the chip is authoritative, the title is not.
+  Invariant: `SCORING_SYSTEM_PROMPT` says a posted range is BASE unless labeled
+  total/OTE, grading happens against LEVEL + NORMALIZED TOTAL COMP (Sam's bar is
+  L6 total, never base); `config/comp_structures.json` carries per-company
+  base→total facts (Google ≈ 60%, fallback `default` entry) injected per role as
+  a "Compensation structure reference"; `_parse_google_careers` extracts the
+  `<span class="wVSTAb">` level chip into `posted_level`, discovered role
+  records persist it, and scoring surfaces it as **Posted Level**.
+  Guarded by `L33-compensation-level-aware-scoring`.
+
 ---
 
 ## Adding a new learning

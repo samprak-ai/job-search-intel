@@ -572,11 +572,20 @@ def _parse_google_careers(html_text: str) -> list[dict]:
         )
         location = re.sub(r"\s*;\s*", "; ", loc_m.group(1).strip()) if loc_m else ""
 
+        # Posted seniority chip ("Mid" / "Advanced"). Google renders a role-level
+        # chip on each result card (`<span class="wVSTAb">Mid</span>`); the level
+        # is authoritative for scoring seniority_fit while titles can mislead
+        # (e.g. "Associate Principal" is tagged Mid). 'Mid' is below Sam's L6;
+        # 'Advanced' is at/above. (L33)
+        lvl_m = re.search(r'<span class="wVSTAb">([^<]+)</span>', card)
+        posted_level = lvl_m.group(1).strip() if lvl_m else ""
+
         out[job_id] = {
             "title": title,
             "url": f"https://www.google.com/about/careers/applications/jobs/results/{job_id}-{slug}/",
             "location": location,
             "department": "",
+            "posted_level": posted_level,
             "raw_jd": text[:1500],
         }
     return list(out.values())

@@ -98,6 +98,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 - Amazon roles are scored as internal transfers — `_is_internal_transfer()` lifts the big-company 84 cap, sets h1b to 100, grades on genuine fit
 - Big-company 84 cap: waived only when responsibilities themselves carry build/0-to-1 language — a team NAME (Labs/DeepMind) is not evidence about the role (see selfcheck L29)
 - Stored to `role_scores` table
+- **Compensation normalization + posted level (L33)** — Gates Google/Meta-type boards that post base-only ranges ("$X + bonus + equity"). `SCORING_SYSTEM_PROMPT` instructs: a posted range is BASE unless labeled total/OTE; grade on LEVEL + NORMALIZED TOTAL COMP (Sam's bar is ~L6 AWS Sr Manager total comp, never base); never down-score for missing bonus/equity. Per-company base→total facts live in `backend/config/comp_structures.json` (Google base ≈ 60% of TC, `default` fallback) and are injected per-role as a "Compensation structure reference". Google's `_parse_google_careers` extracts the role-level chip (`<span class="wVSTAb">Mid</span>`) into `posted_level` (column added by `supabase/migration_posted_level.sql`); discovered role records persist it and `build_scoring_message` surfaces it as **Posted Level** — the chip is authoritative over title (a titled "Lead/Associate Principal" tagged Mid stays below L6; Advanced reads at/above). Guarded by `L33-compensation-level-aware-scoring`.
 
 ### Module 4 — Interview Intel (Lite)
 - Input: company name + role type

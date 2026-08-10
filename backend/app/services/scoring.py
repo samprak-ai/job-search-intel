@@ -9,6 +9,7 @@ from app.config import (
     load_profile,
     load_scoring_adjustments,
 )
+from app.config import CONFIG_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,14 @@ LOCATION FIT (use the role's Location field + any JD location):
 - HARD penalty: roles that are non-US only (no US location and not US-remote) — cap overall_score at 45 (wrong market + visa path).
 - A multi-location role counts as IDEAL if ANY listed location is acceptable. If the location is unknown, do not penalize. Always state the location assessment in the rationale.
 
+COMPENSATION NORMALIZATION:
+- A posted salary range is BASE salary unless the posting states otherwise (e.g. "OTE", "total comp"). Google, Meta, Amazon and similar post only a base range, then "+ bonus + equity". Reading posted base as total comp UNDERSTATES the role and wrongly dings seniority/level fit. A role that posts only a base range must NOT be scored lower than an equivalent role that posts total comp.
+- Sam's bar is ~L6 AWS Sr Manager TOTAL comp, not base. Normalize the posted base to an APPROXIMATE total-comp figure using the per-company structure (injected as "Compensation structure reference"), then grade seniority_fit and the level-up rule against LEVEL + NORMALIZED TOTAL COMP (never the raw base number).
+- NEVER add a gap or down-score a role merely because bonus/equity are not included in the posted base range.
+
+POSTED LEVEL (authoritative over title for seniority_fit):
+- If the posting exposes a level chip (Google renders "Mid" / "Advanced"), USE IT. 'Mid' is BELOW Sam's L6; 'Advanced' is AT/ABOVE L6. A title that looks senior (e.g. "Associate Principal") does NOT override a posted 'Mid' chip — mid-level is not a level-up. Use the posted level + normalized comp to judge whether the role is at-level, lateral, or a genuine level-up.
+
 Assign a match_tier based on overall score:
 - "Perfect Match" — 90-100 overall, exceptional alignment across all dimensions
 - "Strong Match" — 80-89 overall, strong alignment on key dimensions
@@ -123,6 +132,29 @@ The candidate is a CURRENT Amazon employee (Sr. GTM / Sales Operations Manager, 
 """
 
 
+def _comp_normalization_block(company: str | None) -> str:
+    """Per-company comp-structure facts (config/comp_structures.json), injected
+    ahead of scoring so base→total-comp normalization is grounded, not remembered.
+
+    Fallback to the 'default' entry for companies not listed. (L33)
+    """
+    path = CONFIG_DIR / "comp_structures.json"
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return "_comp_normalization_block: comp_structures.json unavailable — apply the generic base≠total rule above."
+    structure = data.get("structures", {}).get((company or "").strip() or "??")
+    if not structure:
+        structure = data.get("default", {})
+    hint = structure.get("normalize_hint", "")
+    posted = structure.get("posted_range_is", "base")
+    return (
+        "## Compensation structure reference (%s)\n"
+        "- Posted range is: %s.\n"
+        "- %s\n" % ((company or "unknown").strip() or "default", posted, hint)
+    )
+
+
 def _calibration_block(company: str | None) -> str:
     """Approved reflection-loop notes, injected as scoring guidance.
 
@@ -151,16 +183,21 @@ def build_scoring_message(role: dict, profile: dict) -> str:
         _INTERNAL_TRANSFER_CONTEXT + "\n" if _is_internal_transfer(role.get("company")) else ""
     )
     calibration_block = _calibration_block(role.get("company"))
+    comp_block = _comp_normalization_block(role.get("company"))
+    posted_level = (role.get("posted_level") or "").strip()
+    posted_level_line = f"**Posted Level:** {posted_level}" if posted_level else ""
     return f"""{calibration_block}{internal_block}## Job Posting
 **Company:** {role['company']}
 **Title:** {role['title']}
 **Location:** {role.get('location') or 'see description'}
+{posted_level_line}
 **Source:** {role.get('source', 'unknown')}
 **URL:** {role['url']}
 
 **Description:**
 {role.get('raw_jd', 'No description available')}
 
+{comp_block}
 ## Candidate Profile
 **Name:** {profile['name']}
 **Location:** {profile['location']}
