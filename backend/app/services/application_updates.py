@@ -34,16 +34,16 @@ import logging
 import re
 from difflib import SequenceMatcher
 
-import anthropic
-
 from app.config import get_settings, get_supabase_client
+from app.services.ai_client import complete
 from app.services.outcomes import map_role_status_to_outcome, record_outcome
 from app.services.forge import generate_session_config
 
 logger = logging.getLogger(__name__)
 
-# Cheap, current model id (kept in selfcheck L18 ALLOWED_MODELS). Classification
-# is a simple task, so we use Haiku rather than the prod Sonnet to bound spend.
+# Model label kept for the anthropic branch (cheap haiku); ai_client maps it to
+# the configured DeepSeek model when AI_PROVIDER=deepseek. Classification is a
+# simple task — bounded max_tokens either way.
 CLASSIFY_MODEL = "claude-haiku-4-5-20251001"
 
 # Bound spend / runtime per ingest call regardless of how many emails are sent.
@@ -138,23 +138,20 @@ def _company_matches(norm_query: str, db_company: str) -> bool:
 
 
 def _classify_email(em: dict) -> dict:
-    """One conservative Claude call. Returns the parsed classification dict."""
-    settings = get_settings()
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
+    """One conservative classifier call via ai_client (follows AI_PROVIDER).
+    Returns the parsed classification dict."""
     sender = _get(em, "from", "from_address", "sender", "fromAddress")
     subject = _get(em, "subject", "title")
     body = _get(em, "body", "snippet", "text", "bodyText", "plain")[:4000]
 
     user = f"From: {sender}\nSubject: {subject}\n\n{body}"
     try:
-        msg = client.messages.create(
+        text = complete(
             model=CLASSIFY_MODEL,
-            max_tokens=400,
             system=CLASSIFY_SYSTEM,
-            messages=[{"role": "user", "content": user}],
-        )
-        text = msg.content[0].text.strip()
+            user=user,
+            max_tokens=400,
+        ).strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
         data = json.loads(text)

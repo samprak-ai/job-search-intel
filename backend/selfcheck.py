@@ -772,6 +772,7 @@ def _l31():
     for module in (
         "intel.py", "forge.py", "quick_apply.py", "reflection.py",
         "resume_tailor.py", "application_tailor.py", "reviewer.py",
+        "application_updates.py",
     ):
         src = _read(BACKEND / f"app/services/{module}")
         if "anthropic.Anthropic(" in src or "client.messages.create(" in src:
@@ -783,19 +784,25 @@ def _l31():
     return problems
 
 
-# ── L32: email classifier stays pinned to Claude (haiku) ─────────────────────
-# The inbox->outcome classifier feeds the calibration/return-path loop, runs on
-# cheap haiku, and is a proven small-decision English task. It must NOT follow
-# AI_PROVIDER to DeepSeek. Guard the pin.
-@check("L32-email-classifier-stays-on-claude")
+# ── L32: no exempt services — every gen call (incl. the email classifier) ───
+# The classifier followed AI_PROVIDER as of 2026-08-21 (was pinned to Claude
+# haiku via direct SDK). Now NOTHING may bypass ai_client: one dispatch, one
+# determinism policy, one provider switch.
+@check("L32-no-direct-provider-sdks")
 def _l32():
     problems = []
-    src = _read(BACKEND / "app/services/application_updates.py")
-    if "anthropic.Anthropic(" not in src or "messages.create(" not in src:
-        problems.append("application_updates.py: must call the Anthropic SDK directly (classifier is pinned to Claude)")
-    ai = _read(BACKEND / "app/services/ai_client.py")
+    services = BACKEND / "app/services"
+    for path in list(services.glob("*.py")) + list((services / "agents").glob("*.py")):
+        if path.name == "ai_client.py":
+            continue
+        src = _read(path)
+        if "import anthropic" in src or "anthropic.Anthropic(" in src:
+            problems.append(f"{path.name}: imports/calls the Anthropic SDK directly — route through ai_client")
+        if "from openai" in src or "OpenAI(" in src:
+            problems.append(f"{path.name}: imports/calls the OpenAI SDK directly — route through ai_client")
+    ai = _read(services / "ai_client.py")
     if any(token in ai for token in ("application_updates", "classify_email", "CLASSIFY")):
-        problems.append("ai_client.py: must NOT special-case the email classifier (it stays pinned to Claude)")
+        problems.append("ai_client.py: must NOT special-case any caller (uniform dispatch)")
     return problems
 
 
