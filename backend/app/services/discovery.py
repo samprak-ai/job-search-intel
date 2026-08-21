@@ -30,6 +30,32 @@ def _jd_fingerprint(raw_jd: str | None) -> str:
     return re.sub(r"\s+", " ", (raw_jd or "").lower()).strip()[:300]
 
 
+def _insert_role(supabase, role: dict):
+    """Insert a role record, tolerating a schema that lags the code.
+
+    When code ships a new column (e.g. posted_level) before its migration runs,
+    PostgREST rejects EVERY insert with PGRST204 — silently zeroing discovery.
+    On that error, retry once without the unknown field so discovery keeps
+    flowing (the enriched value returns once the migration lands).
+    """
+    try:
+        return supabase.table("roles").insert(role).execute()
+    except Exception as e:
+        msg = str(e)
+        m = re.search(r"column '([a-z_]+)' of 'roles'", msg) or re.search(
+            "Could not find the '([a-z_]+)' column", msg
+        )
+        if m and m.group(1) in role:
+            dropped = role[m.group(1)]
+            retry = {k: v for k, v in role.items() if k != m.group(1)}
+            logger.warning(
+                f"roles.{m.group(1)} missing in DB (migration pending) — "
+                f"inserting without it (dropped: {dropped!r})"
+            )
+            return supabase.table("roles").insert(retry).execute()
+        raise
+
+
 def _dedup_key(title: str, location: str | None, raw_jd: str | None = None) -> tuple:
     """Identity key for role dedup: collapse only PROVABLY-IDENTICAL postings.
 
@@ -294,7 +320,7 @@ async def discover_via_ats(company: dict, notify: bool = True) -> dict:
     scored = 0
     for role in new_roles:
         try:
-            result = supabase.table("roles").insert(role).execute()
+            result = _insert_role(supabase, role)
             inserted += 1
 
             # Auto-score against profile
@@ -517,7 +543,7 @@ async def discover_via_web_search(company: dict, notify: bool = True) -> dict:
     scored = 0
     for role in new_roles:
         try:
-            result_row = supabase.table("roles").insert(role).execute()
+            result_row = _insert_role(supabase, role)
             inserted += 1
 
             role_id = result_row.data[0]["id"]
@@ -599,7 +625,7 @@ async def discover_via_linkedin(company: dict, notify: bool = True) -> dict:
     inserted = scored = 0
     for role in new_roles:
         try:
-            res = supabase.table("roles").insert(role).execute()
+            res = _insert_role(supabase, role)
             inserted += 1
             try:
                 await score_role(res.data[0]["id"], notify=notify); scored += 1

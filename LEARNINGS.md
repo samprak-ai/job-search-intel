@@ -273,6 +273,22 @@ These are harder to assert statically. Follow the procedure; promote to a
   records persist it, and scoring surfaces it as **Posted Level**.
   Guarded by `L33-compensation-level-aware-scoring`.
 
+- **L34 — shipping a new roles column before its migration silently zeroes ALL
+  discovery inserts.**
+  The L33 change added `posted_level` to every role record; the Supabase column
+  didn't exist yet (migration pending), so PostgREST rejected EVERY insert with
+  PGRST204 ("Could not find the 'posted_level' column"). Caught live when Meta's
+  LinkedIn discovery inserted 0 of 6 matched roles — and it would have zeroed the
+  daily cron for all 10 companies. Silent because each insert site catches
+  per-role exceptions and logs a warning.
+  Invariant: every roles-insert goes through `_insert_role()` in discovery.py,
+  which on a missing-column error retries ONCE without the unknown field (the
+  enriched value returns once the migration lands) — schema drift degrades
+  instead of zeroing discovery. Guarded by `L34-insert-fallback-for-schema-lag`
+  (fails if any raw `roles.insert()` appears outside `_insert_role`). Manual
+  procedure: run the pending migration in the Supabase SQL editor immediately
+  after merging any migration_*.sql.
+
 ---
 
 ## Adding a new learning

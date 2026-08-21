@@ -830,6 +830,33 @@ def _l33():
     return problems
 
 
+# ── L34: role inserts must survive a schema that lags the code ──────────────
+# Shipping a new roles column before its migration made PostgREST reject EVERY
+# insert (PGRST204) — discovery silently zeroed. All role-insert sites must go
+# through the _insert_role fallback (retry without the missing field).
+@check("L34-insert-fallback-for-schema-lag")
+def _l34():
+    problems = []
+    src = _read(BACKEND / "app/services/discovery.py")
+    if "def _insert_role" not in src:
+        problems.append("discovery.py: missing _insert_role fallback (retry without unknown column on PGRST204)")
+    if "PGRST204" not in src and "of 'roles'" not in src:
+        problems.append("discovery.py: _insert_role must detect the missing-column error (PGRST204 / 'column ... of roles')")
+    # The ONLY raw roles.insert() calls allowed are the two inside _insert_role
+    # (primary + retry-without-column).
+    fn_start = src.find("def _insert_role")
+    fn_end = src.find("\ndef ", fn_start + 1)
+    body = src[fn_start:fn_end] if fn_start >= 0 else ""
+    raw_calls = [ln for ln in src.splitlines() if 'table("roles").insert(' in ln]
+    stray = [ln for ln in raw_calls if ln.strip() not in {ln.strip() for ln in body.splitlines()}]
+    if len(raw_calls) != 2 or stray:
+        problems.append(
+            "discovery.py: raw roles.insert() calls found outside _insert_role — "
+            f"all insert sites must use _insert_role ({len(stray)} stray of {len(raw_calls)} raw)"
+        )
+    return problems
+
+
 def main() -> int:
     args = set(sys.argv[1:])
     run_db = bool(args & {"--db", "--all"})
