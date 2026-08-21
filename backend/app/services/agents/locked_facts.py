@@ -96,7 +96,7 @@ LOCKED_IN_FACTS_MARKDOWN = """## Startup Pulse
   taking the verdict on faith. Same provenance principle as Cloud-Intel's citing knowledge-graph Q&A.
   DIVISION OF LABOUR - do not conflate these two:
     * Startup Pulse     = SCHEDULED cohort reporting (monthly 50, quarterly 1000). The heavyweight.
-                          The PCP INFERENCE, its three-era evolution, the 1,000+ seller-conversation eval,
+                          The PCP INFERENCE, its three-era evolution, the 100+ seller-conversation eval,
                           the 100%->under-30% manual-effort arc, and Jassy's-office-as-design-partner ALL belong
                           HERE, to the reporting system. NOT to the reference app.
     * PCP Reference App = AD-HOC, on-demand, one metric, with evidence. A lightweight read on the same
@@ -275,7 +275,7 @@ BANNED_CHARS = ["—", "–"]  # em dash, en dash
 # - TWO ARCS that carry the story: hallucinations -> decision-grade trust; 100% manual -> <30% manual.
 #   CORRECTED by Sam 2026-07-15: the baseline was FULLY manual (100%), not ~75%. Never write '75%'.
 #   These describe SAM'S OWN WORKFLOW, not AWS business results. That is why they are safe to state.
-# - GROUND-TRUTH LOOP (lead with this): 1,000+ seller conversations over 2 yrs. Every seller
+# - GROUND-TRUTH LOOP (lead with this): 100+ seller conversations over 2 yrs. Every seller
 #   disagreement was a labeled example of where the inference was wrong; that built the eval.
 # - Era-1 external-search VENDOR NAME: keep OUT of external materials. Say "an external-search-only
 #   prototype". Vendor specificity is a detail about internal AWS architecture choices.

@@ -22,7 +22,8 @@ async def list_roles(company: str | None = None, limit: int = 100):
     # Fetch roles (without join — much faster)
     query = supabase.table("roles").select(
         "id, company, title, url, source, department, date_found, "
-        "application_status, is_live, last_checked_at, created_at"
+        "application_status, is_live, last_checked_at, created_at, "
+        "location, posted_level"
     ).order("date_found", desc=True).limit(limit)
 
     if company:

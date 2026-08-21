@@ -23,3 +23,4 @@ backend/.env
 # Email-bridge runtime output (Cowork tracker batches + quick-apply packets)
 application-responses-*.json
 quick_apply_packets_*.md
+backend/config/*.bak
