@@ -34,8 +34,8 @@ MODEL = "claude-sonnet-4-6"  # match the model the app already uses in prod
 # ---------------------------------------------------------------------------
 # Company / artifact specs
 # ---------------------------------------------------------------------------
-# (min, max) word counts per artifact type, by company. Sourced from CLAUDE.md
-# + per-company application research.
+# (min, max) word counts per artifact type, by company. Maintained here,
+# grounded in per-company application research.
 COMPANY_SPECS: dict[str, dict[str, Any]] = {
     "Anthropic": {
         "length": {"why": (200, 400), "cover_letter": (350, 550)},

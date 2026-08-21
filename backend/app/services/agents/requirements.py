@@ -2,7 +2,7 @@
 
 Returns a typed dict describing what the drafter must produce for a given
 company + role. For v1 this is Anthropic-only and the spec is deterministic
-(form conventions documented in CLAUDE.md). The spec is what the critic
+(form conventions encoded in ANTHROPIC_SPEC below). The spec is what the critic
 validates against (length targets, must-include, must-not-claim, tone rules).
 """
 

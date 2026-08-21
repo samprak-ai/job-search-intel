@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Bounded daily-cron default when CRON_COMPANIES is unset. Keep in sync with the
-# "Daily cron scope" section of CLAUDE.md (guarded by selfcheck L5).
+# "Daily cron scope" section of AGENTS.md (guarded by selfcheck L5).
 DEFAULT_CRON_COMPANIES = ["Anthropic", "OpenAI", "Amazon", "Google DeepMind", "Google", "Databricks", "NVIDIA", "Snowflake", "CoreWeave", "Meta"]
 
 
