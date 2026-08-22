@@ -299,3 +299,17 @@ These are harder to assert statically. Follow the procedure; promote to a
 2. If guardable: add a `@check("Lx-...")` function in `backend/selfcheck.py` and
    confirm it FAILS on the bad state and PASSES on the fix.
 3. Re-run `python3 selfcheck.py`. Commit the learning + the guard together.
+
+- **Ox Alpha via OpenRouter — tested 2026-08-21, NOT fit for grading.**
+  `ai_client` gained an `openrouter` branch (model `stealth/ox-alpha`, $0/$0,
+  ~1M context). Two traps found: reasoning is mandatory (endpoint rejects
+  `enabled:false`) and reasoning + content share `max_tokens`, so unscaled
+  scoring calls return empty content — the branch scales the budget x3
+  (min 4000) and excludes reasoning from output. A/B vs DeepSeek v4-pro on
+  known roles: band fidelity fine (78-84 around DeepSeek's 82-86), classifier
+  correct (interview_invite @0.98, stable). But temperature=0 is NOT
+  deterministic: same prompt scored 78/80/82/84 across runs, straddling the 80
+  notify bar. That breaks the L26 invariant a calibration loop depends on.
+  Verdict: DeepSeek v4-pro stays the prod provider; ox-alpha is available for
+  non-graded work (drafts, intel experiments) where run-to-run variance is
+  acceptable and cost is $0.
