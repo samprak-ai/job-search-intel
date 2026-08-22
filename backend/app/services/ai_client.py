@@ -76,29 +76,37 @@ def _deepseek_model(model: str | None) -> str:
     return get_settings().deepseek_model
 
 
-def complete_deepseek_with_usage(model: str | None, system: str, user: str, max_tokens: int) -> tuple[str, int, int]:
-    s = get_settings()
+def _openai_compatible_chat(
+    base_url: str,
+    api_key: str,
+    model: str,
+    system: str,
+    user: str,
+    max_tokens: int,
+    extra_body: dict | None = None,
+) -> tuple[str, int, int]:
+    """Shared OpenAI-compatible chat completion (DeepSeek, OpenRouter, ...)."""
+    body = {
+        "model": model,
+        "temperature": 0,
+        "max_tokens": max_tokens,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+    if extra_body:
+        body.update(extra_body)
     resp = httpx.post(
-        f"{s.deepseek_base_url}/chat/completions",
-        headers={"Authorization": f"Bearer {s.deepseek_api_key}"},
-        json={
-            "model": _deepseek_model(model),
-            "temperature": 0,
-            "max_tokens": max_tokens,
-            # deepseek-v4-pro (and the flash/reasoner family) default to a
-            # thinking/reasoning mode whose output lands in reasoning_content and
-            # leaves content empty. Scoring + all structured gen must be a plain,
-            # deterministic, non-reasoning completion (matching temperature=0), so
-            # disable thinking explicitly. Harmless on non-thinking models.
-            "thinking": {"type": "disabled"},
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-        },
+        f"{base_url}/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}"},
+        json=body,
         timeout=120.0,
     )
-    resp.raise_for_status()
+    if resp.status_code != 200:
+        # Surface the provider's error payload — OpenRouter embeds rate-limit
+        # and provider-error detail in the JSON body.
+        raise RuntimeError(f"LLM HTTP {resp.status_code} from {base_url}: {resp.text[:300]}")
     data = resp.json()
     usage = data.get("usage") or {}
     return (
@@ -108,25 +116,83 @@ def complete_deepseek_with_usage(model: str | None, system: str, user: str, max_
     )
 
 
+def complete_deepseek_with_usage(model: str | None, system: str, user: str, max_tokens: int) -> tuple[str, int, int]:
+    s = get_settings()
+    return _openai_compatible_chat(
+        base_url=s.deepseek_base_url,
+        api_key=s.deepseek_api_key,
+        # deepseek-v4-pro (and the flash/reasoner family) default to a
+        # thinking/reasoning mode whose output lands in reasoning_content and
+        # leaves content empty. Scoring + all structured gen must be a plain,
+        # deterministic, non-reasoning completion (matching temperature=0), so
+        # disable thinking explicitly. Harmless on non-thinking models.
+        model=_deepseek_model(model),
+        system=system,
+        user=user,
+        max_tokens=max_tokens,
+        extra_body={"thinking": {"type": "disabled"}},
+    )
+
+
+def _openrouter_model(model: str | None) -> str:
+    """Same semantic-label mapping as DeepSeek: 'claude-sonnet-4-6' means 'the
+    standard sonnet-weight completion', served by the configured OpenRouter
+    model (default stealth/ox-alpha)."""
+    if model and not model.startswith("claude"):
+        return model
+    return get_settings().openrouter_model
+
+
+def complete_openrouter(model: str | None, system: str, user: str, max_tokens: int) -> str:
+    text, _, _ = complete_openrouter_with_usage(model, system, user, max_tokens)
+    return text
+
+
+def complete_openrouter_with_usage(model: str | None, system: str, user: str, max_tokens: int) -> tuple[str, int, int]:
+    """OpenRouter (OpenAI-compatible). Reasoning is MANDATORY on this model
+    (the endpoint rejects enabled:false) and reasoning + content share the
+    max_tokens budget — so scale the budget up or big prompts die with empty
+    content. 'exclude' keeps the visible output clean. temperature=0 holds."""
+    s = get_settings()
+    return _openai_compatible_chat(
+        base_url=s.openrouter_base_url,
+        api_key=s.openrouter_api_key,
+        model=_openrouter_model(model),
+        system=system,
+        user=user,
+        max_tokens=max(max_tokens * 3, 4000),
+        extra_body={"reasoning": {"exclude": True}},
+    )
+
+
 def complete(model: str | None, system, user: str, max_tokens: int = 1024) -> str:
     """Route a completion to the configured provider. `model` is a fallback label
     for two-provider parity; each provider applies its own default when None.
 
     `system` accepts either a plain string or an Anthropic system-blocks list
     (e.g. a persona block carrying cache_control). Anthropic gets the blocks
-    verbatim (preserving prompt caching); DeepSeek gets them flattened to text
-    since the OpenAI-compatible endpoint takes a single system string.
+    verbatim (preserving prompt caching); OpenAI-compatible providers get them
+    flattened to text since the chat endpoint takes a single system string.
     """
-    if provider() == "deepseek":
+    p = provider()
+    if p == "deepseek":
         return complete_deepseek(model, _flatten_system(system), user, max_tokens)
+    if p == "openrouter":
+        return complete_openrouter(model, _flatten_system(system), user, max_tokens)
     return _call_anthropic(model, system, user, max_tokens)
 
 
 def complete_with_usage(model: str | None, system, user: str, max_tokens: int = 1024) -> tuple[str, dict]:
     """Like complete() but also returns {input_tokens, output_tokens} for cost
     reporting (0s when the provider doesn't report usage)."""
-    if provider() == "deepseek":
+    p = provider()
+    if p == "deepseek":
         text, inp, out = complete_deepseek_with_usage(
+            model, _flatten_system(system), user, max_tokens
+        )
+        return text, {"input_tokens": inp, "output_tokens": out}
+    if p == "openrouter":
+        text, inp, out = complete_openrouter_with_usage(
             model, _flatten_system(system), user, max_tokens
         )
         return text, {"input_tokens": inp, "output_tokens": out}

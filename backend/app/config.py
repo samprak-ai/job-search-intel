@@ -48,12 +48,16 @@ def get_settings():
         # service key is set in the environment.
         supabase_key: str = _env_get("SUPABASE_SERVICE_KEY", "") or _env_get("SUPABASE_KEY")
         anthropic_api_key: str = _env_get("ANTHROPIC_API_KEY")
-        # Runtime LLM provider for scoring inference. "anthropic" (default) or
-        # "deepseek". DeepSeek uses an OpenAI-compatible endpoint.
+        # Runtime LLM provider for scoring inference. "anthropic" (default),
+        # "deepseek", or "openrouter". DeepSeek/OpenRouter use OpenAI-compatible
+        # endpoints.
         ai_provider: str = _env_get("AI_PROVIDER", "anthropic")
         deepseek_api_key: str = _env_get("DEEPSEEK_API_KEY")
         deepseek_model: str = _env_get("DEEPSEEK_MODEL", "deepseek-v4-pro")
         deepseek_base_url: str = _env_get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        openrouter_api_key: str = _env_get("OPENROUTER_API_KEY")
+        openrouter_model: str = _env_get("OPENROUTER_MODEL", "stealth/ox-alpha")
+        openrouter_base_url: str = _env_get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
         serper_api_key: str = _env_get("SERPER_API_KEY")
         brave_api_key: str = _env_get("BRAVE_API_KEY")
         search_provider: str = _env_get("SEARCH_PROVIDER", "brave")
