@@ -9,7 +9,7 @@ A personal job search intelligence platform built by Sam Prakash. Tracks target 
 - **Backend:** FastAPI (Python), deployed on Railway
 - **Frontend:** Next.js, deployed on Vercel
 - **Database:** Supabase (new project, separate from GenAI-Intel)
-- **AI:** Claude API (Anthropic), with DeepSeek opt-in for gen inference via `AI_PROVIDER` (see Module 3; the email classifier stays pinned to Claude)
+- **AI:** OpenRouter (`stealth/ox-alpha`) for all gen inference via `AI_PROVIDER` (default; `deepseek` opt-in — see Module 3)
 - **Search:** Brave Search API
 - **Auth:** Supabase Auth (single user — Sam)
 

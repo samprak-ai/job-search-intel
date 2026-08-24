@@ -2,8 +2,8 @@
 
 Centralizes the completion call so the provider is a config decision (AI_PROVIDER
 in env) instead of a hardcode in each service. The system prompt is model-agnostic
-and both providers consume it verbatim. Default stays Anthropic
-(claude-sonnet-4-6); DeepSeek (OpenAI-compatible) is opt-in.
+and both providers consume it verbatim. Default is OpenRouter (stealth/ox-alpha);
+DeepSeek (OpenAI-compatible) is opt-in.
 
 Interface: complete(model, system, user, max_tokens) -> str
            complete_with_usage(model, system, user, max_tokens) -> (str, usage_dict)
@@ -12,16 +12,14 @@ import httpx
 
 from app.config import get_settings
 
-_DEFAULT_CLAUDE = "claude-sonnet-4-6"
-
 
 def provider() -> str:
-    return (get_settings().ai_provider or "anthropic").lower().replace(" ", "")
+    return (get_settings().ai_provider or "openrouter").lower().replace(" ", "")
 
 
 def _flatten_system(system) -> str:
-    """Reduce an Anthropic system-blocks list to a single text string for
-    OpenAI-compatible providers. Plain strings pass through unchanged."""
+    """Reduce a system-blocks list to a single text string for the
+    OpenAI-compatible chat endpoint. Plain strings pass through unchanged."""
     if isinstance(system, str):
         return system
     parts = []
@@ -31,34 +29,6 @@ def _flatten_system(system) -> str:
         else:
             parts.append(str(b))
     return "\n\n".join(p for p in parts if p)
-
-
-def _call_anthropic(model: str | None, system, user: str, max_tokens: int) -> str:
-    text, _ = _call_anthropic_with_usage(model, system, user, max_tokens)
-    return text
-
-
-def _call_anthropic_with_usage(model: str | None, system, user: str, max_tokens: int) -> tuple[str, dict]:
-    import anthropic
-
-    s = get_settings()
-    client = anthropic.Anthropic(api_key=s.anthropic_api_key)
-    message = client.messages.create(
-        model=model or _DEFAULT_CLAUDE,
-        max_tokens=max_tokens,
-        # Grading + structured generation must be reproducible. Default temperature
-        # (1.0) injects ±several points of run-to-run noise, enough to flip a role
-        # across the Good/Strong boundary. temperature=0 makes the same input
-        # produce the same result every time. (L26)
-        temperature=0,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-    )
-    usage = {
-        "input_tokens": getattr(message.usage, "input_tokens", 0),
-        "output_tokens": getattr(message.usage, "output_tokens", 0),
-    }
-    return message.content[0].text.strip(), usage
 
 
 def complete_deepseek(model: str | None, system: str, user: str, max_tokens: int) -> str:
@@ -166,20 +136,17 @@ def complete_openrouter_with_usage(model: str | None, system: str, user: str, ma
 
 
 def complete(model: str | None, system, user: str, max_tokens: int = 1024) -> str:
-    """Route a completion to the configured provider. `model` is a fallback label
-    for two-provider parity; each provider applies its own default when None.
+    """Route a completion to the configured provider (openrouter default,
+    deepseek optional). `model` is a fallback label; each provider applies its
+    own default when None.
 
-    `system` accepts either a plain string or an Anthropic system-blocks list
-    (e.g. a persona block carrying cache_control). Anthropic gets the blocks
-    verbatim (preserving prompt caching); OpenAI-compatible providers get them
+    `system` accepts either a plain string or a system-blocks list — blocks get
     flattened to text since the chat endpoint takes a single system string.
     """
     p = provider()
     if p == "deepseek":
         return complete_deepseek(model, _flatten_system(system), user, max_tokens)
-    if p == "openrouter":
-        return complete_openrouter(model, _flatten_system(system), user, max_tokens)
-    return _call_anthropic(model, system, user, max_tokens)
+    return complete_openrouter(model, _flatten_system(system), user, max_tokens)
 
 
 def complete_with_usage(model: str | None, system, user: str, max_tokens: int = 1024) -> tuple[str, dict]:
@@ -191,9 +158,7 @@ def complete_with_usage(model: str | None, system, user: str, max_tokens: int = 
             model, _flatten_system(system), user, max_tokens
         )
         return text, {"input_tokens": inp, "output_tokens": out}
-    if p == "openrouter":
-        text, inp, out = complete_openrouter_with_usage(
-            model, _flatten_system(system), user, max_tokens
-        )
-        return text, {"input_tokens": inp, "output_tokens": out}
-    return _call_anthropic_with_usage(model, system, user, max_tokens)
+    text, inp, out = complete_openrouter_with_usage(
+        model, _flatten_system(system), user, max_tokens
+    )
+    return text, {"input_tokens": inp, "output_tokens": out}

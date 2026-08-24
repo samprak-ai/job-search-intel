@@ -516,10 +516,10 @@ def _l23():
 @check("L26-scoring-temperature-zero")
 def _l26():
     client = _read(BACKEND / "app/services/ai_client.py")
-    for func in ("_call_anthropic", "complete_deepseek"):
+    for func in ("complete_openrouter", "complete_deepseek"):
         if f"def {func}(" not in client:
             return [f"ai_client.py: def {func}() not found"]
-    # temperature=0 must appear once per provider branch (Anthropic + DeepSeek)
+    # temperature=0 must appear once per provider branch (OpenRouter + DeepSeek)
     if client.count("temperature=0") < 2:
         return ["ai_client.py: both provider branches must pass temperature=0 (deterministic grading)"]
     return []
@@ -764,8 +764,8 @@ def _l31():
     client = _read(BACKEND / "app/services/ai_client.py")
     if "def complete(" not in client:
         problems.append("ai_client.py: must expose a complete() dispatch function")
-    if "deepseek" not in client or "anthropic" not in client:
-        problems.append("ai_client.py: must branch between deepseek and anthropic providers")
+    if "deepseek" not in client or "openrouter" not in client:
+        problems.append("ai_client.py: must branch between deepseek and openrouter providers")
     sc = _read(BACKEND / "app/services/scoring.py")
     if "from app.services.ai_client import complete" not in sc or "complete(" not in sc:
         problems.append("scoring.py: score_role must call ai_client.complete (not a provider SDK directly)")
