@@ -431,8 +431,11 @@ export default function Dashboard() {
   const filtered = roles.filter((r) => {
     // Stale roles (dead posting links) are dropped from the dashboard entirely.
     if (r.is_live === false) return false;
-    if (filterCompany && r.company !== filterCompany) return false;
     const normalized = normalizeTier(r.match_tier);
+    // Unscored roles are hidden from the default view (only surfaced when the
+    // operator explicitly selects the "Unscored" filter to batch-score them).
+    if (normalized === "Unscored" && filterTier !== "unscored") return false;
+    if (filterCompany && r.company !== filterCompany) return false;
     if (filterTier === "unscored" && normalized !== "Unscored") return false;
     if (filterTier && filterTier !== "unscored" && normalized !== filterTier)
       return false;
