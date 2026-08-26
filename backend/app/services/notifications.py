@@ -9,18 +9,22 @@ from app.services.conversion import TIER_RANK, conversion_tier
 logger = logging.getLogger(__name__)
 
 
-# Per-company notification bar. Most companies notify at Strong+ (80+), but
-# big-company roles get JD-realism score caps (see scoring.py), so genuinely
-# strong-fit Amazon roles cluster in the 70-79 "Good Match" band. Sam wants
-# those surfaced, so Amazon's bar is 70.
+# Uniform notification bar: only Strong (80+) and Perfect (90+) matches email.
+# Good Match (70-79) is surfaced on the dashboard but never emailed. Per-company
+# overrides below can reintroduce a lower bar for a specific company if needed;
+# Amazon's 70 exception was removed 2026-08-24 (its internal-transfer lift already
+# differentiates strong fits up into 80+, so genuine strength still notifies).
 DEFAULT_NOTIFICATION_THRESHOLD = 80
 COMPANY_NOTIFICATION_THRESHOLDS = {
-    "amazon": 70,
 }
 
 
 def notification_threshold(company: str | None) -> int:
-    """Return the minimum overall_score that qualifies a role for notification."""
+    """Minimum overall_score that qualifies a role for notification.
+
+    Uniform Strong+ (80) since 2026-08-24. `company` is kept in the signature so
+    a per-company bar can be reintroduced without touching call sites.
+    """
     key = (company or "").lower().replace(" ", "")
     for name, threshold in COMPANY_NOTIFICATION_THRESHOLDS.items():
         if name in key:
@@ -226,9 +230,8 @@ async def send_daily_digest_email(
         grouped.setdefault(tier, []).append(role)
 
     # A role qualifies for the digest when its score meets its company's
-    # notification bar (80 default, 70 for Amazon). Perfect/Strong always
-    # qualify; Good Match (70-79) qualifies only for low-bar companies like
-    # Amazon — so non-Amazon Good Matches stay out of the digest.
+    # notification bar (uniform 80 as of 2026-08-24). Good Match (70-79) stays
+    # out of the digest for every company.
     def _qualifies(role: dict) -> bool:
         score = role["score"].get("overall_score", 0)
         return score >= notification_threshold(role.get("company"))
