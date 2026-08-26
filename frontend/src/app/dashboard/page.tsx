@@ -33,13 +33,12 @@ const CONVERSION_BADGE: Record<string, { label: string; cls: string }> = {
 // Constants
 // ---------------------------------------------------------------------------
 
-// "Possible Match" and "Unlikely Match" are intentionally omitted — the dashboard
-// groups only by the tiers in this list, so those roles are hidden from view (to
-// cut noise; they're still in the DB and scored, just not surfaced).
+// The dashboard surfaces only Perfect and Strong matches. "Good Match" and below
+// are intentionally omitted — those roles are still in the DB and scored, just
+// not surfaced (to cut noise; Sam's apply list is Perfect + Strong only).
 const TIER_ORDER = [
   "Perfect Match",
   "Strong Match",
-  "Good Match",
 ];
 
 // Map old tier names (from pre-rename scoring) to new tier names
@@ -430,6 +429,8 @@ export default function Dashboard() {
   // Filters
   const companies = [...new Set(roles.map((r) => r.company))].sort();
   const filtered = roles.filter((r) => {
+    // Stale roles (dead posting links) are dropped from the dashboard entirely.
+    if (r.is_live === false) return false;
     if (filterCompany && r.company !== filterCompany) return false;
     const normalized = normalizeTier(r.match_tier);
     if (filterTier === "unscored" && normalized !== "Unscored") return false;
@@ -659,7 +660,6 @@ export default function Dashboard() {
           <option value="">All Tiers</option>
           <option value="Perfect Match">Perfect Match</option>
           <option value="Strong Match">Strong Match</option>
-          <option value="Good Match">Good Match</option>
           <option value="unscored">Unscored</option>
         </select>
         <select
