@@ -14,7 +14,7 @@ from app.config import get_settings
 
 
 def provider() -> str:
-    return (get_settings().ai_provider or "openrouter").lower().replace(" ", "")
+    return (get_settings().ai_provider or "deepseek").lower().replace(" ", "")
 
 
 def _flatten_system(system) -> str:
@@ -136,29 +136,29 @@ def complete_openrouter_with_usage(model: str | None, system: str, user: str, ma
 
 
 def complete(model: str | None, system, user: str, max_tokens: int = 1024) -> str:
-    """Route a completion to the configured provider (openrouter default,
-    deepseek optional). `model` is a fallback label; each provider applies its
+    """Route a completion to the configured provider (deepseek default,
+    openrouter opt-in). `model` is a fallback label; each provider applies its
     own default when None.
 
     `system` accepts either a plain string or a system-blocks list — blocks get
     flattened to text since the chat endpoint takes a single system string.
     """
     p = provider()
-    if p == "deepseek":
-        return complete_deepseek(model, _flatten_system(system), user, max_tokens)
-    return complete_openrouter(model, _flatten_system(system), user, max_tokens)
+    if p == "openrouter":
+        return complete_openrouter(model, _flatten_system(system), user, max_tokens)
+    return complete_deepseek(model, _flatten_system(system), user, max_tokens)
 
 
 def complete_with_usage(model: str | None, system, user: str, max_tokens: int = 1024) -> tuple[str, dict]:
     """Like complete() but also returns {input_tokens, output_tokens} for cost
     reporting (0s when the provider doesn't report usage)."""
     p = provider()
-    if p == "deepseek":
-        text, inp, out = complete_deepseek_with_usage(
+    if p == "openrouter":
+        text, inp, out = complete_openrouter_with_usage(
             model, _flatten_system(system), user, max_tokens
         )
         return text, {"input_tokens": inp, "output_tokens": out}
-    text, inp, out = complete_openrouter_with_usage(
+    text, inp, out = complete_deepseek_with_usage(
         model, _flatten_system(system), user, max_tokens
     )
     return text, {"input_tokens": inp, "output_tokens": out}

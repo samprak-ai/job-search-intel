@@ -47,9 +47,9 @@ def get_settings():
         # key. Falls back to SUPABASE_KEY (anon) so nothing breaks before the
         # service key is set in the environment.
         supabase_key: str = _env_get("SUPABASE_SERVICE_KEY", "") or _env_get("SUPABASE_KEY")
-        # Runtime LLM provider for scoring inference. "openrouter" (default,
-        # stealth/ox-alpha) or "deepseek". Both use OpenAI-compatible endpoints.
-        ai_provider: str = _env_get("AI_PROVIDER", "openrouter")
+        # Runtime LLM provider for scoring inference. "deepseek" (default) or
+        # "openrouter" (stealth/ox-alpha). Both use OpenAI-compatible endpoints.
+        ai_provider: str = _env_get("AI_PROVIDER", "deepseek")
         deepseek_api_key: str = _env_get("DEEPSEEK_API_KEY")
         deepseek_model: str = _env_get("DEEPSEEK_MODEL", "deepseek-v4-pro")
         deepseek_base_url: str = _env_get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
